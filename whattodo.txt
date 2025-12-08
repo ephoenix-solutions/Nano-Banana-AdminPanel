@@ -1,0 +1,560 @@
+# NANO BANANA ADMIN PANEL - PROJECT DOCUMENTATION & SESSION TRAINING GUIDE
+
+## 🎯 PROJECT OVERVIEW
+This is a Next.js 14 admin panel for the Nano Banana mobile application (AI image generation app).
+The admin panel manages users, categories, prompts, subscriptions, feedback, and app settings.
+
+**Tech Stack:**
+- Next.js 14 (App Router)
+- TypeScript
+- Tailwind CSS
+- Firebase Firestore (Database)
+- Lucide React (Icons)
+
+**Project Root:** D:\ePhoenix\dhvanil\projects\Nano-Banana\nano-banana-admin-panel
+
+---
+
+## 📋 CRITICAL FILES TO READ & ANALYZE
+
+### 1. CONFIGURATION FILES (Read First)
+```
+config/firebase.ts          - Firebase initialization and configuration
+config/icons.ts             - Centralized icon exports from lucide-react
+config/theme.ts             - Color scheme and design tokens
+tailwind.config.ts          - Tailwind CSS configuration with custom colors
+```
+
+### 2. TYPE DEFINITIONS (Understand Data Structure)
+```
+lib/types/user.types.ts                    - User interface and CRUD types
+lib/types/category.types.ts                - Category & Subcategory types
+lib/types/prompt.types.ts                  - Prompt (formerly images) types
+lib/types/subscription-plan.types.ts       - Subscription plan types
+lib/types/user-subscription.types.ts       - User subscription types
+lib/types/feedback.types.ts                - Feedback types
+lib/types/app-settings.types.ts            - App settings types
+lib/types/country.types.ts                 - Country types
+```
+
+### 3. SERVICE LAYER (Business Logic)
+```
+lib/services/user.service.ts               - User CRUD operations
+lib/services/category.service.ts           - Category & Subcategory CRUD
+lib/services/prompt.service.ts             - Prompt CRUD operations
+lib/services/subscription-plan.service.ts  - Subscription plan CRUD
+lib/services/user-subscription.service.ts  - User subscription CRUD
+lib/services/feedback.service.ts           - Feedback operations (read-only)
+lib/services/app-settings.service.ts       - App settings (single document)
+lib/services/country.service.ts            - Country CRUD operations
+lib/services/index.ts                      - Service exports
+```
+
+### 4. REUSABLE COMPONENTS
+```
+components/AdminLayout.tsx   - Main layout with sidebar and header
+components/Sidebar.tsx       - Navigation sidebar with dropdowns
+components/Header.tsx        - Top header with user info
+components/Table.tsx         - Reusable table component
+components/Modal.tsx         - Base modal component
+components/ConfirmModal.tsx  - Confirmation dialog modal
+```
+
+### 5. PAGE IMPLEMENTATIONS (All CRUD Pages)
+```
+app/users/page.tsx                                          - Users list
+app/users/add/page.tsx                                      - Add user
+app/users/edit/[id]/page.tsx                                - Edit user
+
+app/categories/page.tsx                                     - Categories list (with expandable subcategories)
+app/categories/add/page.tsx                                 - Add category
+app/categories/edit/[id]/page.tsx                           - Edit category
+app/categories/[categoryId]/subcategories/add/page.tsx      - Add subcategory
+app/categories/[categoryId]/subcategories/edit/[subcategoryId]/page.tsx - Edit subcategory
+
+app/prompts/page.tsx                                        - Prompts list
+app/prompts/add/page.tsx                                    - Add prompt
+app/prompts/edit/[id]/page.tsx                              - Edit prompt
+
+app/subscription-plan/page.tsx                              - Subscription plans list
+app/subscription-plan/add/page.tsx                          - Add plan
+app/subscription-plan/edit/[id]/page.tsx                    - Edit plan
+
+app/user-subscription/page.tsx                              - User subscriptions list
+
+app/feedback/page.tsx                                       - Feedback list (read-only)
+
+app/app-settings/page.tsx                                   - App settings (single config)
+
+app/countries/page.tsx                                      - Countries list
+app/countries/add/page.tsx                                  - Add country
+app/countries/edit/[id]/page.tsx                            - Edit country
+```
+
+---
+
+## 🎨 DESIGN SYSTEM
+
+### Color Palette (Tailwind Config)
+```
+Primary (Black):     #000000  - Main text, headings
+Secondary (Brown):   #854836  - Buttons, accents, alerts
+Accent (Yellow):     #FFB22C  - Primary actions, highlights
+Background (White):  #F7F7F7  - Page background
+```
+
+### Typography
+```
+Heading Font: 'Playfair Display' (serif)
+Body Font:    'Inter' (sans-serif)
+```
+
+### Component Patterns
+- All forms use 2-column grid layout (responsive)
+- Buttons have loading states with spinners
+- Tables have hover effects and proper spacing
+- Modals close on: ESC key, outside click, X button, Cancel button
+- All pages have stats cards at the top
+- Search functionality with real-time filtering
+
+---
+
+## 🗄️ FIRESTORE DATABASE STRUCTURE
+
+### Collections & Fields
+
+**1. users**
+```
+- id (auto-generated)
+- name: string
+- email: string
+- provider: "google" | "apple"
+- language: string (e.g., "en", "hi")
+- photoURL: string
+- createdAt: Timestamp
+- lastLogin: Timestamp
+```
+
+**2. categories**
+```
+- id (auto-generated)
+- name: string
+- iconImage: string (URL)
+- order: number
+- searchCount: string | number
+
+Subcollection: subcategories
+  - id (auto-generated)
+  - name: string
+  - order: number
+  - searchCount: number
+```
+
+**3. images** (displayed as "Prompts" in UI)
+```
+- id (auto-generated)
+- categoryId: string
+- subCategoryId: string
+- prompt: string
+- url: string (image URL)
+- isTrending: boolean
+- likes: number
+- searchCount: number
+- createdAt: Timestamp
+```
+
+**4. subscription_plans**
+```
+- id (auto-generated)
+- name: string
+- price: string
+- currency: string (e.g., "INR", "USD")
+- durationDays: number
+- generationLimit: number
+- features: string[] (array)
+- isActive: boolean
+- order: number
+```
+
+**5. user_subscriptions**
+```
+- id (auto-generated)
+- userId: string
+- planId: string
+- startDate: Timestamp
+- endDate: Timestamp
+- isActive: boolean
+- paymentMethod: string (e.g., "google")
+- transactionId: string
+```
+
+**6. feedback**
+```
+- id (auto-generated)
+- userId: string
+- message: string
+- rating: number (1-5)
+- deviceInfo: {
+    model: string
+    os: string
+    appVersion: string
+  }
+- createdAt: Timestamp
+```
+
+**7. app_settings** (Single Document: "app_config")
+```
+- languagesSupported: string[] (e.g., ["en", "hi"])
+- privacyPolicy: string (URL)
+- terms: string (URL)
+- currentVersion: string
+- latestVersion: string
+```
+
+**8. countries**
+```
+- id (auto-generated)
+- name: string
+- isoCode: string (2-letter code)
+```
+
+---
+
+## 🔑 KEY IMPLEMENTATION DETAILS
+
+### 1. Firebase Configuration
+- Firebase is initialized in `config/firebase.ts`
+- Uses environment variables (not committed to git)
+- Firestore database instance exported as `db`
+
+### 2. Service Layer Pattern
+- All Firestore operations are in service files
+- Services use TypeScript interfaces for type safety
+- Common operations: getAll, getById, create, update, delete
+- Special operations: toggleActive, bulkImport, etc.
+
+### 3. Naming Conventions
+- **Collection "images"** is displayed as **"Prompts"** in the UI
+- Provider options: "google" and "apple" (not "ios")
+- All services follow the pattern: `<entity>.service.ts`
+- All types follow the pattern: `<entity>.types.ts`
+
+### 4. Special Features
+
+**Categories:**
+- Has subcategories as a Firestore subcollection
+- Table shows expandable rows for subcategories
+- Separate CRUD for categories and subcategories
+- Deleting a category deletes all its subcategories
+
+**Prompts:**
+- Linked to categories and subcategories
+- Shows category/subcategory names (not IDs)
+- Has trending toggle functionality
+- Displays image preview in table
+
+**Subscription Plans:**
+- Features are stored as an array
+- Features displayed in separate row below plan details
+- Has active/inactive toggle
+
+**User Subscriptions:**
+- Shows user names and plan names (fetched from other collections)
+- Displays "Expired" badge if endDate < current date
+- Payment method displayed as badge
+
+**Feedback:**
+- Read-only (no add/edit, only view and delete)
+- Shows star ratings (1-5)
+- Displays device information
+
+**App Settings:**
+- Single document configuration (ID: "app_config")
+- Edit mode with Cancel functionality
+- Languages managed as array with add/remove
+- Privacy Policy and Terms are URLs (not text)
+
+**Countries:**
+- 250+ countries imported from country_data.json
+- Search by name or ISO code
+- ISO code auto-converts to uppercase
+- Import functionality removed after initial import
+
+### 5. Sidebar Navigation
+- Collapsible sidebar (280px expanded, 80px collapsed)
+- Dropdown menus for Users, Categories, and Prompts
+- Dropdowns stay open when navigating to other pages
+- Active state highlighting
+- Chevron indicators for sub-items
+
+### 6. Common UI Patterns
+
+**Stats Cards:**
+- Always at top of list pages
+- Show relevant metrics (total, active, filtered, etc.)
+- Icon with colored background
+- Responsive grid layout
+
+**Search:**
+- Real-time filtering
+- Search icon on left
+- Placeholder text explains what can be searched
+
+**Tables:**
+- Hover effects on rows
+- Edit and Delete buttons on right
+- Badges for status/tags
+- Image placeholders when no image
+
+**Forms:**
+- 2-column grid on desktop, 1-column on mobile
+- Required fields marked with red asterisk
+- Cancel and Save/Create buttons
+- Loading states with spinners
+- Error messages with alert icon
+
+**Modals:**
+- Backdrop with blur
+- Close on ESC, outside click, X button
+- Confirm/Cancel buttons
+- Different types: info, danger
+
+---
+
+## 🚀 HOW TO TRAIN NEW SESSION
+
+### Step 1: Context Loading
+Tell the new session:
+```
+"I'm working on a Next.js admin panel for Nano Banana app. 
+Please read and analyze the following files to understand the project:
+
+1. Read config files: config/firebase.ts, config/icons.ts, config/theme.ts
+2. Read all type definitions in lib/types/
+3. Read all services in lib/services/
+4. Read component files: components/AdminLayout.tsx, components/Sidebar.tsx
+5. Read this whattodo.txt file completely
+
+After reading, confirm you understand:
+- The tech stack (Next.js 14, TypeScript, Firebase)
+- The database structure (8 collections)
+- The service layer pattern
+- The UI component patterns
+- The color scheme and design system
+"
+```
+
+### Step 2: Verify Understanding
+Ask the new session:
+```
+"Can you explain:
+1. Why is the 'images' collection displayed as 'Prompts' in the UI?
+2. What are the two provider options for users?
+3. How are subcategories stored in Firestore?
+4. What makes app_settings different from other collections?
+5. What are the 4 main colors in the design system?
+"
+```
+
+### Step 3: Test Knowledge
+Give a sample task:
+```
+"If I wanted to add a new field 'description' to categories, 
+what files would you need to modify? List them in order."
+
+Expected answer:
+1. lib/types/category.types.ts (add to interfaces)
+2. lib/services/category.service.ts (add to create/update)
+3. app/categories/add/page.tsx (add form field)
+4. app/categories/edit/[id]/page.tsx (add form field)
+5. app/categories/page.tsx (optionally display in table)
+```
+
+---
+
+## 📝 IMPORTANT NOTES FOR NEW SESSION
+
+### DO's:
+✅ Always use the existing service layer for database operations
+✅ Follow the established naming conventions
+✅ Use TypeScript interfaces from lib/types/
+✅ Maintain the 2-column form layout pattern
+✅ Add loading states and error handling
+✅ Use the centralized Icons from config/icons.ts
+✅ Follow the color scheme from tailwind.config.ts
+✅ Keep forms consistent with existing patterns
+✅ Add proper validation before database operations
+✅ Use the reusable components (Table, Modal, ConfirmModal)
+
+### DON'Ts:
+❌ Don't create new database operations outside service files
+❌ Don't use inline Firestore queries in components
+❌ Don't change the collection names in Firestore
+❌ Don't modify the color scheme without confirmation
+❌ Don't create forms without Cancel buttons
+❌ Don't forget loading states on async operations
+❌ Don't skip error handling
+❌ Don't use different icon libraries
+❌ Don't create modals that can't be closed with ESC
+❌ Don't forget to update lib/services/index.ts when adding new services
+
+### Common Patterns to Follow:
+
+**1. Creating a new CRUD section:**
+```
+Step 1: Create types in lib/types/<entity>.types.ts
+Step 2: Create service in lib/services/<entity>.service.ts
+Step 3: Export service in lib/services/index.ts
+Step 4: Create list page in app/<entity>/page.tsx
+Step 5: Create add page in app/<entity>/add/page.tsx
+Step 6: Create edit page in app/<entity>/edit/[id]/page.tsx
+Step 7: Add to sidebar in components/Sidebar.tsx
+```
+
+**2. Form Structure:**
+```tsx
+<form onSubmit={handleSubmit}>
+  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+    {/* Form fields */}
+  </div>
+  
+  {/* Error message */}
+  
+  <div className="flex items-center justify-end gap-3">
+    <button type="button" onClick={handleCancel}>Cancel</button>
+    <button type="submit" disabled={loading}>
+      {loading ? 'Saving...' : 'Save'}
+    </button>
+  </div>
+</form>
+```
+
+**3. Service Function:**
+```typescript
+export async function getAll<Entity>(): Promise<Entity[]> {
+  try {
+    const ref = collection(db, COLLECTION_NAME);
+    const q = query(ref, orderBy('field', 'asc'));
+    const snapshot = await getDocs(q);
+    return snapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    } as Entity));
+  } catch (error) {
+    console.error('Error:', error);
+    throw error;
+  }
+}
+```
+
+---
+
+## 🔧 CURRENT STATE OF PROJECT
+
+### Completed Features:
+✅ Users CRUD (with Google/Apple providers)
+✅ Categories CRUD with Subcategories
+✅ Prompts CRUD (linked to categories)
+✅ Subscription Plans CRUD (with features array)
+✅ User Subscriptions list (read-only for now)
+✅ Feedback list (read-only)
+✅ App Settings (single config with edit mode)
+✅ Countries CRUD (250+ countries imported)
+✅ Sidebar with dropdowns
+✅ Reusable components (Table, Modals)
+✅ Search functionality
+✅ Image placeholders
+✅ Responsive design
+
+### Known Limitations:
+- User Subscriptions: No add/edit pages yet (if needed)
+- Authentication: Not implemented (admin panel assumes authenticated user)
+- File uploads: Not implemented (using URLs for images)
+- Pagination: Not implemented (all data loaded at once)
+- Sorting: Only default sorting (by order, name, or date)
+- Filtering: Only search, no advanced filters
+
+### Files NOT to Modify:
+- country_data.json (source data, already imported)
+- tailwind.config.ts (unless changing design system)
+- next.config.js (unless adding new features)
+- package.json (unless adding new dependencies)
+
+---
+
+## 🎓 TRAINING VERIFICATION CHECKLIST
+
+Before considering the new session trained, verify it can:
+
+□ Explain the difference between "images" collection and "Prompts" UI
+□ List all 8 Firestore collections and their purposes
+□ Describe the service layer pattern
+□ Identify the 4 main colors and their usage
+□ Explain how subcategories are stored
+□ Describe the app_settings special case
+□ List the reusable components
+□ Explain the form layout pattern
+□ Describe the modal closing mechanisms
+□ Identify provider options (google, apple)
+□ Explain the sidebar dropdown behavior
+□ Describe the stats cards pattern
+□ List the required files for adding a new CRUD section
+□ Explain the TypeScript interface pattern
+□ Describe error handling approach
+
+---
+
+## 📞 QUICK REFERENCE
+
+**Project Type:** Next.js 14 Admin Panel
+**Database:** Firebase Firestore
+**Styling:** Tailwind CSS
+**Icons:** Lucide React
+**Language:** TypeScript
+
+**Main Collections:** users, categories, images (prompts), subscription_plans, user_subscriptions, feedback, app_settings, countries
+
+**Key Directories:**
+- `/app` - Pages (Next.js App Router)
+- `/components` - Reusable UI components
+- `/lib/types` - TypeScript interfaces
+- `/lib/services` - Database operations
+- `/config` - Configuration files
+
+**Color Variables:**
+- primary: #000000 (black)
+- secondary: #854836 (brown)
+- accent: #FFB22C (yellow)
+- background: #F7F7F7 (light gray)
+
+**Fonts:**
+- Heading: Playfair Display
+- Body: Inter
+
+---
+
+## 🎯 FINAL INSTRUCTIONS FOR NEW SESSION
+
+1. **Read this entire file first**
+2. **Read all files mentioned in "CRITICAL FILES TO READ & ANALYZE" section**
+3. **Understand the database structure completely**
+4. **Study the existing patterns in at least 2-3 page implementations**
+5. **Review the reusable components**
+6. **Confirm understanding by explaining key concepts**
+7. **Ask clarifying questions if anything is unclear**
+8. **Start helping with new features or modifications**
+
+**Remember:** This is a production admin panel. Always maintain:
+- Type safety (TypeScript)
+- Error handling
+- Loading states
+- Consistent UI patterns
+- Clean code structure
+- Proper validation
+
+---
+
+END OF TRAINING DOCUMENT
+Version: 1.0
+Last Updated: Current Session
+Project: Nano Banana Admin Panel
