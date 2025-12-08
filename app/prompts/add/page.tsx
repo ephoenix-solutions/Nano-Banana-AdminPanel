@@ -18,14 +18,17 @@ export default function AddPromptPage() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [subcategories, setSubcategories] = useState<Subcategory[]>([]);
   const [formData, setFormData] = useState<CreatePromptInput>({
+    title: '',
     categoryId: '',
     subCategoryId: '',
     prompt: '',
     url: '',
+    tags: [],
     isTrending: false,
     likes: 0,
     searchCount: 0,
   });
+  const [tagInput, setTagInput] = useState('');
 
   useEffect(() => {
     fetchCategories();
@@ -79,12 +82,40 @@ export default function AddPromptPage() {
     }
   };
 
+  const handleAddTag = () => {
+    const trimmedTag = tagInput.trim();
+    if (trimmedTag && !formData.tags?.includes(trimmedTag)) {
+      setFormData((prev) => ({
+        ...prev,
+        tags: [...(prev.tags || []), trimmedTag],
+      }));
+      setTagInput('');
+    }
+  };
+
+  const handleRemoveTag = (tagToRemove: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      tags: prev.tags?.filter((tag) => tag !== tagToRemove) || [],
+    }));
+  };
+
+  const handleTagInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      handleAddTag();
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError(null);
 
     try {
+      if (!formData.title.trim()) {
+        throw new Error('Title is required');
+      }
       if (!formData.prompt.trim()) {
         throw new Error('Prompt text is required');
       }
@@ -150,6 +181,26 @@ export default function AddPromptPage() {
         {/* Form Card */}
         <div className="bg-white rounded-lg border border-primary/10 p-8">
           <form onSubmit={handleSubmit} className="space-y-6">
+            {/* Title Field - Full Width */}
+            <div>
+              <label
+                htmlFor="title"
+                className="block text-sm font-semibold text-primary mb-2 font-body"
+              >
+                Title <span className="text-secondary">*</span>
+              </label>
+              <input
+                type="text"
+                id="title"
+                name="title"
+                value={formData.title}
+                onChange={handleChange}
+                required
+                className="w-full px-4 py-3 border border-primary/10 rounded-lg text-sm font-body text-primary bg-background transition-all duration-200 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
+                placeholder="Enter a descriptive title for the prompt..."
+              />
+            </div>
+
             {/* Prompt Text Field - Full Width */}
             <div>
               <label
@@ -240,6 +291,53 @@ export default function AddPromptPage() {
                 className="w-full px-4 py-3 border border-primary/10 rounded-lg text-sm font-body text-primary bg-background transition-all duration-200 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
                 placeholder="https://example.com/image.jpg"
               />
+            </div>
+
+            {/* Tags Field - Full Width */}
+            <div>
+              <label
+                htmlFor="tags"
+                className="block text-sm font-semibold text-primary mb-2 font-body"
+              >
+                Tags <span className="text-secondary/50">(Optional)</span>
+              </label>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  id="tags"
+                  value={tagInput}
+                  onChange={(e) => setTagInput(e.target.value)}
+                  onKeyDown={handleTagInputKeyDown}
+                  className="flex-1 px-4 py-3 border border-primary/10 rounded-lg text-sm font-body text-primary bg-background transition-all duration-200 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
+                  placeholder="Enter a tag and press Enter or click Add"
+                />
+                <button
+                  type="button"
+                  onClick={handleAddTag}
+                  className="px-6 py-3 bg-secondary text-white rounded-lg font-semibold hover:bg-secondary/90 transition-all"
+                >
+                  Add Tag
+                </button>
+              </div>
+              {formData.tags && formData.tags.length > 0 && (
+                <div className="flex flex-wrap gap-2 mt-3">
+                  {formData.tags.map((tag, index) => (
+                    <span
+                      key={index}
+                      className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium bg-accent/20 text-primary border border-accent/30"
+                    >
+                      {tag}
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveTag(tag)}
+                        className="hover:text-secondary transition-colors"
+                      >
+                        <Icons.close size={16} />
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              )}
             </div>
 
             {/* Trending Checkbox */}

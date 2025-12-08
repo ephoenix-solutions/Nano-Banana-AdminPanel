@@ -196,13 +196,13 @@ export default function ViewPromptPage() {
 
               {/* Prompt Basic Info */}
               <div className="flex-1 min-w-0">
-                <h2 className="text-2xl font-bold text-primary font-heading mb-4">
-                  Prompt Text
+                <h2 className="text-3xl font-bold text-primary font-heading mb-2">
+                  {prompt.title || 'Untitled Prompt'}
                 </h2>
                 <p className="text-base text-primary font-body mb-6 leading-relaxed">
                   {prompt.prompt}
                 </p>
-                <div className="flex flex-wrap items-center gap-3">
+                <div className="flex flex-wrap items-center gap-3 mb-4">
                   {prompt.isTrending && (
                     <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-accent text-primary">
                       <Icons.chart size={16} className="mr-2" />
@@ -218,6 +218,21 @@ export default function ViewPromptPage() {
                     {prompt.searchCount} searches
                   </span>
                 </div>
+                {prompt.tags && prompt.tags.length > 0 && (
+                  <div>
+                    <p className="text-xs text-secondary font-body mb-2">Tags:</p>
+                    <div className="flex flex-wrap gap-2">
+                      {prompt.tags.map((tag, index) => (
+                        <span
+                          key={index}
+                          className="inline-flex items-center px-3 py-1 rounded-lg text-sm font-medium bg-accent/20 text-primary border border-accent/30"
+                        >
+                          {tag}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -229,11 +244,26 @@ export default function ViewPromptPage() {
             </h3>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Prompt ID */}
-              <div className="bg-background rounded-lg p-4 border border-primary/10">
+              {/* Title */}
+              <div className="bg-background rounded-lg p-4 border border-primary/10 md:col-span-2">
                 <div className="flex items-start gap-3">
                   <div className="w-10 h-10 bg-accent/20 rounded-lg flex items-center justify-center flex-shrink-0">
                     <Icons.file size={20} className="text-accent" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm text-secondary font-body mb-1">Title</p>
+                    <p className="text-lg font-bold text-primary font-body">
+                      {prompt.title || 'Untitled'}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Prompt ID */}
+              <div className="bg-background rounded-lg p-4 border border-primary/10">
+                <div className="flex items-start gap-3">
+                  <div className="w-10 h-10 bg-secondary/20 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <Icons.file size={20} className="text-secondary" />
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm text-secondary font-body mb-1">Prompt ID</p>
@@ -247,8 +277,8 @@ export default function ViewPromptPage() {
               {/* Category */}
               <div className="bg-background rounded-lg p-4 border border-primary/10">
                 <div className="flex items-start gap-3">
-                  <div className="w-10 h-10 bg-secondary/20 rounded-lg flex items-center justify-center flex-shrink-0">
-                    <Icons.categories size={20} className="text-secondary" />
+                  <div className="w-10 h-10 bg-accent/20 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <Icons.categories size={20} className="text-accent" />
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm text-secondary font-body mb-1">Category</p>
@@ -262,8 +292,8 @@ export default function ViewPromptPage() {
               {/* Subcategory */}
               <div className="bg-background rounded-lg p-4 border border-primary/10">
                 <div className="flex items-start gap-3">
-                  <div className="w-10 h-10 bg-accent/20 rounded-lg flex items-center justify-center flex-shrink-0">
-                    <Icons.file size={20} className="text-accent" />
+                  <div className="w-10 h-10 bg-secondary/20 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <Icons.file size={20} className="text-secondary" />
                   </div>
                   <div className="flex-1">
                     <p className="text-sm text-secondary font-body mb-1">Subcategory</p>
@@ -277,8 +307,8 @@ export default function ViewPromptPage() {
               {/* Trending Status */}
               <div className="bg-background rounded-lg p-4 border border-primary/10">
                 <div className="flex items-start gap-3">
-                  <div className="w-10 h-10 bg-secondary/20 rounded-lg flex items-center justify-center flex-shrink-0">
-                    <Icons.chart size={20} className="text-secondary" />
+                  <div className="w-10 h-10 bg-accent/20 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <Icons.chart size={20} className="text-accent" />
                   </div>
                   <div className="flex-1">
                     <p className="text-sm text-secondary font-body mb-1">Trending Status</p>
@@ -292,8 +322,8 @@ export default function ViewPromptPage() {
               {/* Likes */}
               <div className="bg-background rounded-lg p-4 border border-primary/10">
                 <div className="flex items-start gap-3">
-                  <div className="w-10 h-10 bg-accent/20 rounded-lg flex items-center justify-center flex-shrink-0">
-                    <Icons.check size={20} className="text-accent" />
+                  <div className="w-10 h-10 bg-secondary/20 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <Icons.check size={20} className="text-secondary" />
                   </div>
                   <div className="flex-1">
                     <p className="text-sm text-secondary font-body mb-1">Total Likes</p>
@@ -307,8 +337,8 @@ export default function ViewPromptPage() {
               {/* Search Count */}
               <div className="bg-background rounded-lg p-4 border border-primary/10">
                 <div className="flex items-start gap-3">
-                  <div className="w-10 h-10 bg-secondary/20 rounded-lg flex items-center justify-center flex-shrink-0">
-                    <Icons.search size={20} className="text-secondary" />
+                  <div className="w-10 h-10 bg-accent/20 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <Icons.search size={20} className="text-accent" />
                   </div>
                   <div className="flex-1">
                     <p className="text-sm text-secondary font-body mb-1">Search Count</p>
@@ -322,8 +352,8 @@ export default function ViewPromptPage() {
               {/* Created At */}
               <div className="bg-background rounded-lg p-4 border border-primary/10 md:col-span-2">
                 <div className="flex items-start gap-3">
-                  <div className="w-10 h-10 bg-accent/20 rounded-lg flex items-center justify-center flex-shrink-0">
-                    <Icons.clock size={20} className="text-accent" />
+                  <div className="w-10 h-10 bg-secondary/20 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <Icons.clock size={20} className="text-secondary" />
                   </div>
                   <div className="flex-1">
                     <p className="text-sm text-secondary font-body mb-1">Created At</p>
@@ -346,6 +376,27 @@ export default function ViewPromptPage() {
                 </p>
               </div>
             </div>
+
+            {/* Tags Section */}
+            {prompt.tags && prompt.tags.length > 0 && (
+              <div className="mt-6">
+                <h3 className="text-xl font-bold text-primary font-heading mb-4">
+                  Tags
+                </h3>
+                <div className="bg-background rounded-lg p-6 border border-primary/10">
+                  <div className="flex flex-wrap gap-2">
+                    {prompt.tags.map((tag, index) => (
+                      <span
+                        key={index}
+                        className="inline-flex items-center px-4 py-2 rounded-lg text-sm font-medium bg-accent/20 text-primary border border-accent/30"
+                      >
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* Image URL Section */}
             {prompt.url && (
@@ -380,22 +431,6 @@ export default function ViewPromptPage() {
           </div>
         </div>
 
-        {/* Action Buttons */}
-        <div className="flex items-center justify-end gap-3 mt-6">
-          <button
-            onClick={handleBack}
-            className="px-6 py-3 text-sm font-medium text-primary bg-background hover:bg-primary/5 rounded-lg transition-all border border-primary/10"
-          >
-            Back to Prompts
-          </button>
-          <button
-            onClick={handleEdit}
-            className="flex items-center gap-2 px-6 py-3 bg-accent text-primary rounded-lg font-semibold hover:bg-accent/90 transition-all"
-          >
-            <Icons.edit size={20} />
-            <span>Edit Prompt</span>
-          </button>
-        </div>
       </div>
     </AdminLayout>
   );

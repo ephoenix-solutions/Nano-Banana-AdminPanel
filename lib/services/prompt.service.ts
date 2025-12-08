@@ -121,10 +121,12 @@ export async function createPrompt(promptData: CreatePromptInput): Promise<strin
     const promptsRef = collection(db, COLLECTION_NAME);
     
     const newPrompt = {
+      title: promptData.title,
       categoryId: promptData.categoryId,
       subCategoryId: promptData.subCategoryId,
       prompt: promptData.prompt,
       url: promptData.url || '',
+      tags: promptData.tags || [],
       isTrending: promptData.isTrending || false,
       likes: promptData.likes || 0,
       searchCount: promptData.searchCount || 0,
@@ -150,10 +152,12 @@ export async function updatePrompt(
     const promptRef = doc(db, COLLECTION_NAME, promptId);
     const updateData: Record<string, any> = {};
     
+    if (promptData.title !== undefined) updateData.title = promptData.title;
     if (promptData.categoryId !== undefined) updateData.categoryId = promptData.categoryId;
     if (promptData.subCategoryId !== undefined) updateData.subCategoryId = promptData.subCategoryId;
     if (promptData.prompt !== undefined) updateData.prompt = promptData.prompt;
     if (promptData.url !== undefined) updateData.url = promptData.url;
+    if (promptData.tags !== undefined) updateData.tags = promptData.tags;
     if (promptData.isTrending !== undefined) updateData.isTrending = promptData.isTrending;
     if (promptData.likes !== undefined) updateData.likes = promptData.likes;
     if (promptData.searchCount !== undefined) updateData.searchCount = promptData.searchCount;

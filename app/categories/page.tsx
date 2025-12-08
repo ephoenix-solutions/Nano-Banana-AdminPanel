@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import AdminLayout from '@/components/AdminLayout';
 import Breadcrumbs from '@/components/Breadcrumbs';
@@ -266,10 +266,9 @@ export default function CategoriesPage() {
                     category.subcategories && category.subcategories.length > 0;
 
                   return (
-                    <>
+                    <React.Fragment key={category.id}>
                       {/* Category Row */}
                       <tr
-                        key={category.id}
                         className="hover:bg-background/50 transition-colors"
                       >
                         <td className="px-6 py-4">
@@ -416,7 +415,7 @@ export default function CategoriesPage() {
                             </td>
                           </tr>
                         ))}
-                    </>
+                    </React.Fragment>
                   );
                 })}
               </tbody>

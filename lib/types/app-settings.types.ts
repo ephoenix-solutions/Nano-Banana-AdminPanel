@@ -3,14 +3,14 @@ export interface AppSettings {
   languagesSupported: string[];
   privacyPolicy: string;
   terms: string;
-  currentVersion: string;
-  latestVersion: string;
+  minimumVersion: string;
+  liveVersion: string;
 }
 
 export interface UpdateAppSettingsInput {
   languagesSupported?: string[];
   privacyPolicy?: string;
   terms?: string;
-  currentVersion?: string;
-  latestVersion?: string;
+  minimumVersion?: string;
+  liveVersion?: string;
 }

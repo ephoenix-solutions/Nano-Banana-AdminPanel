@@ -22,15 +22,15 @@ export default function AppSettingsPage() {
     languagesSupported: [],
     privacyPolicy: '',
     terms: '',
-    currentVersion: '',
-    latestVersion: '',
+    minimumVersion: '',
+    liveVersion: '',
   });
   const [formData, setFormData] = useState<UpdateAppSettingsInput>({
     languagesSupported: [],
     privacyPolicy: '',
     terms: '',
-    currentVersion: '',
-    latestVersion: '',
+    minimumVersion: '',
+    liveVersion: '',
   });
 
   useEffect(() => {
@@ -51,8 +51,8 @@ export default function AppSettingsPage() {
           languagesSupported: settings.languagesSupported,
           privacyPolicy: settings.privacyPolicy,
           terms: settings.terms,
-          currentVersion: settings.currentVersion,
-          latestVersion: settings.latestVersion,
+          minimumVersion: settings.minimumVersion,
+          liveVersion: settings.liveVersion,
         };
         setFormData(data);
         setOriginalData(data);
@@ -121,11 +121,11 @@ export default function AppSettingsPage() {
     setSuccess(null);
 
     try {
-      if (!formData.currentVersion?.trim()) {
-        throw new Error('Current version is required');
+      if (!formData.minimumVersion?.trim()) {
+        throw new Error('Minimum version is required');
       }
-      if (!formData.latestVersion?.trim()) {
-        throw new Error('Latest version is required');
+      if (!formData.liveVersion?.trim()) {
+        throw new Error('Live version is required');
       }
       if (!formData.languagesSupported || formData.languagesSupported.length === 0) {
         throw new Error('At least one language is required');
@@ -242,16 +242,16 @@ export default function AppSettingsPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                   <label
-                    htmlFor="currentVersion"
+                    htmlFor="minimumVersion"
                     className="block text-sm font-semibold text-primary mb-2 font-body"
                   >
-                    Current Version <span className="text-secondary">*</span>
+                    Minimum Version <span className="text-secondary">*</span>
                   </label>
                   <input
                     type="text"
-                    id="currentVersion"
-                    name="currentVersion"
-                    value={formData.currentVersion}
+                    id="minimumVersion"
+                    name="minimumVersion"
+                    value={formData.minimumVersion}
                     onChange={handleChange}
                     disabled={!isEditing}
                     required
@@ -262,16 +262,16 @@ export default function AppSettingsPage() {
 
                 <div>
                   <label
-                    htmlFor="latestVersion"
+                    htmlFor="liveVersion"
                     className="block text-sm font-semibold text-primary mb-2 font-body"
                   >
-                    Latest Version <span className="text-secondary">*</span>
+                    Live Version <span className="text-secondary">*</span>
                   </label>
                   <input
                     type="text"
-                    id="latestVersion"
-                    name="latestVersion"
-                    value={formData.latestVersion}
+                    id="liveVersion"
+                    name="liveVersion"
+                    value={formData.liveVersion}
                     onChange={handleChange}
                     disabled={!isEditing}
                     required

@@ -238,7 +238,10 @@ export default function PromptsPage() {
                     Image
                   </th>
                   <th className="px-6 py-4 text-left text-sm font-semibold text-primary font-body">
-                    Prompt
+                    Title
+                  </th>
+                  <th className="px-6 py-4 text-left text-sm font-semibold text-primary font-body">
+                    Tags
                   </th>
                   <th className="px-6 py-4 text-left text-sm font-semibold text-primary font-body">
                     Category
@@ -284,10 +287,33 @@ export default function PromptsPage() {
                       )}
                     </td>
                     <td className="px-6 py-4">
-                      <div className="max-w-md">
-                        <p className="text-sm text-primary font-medium line-clamp-2">
-                          {prompt.prompt}
+                      <div className="max-w-xs">
+                        <p className="text-sm text-primary font-semibold">
+                          {prompt.title || 'Untitled'}
                         </p>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="max-w-xs">
+                        {prompt.tags && prompt.tags.length > 0 ? (
+                          <div className="flex flex-wrap gap-1">
+                            {prompt.tags.slice(0, 3).map((tag, index) => (
+                              <span
+                                key={index}
+                                className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-accent/20 text-primary"
+                              >
+                                {tag}
+                              </span>
+                            ))}
+                            {prompt.tags.length > 3 && (
+                              <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-secondary/20 text-primary">
+                                +{prompt.tags.length - 3}
+                              </span>
+                            )}
+                          </div>
+                        ) : (
+                          <span className="text-sm text-secondary/50">No tags</span>
+                        )}
                       </div>
                     </td>
                     <td className="px-6 py-4 text-sm text-primary">

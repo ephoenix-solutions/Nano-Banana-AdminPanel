@@ -335,22 +335,6 @@ export default function ViewSubscriptionPlanPage() {
           </div>
         </div>
 
-        {/* Action Buttons */}
-        <div className="flex items-center justify-end gap-3 mt-6">
-          <button
-            onClick={handleBack}
-            className="px-6 py-3 text-sm font-medium text-primary bg-background hover:bg-primary/5 rounded-lg transition-all border border-primary/10"
-          >
-            Back to Subscription Plans
-          </button>
-          <button
-            onClick={handleEdit}
-            className="flex items-center gap-2 px-6 py-3 bg-accent text-primary rounded-lg font-semibold hover:bg-accent/90 transition-all"
-          >
-            <Icons.edit size={20} />
-            <span>Edit Plan</span>
-          </button>
-        </div>
       </div>
     </AdminLayout>
   );

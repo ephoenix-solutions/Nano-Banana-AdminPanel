@@ -52,8 +52,8 @@ interface DashboardStats {
     withCategories: number;
   };
   appSettings: {
-    currentVersion: string;
-    latestVersion: string;
+    minimumVersion: string;
+    liveVersion: string;
     languagesCount: number;
   };
 }
@@ -70,7 +70,7 @@ export default function DashboardPage() {
     userSubscriptions: { total: 0, active: 0, expired: 0 },
     feedback: { total: 0, averageRating: 0, fiveStars: 0, oneStar: 0 },
     countries: { total: 0, withCategories: 0 },
-    appSettings: { currentVersion: '', latestVersion: '', languagesCount: 0 },
+    appSettings: { minimumVersion: '', liveVersion: '', languagesCount: 0 },
   });
 
   useEffect(() => {
@@ -168,8 +168,8 @@ export default function DashboardPage() {
 
       // App settings stats
       const settingsStats = {
-        currentVersion: settings?.currentVersion || 'N/A',
-        latestVersion: settings?.latestVersion || 'N/A',
+        minimumVersion: settings?.minimumVersion || 'N/A',
+        liveVersion: settings?.liveVersion || 'N/A',
         languagesCount: settings?.languagesSupported?.length || 0,
       };
 
@@ -426,8 +426,12 @@ export default function DashboardPage() {
                 <p className="text-2xl font-bold text-primary font-body mt-1">{stats.countries.withCategories}</p>
               </div>
               <div>
-                <p className="text-sm text-secondary font-body">Current Version</p>
-                <p className="text-xl font-bold text-primary font-body mt-1">{stats.appSettings.currentVersion}</p>
+                <p className="text-sm text-secondary font-body">Minimum Version</p>
+                <p className="text-xl font-bold text-primary font-body mt-1">{stats.appSettings.minimumVersion}</p>
+              </div>
+              <div>
+                <p className="text-sm text-secondary font-body">Live Version</p>
+                <p className="text-xl font-bold text-primary font-body mt-1">{stats.appSettings.liveVersion}</p>
               </div>
               <div>
                 <p className="text-sm text-secondary font-body">Languages</p>
