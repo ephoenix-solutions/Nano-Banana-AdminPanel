@@ -54,11 +54,11 @@ export async function updateAppSettings(
     if (settingsData.terms !== undefined) {
       updateData.terms = settingsData.terms;
     }
-    if (settingsData.currentVersion !== undefined) {
-      updateData.currentVersion = settingsData.currentVersion;
+    if (settingsData.minimumVersion !== undefined) {
+      updateData.minimumVersion = settingsData.minimumVersion;
     }
-    if (settingsData.latestVersion !== undefined) {
-      updateData.latestVersion = settingsData.latestVersion;
+    if (settingsData.liveVersion !== undefined) {
+      updateData.liveVersion = settingsData.liveVersion;
     }
     
     await updateDoc(settingsRef, updateData);
@@ -81,8 +81,8 @@ export async function initializeAppSettings(): Promise<void> {
         languagesSupported: ['en'],
         privacyPolicy: '',
         terms: '',
-        currentVersion: '1.0.0',
-        latestVersion: '1.0.0',
+        minimumVersion: '1.0.0',
+        liveVersion: '1.0.0',
       };
       
       await setDoc(settingsRef, defaultSettings);

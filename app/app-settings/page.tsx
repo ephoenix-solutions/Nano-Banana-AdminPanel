@@ -48,11 +48,11 @@ export default function AppSettingsPage() {
       const settings = await getAppSettings();
       if (settings) {
         const data = {
-          languagesSupported: settings.languagesSupported,
-          privacyPolicy: settings.privacyPolicy,
-          terms: settings.terms,
-          minimumVersion: settings.minimumVersion,
-          liveVersion: settings.liveVersion,
+          languagesSupported: settings.languagesSupported || [],
+          privacyPolicy: settings.privacyPolicy || '',
+          terms: settings.terms || '',
+          minimumVersion: settings.minimumVersion || '',
+          liveVersion: settings.liveVersion || '',
         };
         setFormData(data);
         setOriginalData(data);
@@ -251,7 +251,7 @@ export default function AppSettingsPage() {
                     type="text"
                     id="minimumVersion"
                     name="minimumVersion"
-                    value={formData.minimumVersion}
+                    value={formData.minimumVersion || ''}
                     onChange={handleChange}
                     disabled={!isEditing}
                     required
@@ -271,7 +271,7 @@ export default function AppSettingsPage() {
                     type="text"
                     id="liveVersion"
                     name="liveVersion"
-                    value={formData.liveVersion}
+                    value={formData.liveVersion || ''}
                     onChange={handleChange}
                     disabled={!isEditing}
                     required
@@ -355,7 +355,7 @@ export default function AppSettingsPage() {
                   type="url"
                   id="privacyPolicy"
                   name="privacyPolicy"
-                  value={formData.privacyPolicy}
+                  value={formData.privacyPolicy || ''}
                   onChange={handleChange}
                   disabled={!isEditing}
                   className="w-full px-4 py-3 border border-primary/10 rounded-lg text-sm font-body text-primary bg-background transition-all duration-200 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 disabled:opacity-60 disabled:cursor-not-allowed"
@@ -380,7 +380,7 @@ export default function AppSettingsPage() {
                   type="url"
                   id="terms"
                   name="terms"
-                  value={formData.terms}
+                  value={formData.terms || ''}
                   onChange={handleChange}
                   disabled={!isEditing}
                   className="w-full px-4 py-3 border border-primary/10 rounded-lg text-sm font-body text-primary bg-background transition-all duration-200 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 disabled:opacity-60 disabled:cursor-not-allowed"
