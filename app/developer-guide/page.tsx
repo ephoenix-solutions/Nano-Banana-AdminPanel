@@ -45,7 +45,7 @@ const collections: Collection[] = [
     name: 'Categories',
     icon: Icons.categories,
     description: 'Organize prompts into categories and subcategories',
-    firebaseCollection: 'category',
+    firebaseCollection: 'categories',
     fields: [
       { name: 'id', type: 'string', required: true, description: 'Unique category ID', example: 'cat_001' },
       { name: 'name', type: 'string', required: true, description: 'Category display name', example: 'Nature' },
@@ -60,7 +60,7 @@ const collections: Collection[] = [
     name: 'Subcategories',
     icon: Icons.file,
     description: 'Sub-level categorization within categories',
-    firebaseCollection: 'category (nested)',
+    firebaseCollection: 'categories (nested)',
     fields: [
       { name: 'id', type: 'string', required: true, description: 'Unique subcategory ID', example: 'subcat_001' },
       { name: 'name', type: 'string', required: true, description: 'Subcategory name', example: 'Mountains' },
@@ -106,7 +106,7 @@ const collections: Collection[] = [
     name: 'Subscription Plans',
     icon: Icons.subscriptionPlan,
     description: 'Manage subscription tiers and pricing',
-    firebaseCollection: 'subscriptionPlan',
+    firebaseCollection: 'subscription_plans',
     fields: [
       { name: 'id', type: 'string', required: true, description: 'Unique plan ID', example: 'plan_premium' },
       { name: 'name', type: 'string', required: true, description: 'Plan name', example: 'Premium Plan' },
@@ -124,7 +124,7 @@ const collections: Collection[] = [
     name: 'User Subscriptions',
     icon: Icons.userSubscription,
     description: 'Track user subscription purchases',
-    firebaseCollection: 'userSubscription',
+    firebaseCollection: 'user_subscriptions',
     fields: [
       { name: 'id', type: 'string', required: true, description: 'Unique subscription ID', example: 'sub_abc123' },
       { name: 'userId', type: 'string', required: true, description: 'User ID reference', example: 'user_abc123' },
@@ -156,7 +156,7 @@ const collections: Collection[] = [
     name: 'App Settings',
     icon: Icons.appSettings,
     description: 'Global application configuration',
-    firebaseCollection: 'appSettings',
+    firebaseCollection: 'app_settings',
     fields: [
       { name: 'id', type: 'string', required: true, description: 'Settings document ID', example: 'settings_main' },
       { name: 'languagesSupported', type: 'string[]', required: false, description: 'Supported language codes', example: '["en", "es", "fr"]' },
