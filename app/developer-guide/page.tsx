@@ -159,7 +159,7 @@ const collections: Collection[] = [
     firebaseCollection: 'app_settings',
     fields: [
       { name: 'id', type: 'string', required: true, description: 'Settings document ID', example: 'settings_main' },
-      { name: 'languagesSupported', type: 'string[]', required: false, description: 'Supported language codes', example: '["en", "es", "fr"]' },
+      { name: 'languagesSupported', type: 'string[]', required: false, description: 'Supported language codes', example: '["english", "hindi", "french"]' },
       { name: 'privacyPolicy', type: 'string', required: false, description: 'Privacy policy URL', example: 'https://example.com/privacy' },
       { name: 'terms', type: 'string', required: false, description: 'Terms & conditions URL', example: 'https://example.com/terms' },
       { name: 'minimumVersion', type: 'string', required: false, description: 'Minimum required app version', example: '1.0.0' },

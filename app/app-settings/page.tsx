@@ -301,7 +301,7 @@ export default function AppSettingsPage() {
                         }
                       }}
                       className="flex-1 px-4 py-3 border border-primary/10 rounded-lg text-sm font-body text-primary bg-background transition-all duration-200 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
-                      placeholder="Enter language code (e.g., en, hi, es)"
+                      placeholder="Enter language (e.g., 'english', 'hindi', 'french')"
                     />
                     <button
                       type="button"
