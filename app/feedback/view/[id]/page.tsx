@@ -221,7 +221,7 @@ export default function ViewFeedbackPage() {
                 Feedback Message
               </h3>
               <div className="bg-background rounded-lg p-6 border border-primary/10">
-                <p className="text-base text-primary font-body leading-relaxed whitespace-pre-wrap">
+                <p className="text-base text-primary font-body leading-relaxed whitespace-pre-wrap wrap-break-word">
                   {feedback.message}
                 </p>
               </div>

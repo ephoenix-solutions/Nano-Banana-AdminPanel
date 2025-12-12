@@ -167,7 +167,7 @@ export default function LoginPage() {
         {/* Footer */}
         <div className="text-center mt-6">
           <p className="text-sm text-secondary font-body">
-            Nano Banana Admin Panel © 2024
+            Nano Banana Admin Panel © {new Date().getFullYear()}
           </p>
         </div>
       </div>

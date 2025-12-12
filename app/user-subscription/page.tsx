@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import AdminLayout from '@/components/AdminLayout';
 import Breadcrumbs from '@/components/Breadcrumbs';
@@ -18,6 +18,11 @@ import { getAllUsers } from '@/lib/services/user.service';
 import { getAllSubscriptionPlans } from '@/lib/services/subscription-plan.service';
 import { Timestamp } from 'firebase/firestore';
 
+type SortField = 'startDate' | 'endDate';
+type SortOrder = 'asc' | 'desc';
+type StatusFilter = 'all' | 'active' | 'inactive' | 'expired';
+type PaymentMethodFilter = 'all' | 'google' | 'apple';
+
 export default function UserSubscriptionsPage() {
   const router = useRouter();
   const [subscriptions, setSubscriptions] = useState<UserSubscription[]>([]);
@@ -32,6 +37,15 @@ export default function UserSubscriptionsPage() {
     isOpen: false,
     subscription: null,
   });
+
+  // Search and Filter States
+  const [searchQuery, setSearchQuery] = useState('');
+  const [sortField, setSortField] = useState<SortField>('startDate');
+  const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
+  const [planFilter, setPlanFilter] = useState<string>('all');
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
+  const [paymentMethodFilter, setPaymentMethodFilter] = useState<PaymentMethodFilter>('all');
+  const [showFilters, setShowFilters] = useState(false);
 
   useEffect(() => {
     fetchData();
@@ -118,6 +132,84 @@ export default function UserSubscriptionsPage() {
     return endDate.toDate() < new Date();
   };
 
+  // Filter and Sort Subscriptions
+  const filteredAndSortedSubscriptions = useMemo(() => {
+    let filtered = [...subscriptions];
+
+    // Search filter (user name or transaction ID)
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      filtered = filtered.filter((subscription) => {
+        const userName = getUserName(subscription.userId).toLowerCase();
+        const transactionId = subscription.transactionId.toLowerCase();
+        return userName.includes(query) || transactionId.includes(query);
+      });
+    }
+
+    // Plan filter
+    if (planFilter !== 'all') {
+      filtered = filtered.filter((subscription) => subscription.planId === planFilter);
+    }
+
+    // Status filter
+    if (statusFilter === 'active') {
+      filtered = filtered.filter((subscription) => subscription.isActive && !isExpired(subscription.endDate));
+    } else if (statusFilter === 'inactive') {
+      filtered = filtered.filter((subscription) => !subscription.isActive);
+    } else if (statusFilter === 'expired') {
+      filtered = filtered.filter((subscription) => isExpired(subscription.endDate));
+    }
+
+    // Payment method filter
+    if (paymentMethodFilter !== 'all') {
+      filtered = filtered.filter((subscription) => subscription.paymentMethod === paymentMethodFilter);
+    }
+
+    // Sort
+    filtered.sort((a, b) => {
+      let aValue: number;
+      let bValue: number;
+
+      if (sortField === 'startDate') {
+        aValue = a.startDate.toDate().getTime();
+        bValue = b.startDate.toDate().getTime();
+      } else {
+        aValue = a.endDate.toDate().getTime();
+        bValue = b.endDate.toDate().getTime();
+      }
+
+      if (sortOrder === 'asc') {
+        return aValue > bValue ? 1 : -1;
+      } else {
+        return aValue < bValue ? 1 : -1;
+      }
+    });
+
+    return filtered;
+  }, [subscriptions, searchQuery, sortField, sortOrder, planFilter, statusFilter, paymentMethodFilter, users]);
+
+  // Clear all filters
+  const clearFilters = () => {
+    setSearchQuery('');
+    setSortField('startDate');
+    setSortOrder('desc');
+    setPlanFilter('all');
+    setStatusFilter('all');
+    setPaymentMethodFilter('all');
+  };
+
+  // Check if any filters are active
+  const hasActiveFilters = useMemo(() => {
+    return (
+      searchQuery.trim() !== '' ||
+      sortField !== 'startDate' ||
+      sortOrder !== 'desc' ||
+      planFilter !== 'all' ||
+      statusFilter !== 'all' ||
+      paymentMethodFilter !== 'all'
+    );
+  }, [searchQuery, sortField, sortOrder, planFilter, statusFilter, paymentMethodFilter]);
+
   if (loading) {
     return (
       <AdminLayout>
@@ -142,6 +234,163 @@ export default function UserSubscriptionsPage() {
             </h1>
             <p className="text-secondary mt-2 font-body">
               Manage user subscription records
+            </p>
+          </div>
+        </div>
+
+        {/* Search and Filter Bar */}
+        <div className="bg-white rounded-lg border border-primary/10 p-4">
+          <div className="flex flex-col lg:flex-row gap-4">
+            {/* Search Input */}
+            <div className="flex-1">
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <Icons.search size={20} className="text-secondary" />
+                </div>
+                <input
+                  type="text"
+                  placeholder="Search by user name or transaction ID..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full pl-10 pr-4 py-2.5 border border-primary/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent font-body text-primary placeholder-secondary/50"
+                />
+              </div>
+            </div>
+
+            {/* Filter Toggle Button */}
+            <button
+              onClick={() => setShowFilters(!showFilters)}
+              className={`flex items-center gap-2 px-4 py-2.5 border rounded-lg font-semibold transition-all ${
+                showFilters || hasActiveFilters
+                  ? 'bg-accent/20 border-accent text-primary'
+                  : 'border-primary/20 text-secondary hover:bg-accent/10'
+              }`}
+            >
+              <Icons.filter size={20} />
+              <span>Filters</span>
+              {hasActiveFilters && (
+                <span className="ml-1 px-2 py-0.5 bg-accent text-primary text-xs rounded-full font-bold">
+                  {[
+                    searchQuery.trim() !== '',
+                    planFilter !== 'all',
+                    statusFilter !== 'all',
+                    paymentMethodFilter !== 'all',
+                    sortField !== 'startDate' || sortOrder !== 'desc',
+                  ].filter(Boolean).length}
+                </span>
+              )}
+            </button>
+
+            {/* Clear Filters Button */}
+            {hasActiveFilters && (
+              <button
+                onClick={clearFilters}
+                className="flex items-center gap-2 px-4 py-2.5 border border-secondary/20 text-secondary rounded-lg font-semibold hover:bg-secondary/10 transition-all"
+              >
+                <Icons.close size={20} />
+                <span>Clear</span>
+              </button>
+            )}
+          </div>
+
+          {/* Filter Options */}
+          {showFilters && (
+            <div className="mt-4 pt-4 border-t border-primary/10 space-y-4">
+              {/* First Row: Sort By, Order, Status */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {/* Sort By */}
+                <div>
+                  <label className="block text-sm font-semibold text-primary font-body mb-2">
+                    Sort By
+                  </label>
+                  <select
+                    value={sortField}
+                    onChange={(e) => setSortField(e.target.value as SortField)}
+                    className="w-full px-3 py-2 border border-primary/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent font-body text-primary"
+                  >
+                    <option value="startDate">Start Date</option>
+                    <option value="endDate">End Date</option>
+                  </select>
+                </div>
+
+                {/* Sort Order */}
+                <div>
+                  <label className="block text-sm font-semibold text-primary font-body mb-2">
+                    Order
+                  </label>
+                  <select
+                    value={sortOrder}
+                    onChange={(e) => setSortOrder(e.target.value as SortOrder)}
+                    className="w-full px-3 py-2 border border-primary/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent font-body text-primary"
+                  >
+                    <option value="asc">Ascending (Old-New)</option>
+                    <option value="desc">Descending (New-Old)</option>
+                  </select>
+                </div>
+
+                {/* Status Filter */}
+                <div>
+                  <label className="block text-sm font-semibold text-primary font-body mb-2">
+                    Status
+                  </label>
+                  <select
+                    value={statusFilter}
+                    onChange={(e) => setStatusFilter(e.target.value as StatusFilter)}
+                    className="w-full px-3 py-2 border border-primary/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent font-body text-primary"
+                  >
+                    <option value="all">All Subscriptions</option>
+                    <option value="active">Active Only</option>
+                    <option value="inactive">Inactive Only</option>
+                    <option value="expired">Expired Only</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Second Row: Plan, Payment Method */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Plan Filter */}
+                <div>
+                  <label className="block text-sm font-semibold text-primary font-body mb-2">
+                    Subscription Plan
+                  </label>
+                  <select
+                    value={planFilter}
+                    onChange={(e) => setPlanFilter(e.target.value)}
+                    className="w-full px-3 py-2 border border-primary/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent font-body text-primary"
+                  >
+                    <option value="all">All Plans</option>
+                    {plans.map((plan) => (
+                      <option key={plan.id} value={plan.id}>
+                        {plan.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Payment Method Filter */}
+                <div>
+                  <label className="block text-sm font-semibold text-primary font-body mb-2">
+                    Payment Method
+                  </label>
+                  <select
+                    value={paymentMethodFilter}
+                    onChange={(e) => setPaymentMethodFilter(e.target.value as PaymentMethodFilter)}
+                    className="w-full px-3 py-2 border border-primary/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent font-body text-primary"
+                  >
+                    <option value="all">All Methods</option>
+                    <option value="google">Google Pay</option>
+                    <option value="apple">Apple Pay</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Results Count */}
+          <div className="mt-4 pt-4 border-t border-primary/10">
+            <p className="text-sm text-secondary font-body">
+              Showing <span className="font-semibold text-primary">{filteredAndSortedSubscriptions.length}</span> of{' '}
+              <span className="font-semibold text-primary">{subscriptions.length}</span> subscriptions
             </p>
           </div>
         </div>
@@ -222,37 +471,38 @@ export default function UserSubscriptionsPage() {
           </div>
         )}
 
-        {/* Subscriptions Table */}
-        <div className="bg-white rounded-lg border border-primary/10 overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-background border-b border-primary/10">
-                <tr>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-primary font-body">
-                    User
-                  </th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-primary font-body">
-                    Plan
-                  </th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-primary font-body">
-                    Start Date
-                  </th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-primary font-body">
-                    End Date
-                  </th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-primary font-body">
-                    Payment Method
-                  </th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-primary font-body">
-                    Status
-                  </th>
-                  <th className="px-6 py-4 text-right text-sm font-semibold text-primary font-body">
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-primary/10">
-                {subscriptions.map((subscription) => {
+        {/* Subscriptions Table - Only show if there are results OR if loading */}
+        {(loading || filteredAndSortedSubscriptions.length > 0) && (
+          <div className="bg-white rounded-lg border border-primary/10 overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-background border-b border-primary/10">
+                  <tr>
+                    <th className="px-6 py-4 text-left text-sm font-semibold text-primary font-body">
+                      User
+                    </th>
+                    <th className="px-6 py-4 text-left text-sm font-semibold text-primary font-body">
+                      Plan
+                    </th>
+                    <th className="px-6 py-4 text-left text-sm font-semibold text-primary font-body">
+                      Start Date
+                    </th>
+                    <th className="px-6 py-4 text-left text-sm font-semibold text-primary font-body">
+                      End Date
+                    </th>
+                    <th className="px-6 py-4 text-left text-sm font-semibold text-primary font-body">
+                      Payment Method
+                    </th>
+                    <th className="px-6 py-4 text-left text-sm font-semibold text-primary font-body">
+                      Status
+                    </th>
+                    <th className="px-6 py-4 text-right text-sm font-semibold text-primary font-body">
+                      Actions
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-primary/10">
+                  {filteredAndSortedSubscriptions.map((subscription) => {
                   const expired = isExpired(subscription.endDate);
                   return (
                     <tr
@@ -322,10 +572,39 @@ export default function UserSubscriptionsPage() {
                     </tr>
                   );
                 })}
-              </tbody>
-            </table>
+                </tbody>
+              </table>
+            </div>
           </div>
-        </div>
+        )}
+
+        {/* No Results Message - Show when filters are active but no matches */}
+        {!loading && filteredAndSortedSubscriptions.length === 0 && subscriptions.length > 0 && (
+          <div className="bg-white rounded-lg border border-primary/10 p-12 text-center">
+            <Icons.search size={48} className="text-secondary/30 mx-auto mb-4" />
+            <h3 className="text-xl font-semibold text-primary mb-2">No subscriptions found</h3>
+            <p className="text-secondary mb-4">
+              No subscriptions match your current filters. Try adjusting your search or filters.
+            </p>
+            <button
+              onClick={clearFilters}
+              className="px-4 py-2 bg-accent text-primary rounded-lg font-semibold hover:bg-accent/90 transition-all"
+            >
+              Clear Filters
+            </button>
+          </div>
+        )}
+
+        {/* No Data Message - Show when database is truly empty */}
+        {!loading && subscriptions.length === 0 && (
+          <div className="bg-white rounded-lg border border-primary/10 p-12 text-center">
+            <Icons.userSubscription size={48} className="text-secondary/30 mx-auto mb-4" />
+            <h3 className="text-xl font-semibold text-primary mb-2">No subscriptions yet</h3>
+            <p className="text-secondary mb-4">
+              There are no user subscriptions in the system yet.
+            </p>
+          </div>
+        )}
 
         {/* Delete Confirmation Modal */}
         <ConfirmModal

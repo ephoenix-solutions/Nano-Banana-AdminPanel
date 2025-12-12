@@ -213,10 +213,10 @@ export default function DashboardPage() {
 
         {/* Welcome Section */}
         <div>
-          <h1 className="text-4xl font-bold text-primary font-heading">
+          <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold text-primary font-heading">
             Nano Banana Admin Panel
           </h1>
-          <p className="text-secondary mt-2 font-body">
+          <p className="text-sm md:text-base text-secondary mt-2 font-body">
             Here's an overview of your application statistics
           </p>
         </div>
@@ -232,148 +232,148 @@ export default function DashboardPage() {
         )}
 
         {/* Quick Actions */}
-        <div className="bg-white rounded-lg border border-primary/10 p-6">
-          <h2 className="text-xl font-bold text-primary font-heading mb-4">
+        <div className="bg-white rounded-lg border border-primary/10 p-4 md:p-6">
+          <h2 className="text-lg md:text-xl font-bold text-primary font-heading mb-4">
             Quick Actions
           </h2>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
             <button
               onClick={() => router.push('/users/add')}
-              className="flex flex-col items-center gap-2 p-4 rounded-lg bg-background hover:bg-accent/10 transition-all border border-primary/10 hover:border-accent"
+              className="flex flex-col items-center gap-2 p-3 md:p-4 rounded-lg bg-background hover:bg-accent/10 transition-all border border-primary/10 hover:border-accent"
             >
-              <Icons.users size={24} className="text-accent" />
-              <span className="text-sm font-medium text-primary font-body">Add User</span>
+              <Icons.users size={20} className="md:w-6 md:h-6 text-accent" />
+              <span className="text-xs md:text-sm font-medium text-primary font-body text-center">Add User</span>
             </button>
             <button
               onClick={() => router.push('/categories/add')}
-              className="flex flex-col items-center gap-2 p-4 rounded-lg bg-background hover:bg-accent/10 transition-all border border-primary/10 hover:border-accent"
+              className="flex flex-col items-center gap-2 p-3 md:p-4 rounded-lg bg-background hover:bg-accent/10 transition-all border border-primary/10 hover:border-accent"
             >
-              <Icons.categories size={24} className="text-accent" />
-              <span className="text-sm font-medium text-primary font-body">Add Category</span>
+              <Icons.categories size={20} className="md:w-6 md:h-6 text-accent" />
+              <span className="text-xs md:text-sm font-medium text-primary font-body text-center">Add Category</span>
             </button>
             <button
               onClick={() => router.push('/prompts/add')}
-              className="flex flex-col items-center gap-2 p-4 rounded-lg bg-background hover:bg-accent/10 transition-all border border-primary/10 hover:border-accent"
+              className="flex flex-col items-center gap-2 p-3 md:p-4 rounded-lg bg-background hover:bg-accent/10 transition-all border border-primary/10 hover:border-accent"
             >
-              <Icons.images size={24} className="text-accent" />
-              <span className="text-sm font-medium text-primary font-body">Add Prompt</span>
+              <Icons.images size={20} className="md:w-6 md:h-6 text-accent" />
+              <span className="text-xs md:text-sm font-medium text-primary font-body text-center">Add Prompt</span>
             </button>
             <button
               onClick={() => router.push('/countries/add')}
-              className="flex flex-col items-center gap-2 p-4 rounded-lg bg-background hover:bg-accent/10 transition-all border border-primary/10 hover:border-accent"
+              className="flex flex-col items-center gap-2 p-3 md:p-4 rounded-lg bg-background hover:bg-accent/10 transition-all border border-primary/10 hover:border-accent"
             >
-              <Icons.globe size={24} className="text-accent" />
-              <span className="text-sm font-medium text-primary font-body">Add Country</span>
+              <Icons.globe size={20} className="md:w-6 md:h-6 text-accent" />
+              <span className="text-xs md:text-sm font-medium text-primary font-body text-center">Add Country</span>
             </button>
           </div>
         </div>
 
         {/* Combined Statistics Cards */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
           {/* Users Card */}
-          <div className="bg-white rounded-lg border border-primary/10 p-6">
+          <div className="bg-white rounded-lg border border-primary/10 p-4 md:p-6">
             <div className="flex items-center gap-3 mb-4 pb-4 border-b border-primary/10">
-              <div className="w-12 h-12 bg-accent/20 rounded-lg flex items-center justify-center">
-                <Icons.users size={24} className="text-accent" />
+              <div className="w-10 h-10 md:w-12 md:h-12 bg-accent/20 rounded-lg flex items-center justify-center">
+                <Icons.users size={20} className="md:w-6 md:h-6 text-accent" />
               </div>
-              <h2 className="text-xl font-bold text-primary font-heading">Users</h2>
+              <h2 className="text-lg md:text-xl font-bold text-primary font-heading">Users</h2>
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-3 md:gap-4">
               <div>
-                <p className="text-sm text-secondary font-body">Total Users</p>
-                <p className="text-2xl font-bold text-primary font-body mt-1">{stats.users.total}</p>
+                <p className="text-xs md:text-sm text-secondary font-body">Total Users</p>
+                <p className="text-xl md:text-2xl font-bold text-primary font-body mt-1">{stats.users.total}</p>
               </div>
               <div>
-                <p className="text-sm text-secondary font-body">Active Today</p>
-                <p className="text-2xl font-bold text-primary font-body mt-1">{stats.users.activeToday}</p>
+                <p className="text-xs md:text-sm text-secondary font-body">Active Today</p>
+                <p className="text-xl md:text-2xl font-bold text-primary font-body mt-1">{stats.users.activeToday}</p>
               </div>
               <div>
-                <p className="text-sm text-secondary font-body">Google Users</p>
-                <p className="text-2xl font-bold text-primary font-body mt-1">{stats.users.google}</p>
+                <p className="text-xs md:text-sm text-secondary font-body">Google Users</p>
+                <p className="text-xl md:text-2xl font-bold text-primary font-body mt-1">{stats.users.google}</p>
               </div>
               <div>
-                <p className="text-sm text-secondary font-body">Apple Users</p>
-                <p className="text-2xl font-bold text-primary font-body mt-1">{stats.users.apple}</p>
+                <p className="text-xs md:text-sm text-secondary font-body">Apple Users</p>
+                <p className="text-xl md:text-2xl font-bold text-primary font-body mt-1">{stats.users.apple}</p>
               </div>
             </div>
           </div>
 
           {/* Categories Card */}
-          <div className="bg-white rounded-lg border border-primary/10 p-6">
+          <div className="bg-white rounded-lg border border-primary/10 p-4 md:p-6">
             <div className="flex items-center gap-3 mb-4 pb-4 border-b border-primary/10">
-              <div className="w-12 h-12 bg-secondary/20 rounded-lg flex items-center justify-center">
-                <Icons.categories size={24} className="text-secondary" />
+              <div className="w-10 h-10 md:w-12 md:h-12 bg-secondary/20 rounded-lg flex items-center justify-center">
+                <Icons.categories size={20} className="md:w-6 md:h-6 text-secondary" />
               </div>
-              <h2 className="text-xl font-bold text-primary font-heading">Categories</h2>
+              <h2 className="text-lg md:text-xl font-bold text-primary font-heading">Categories</h2>
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-3 md:gap-4">
               <div>
-                <p className="text-sm text-secondary font-body">Total Categories</p>
-                <p className="text-2xl font-bold text-primary font-body mt-1">{stats.categories.total}</p>
+                <p className="text-xs md:text-sm text-secondary font-body">Total Categories</p>
+                <p className="text-xl md:text-2xl font-bold text-primary font-body mt-1">{stats.categories.total}</p>
               </div>
               <div>
-                <p className="text-sm text-secondary font-body">Subcategories</p>
-                <p className="text-2xl font-bold text-primary font-body mt-1">{stats.categories.subcategories}</p>
+                <p className="text-xs md:text-sm text-secondary font-body">Subcategories</p>
+                <p className="text-xl md:text-2xl font-bold text-primary font-body mt-1">{stats.categories.subcategories}</p>
               </div>
               <div className="col-span-2">
-                <p className="text-sm text-secondary font-body">Total Searches</p>
-                <p className="text-2xl font-bold text-primary font-body mt-1">{stats.categories.totalSearches}</p>
+                <p className="text-xs md:text-sm text-secondary font-body">Total Searches</p>
+                <p className="text-xl md:text-2xl font-bold text-primary font-body mt-1">{stats.categories.totalSearches}</p>
               </div>
             </div>
           </div>
 
           {/* Prompts Card */}
-          <div className="bg-white rounded-lg border border-primary/10 p-6">
+          <div className="bg-white rounded-lg border border-primary/10 p-4 md:p-6">
             <div className="flex items-center gap-3 mb-4 pb-4 border-b border-primary/10">
-              <div className="w-12 h-12 bg-accent/20 rounded-lg flex items-center justify-center">
-                <Icons.images size={24} className="text-accent" />
+              <div className="w-10 h-10 md:w-12 md:h-12 bg-accent/20 rounded-lg flex items-center justify-center">
+                <Icons.images size={20} className="md:w-6 md:h-6 text-accent" />
               </div>
-              <h2 className="text-xl font-bold text-primary font-heading">Prompts</h2>
+              <h2 className="text-lg md:text-xl font-bold text-primary font-heading">Prompts</h2>
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-3 md:gap-4">
               <div>
-                <p className="text-sm text-secondary font-body">Total Prompts</p>
-                <p className="text-2xl font-bold text-primary font-body mt-1">{stats.prompts.total}</p>
+                <p className="text-xs md:text-sm text-secondary font-body">Total Prompts</p>
+                <p className="text-xl md:text-2xl font-bold text-primary font-body mt-1">{stats.prompts.total}</p>
               </div>
               <div>
-                <p className="text-sm text-secondary font-body">Trending</p>
-                <p className="text-2xl font-bold text-primary font-body mt-1">{stats.prompts.trending}</p>
+                <p className="text-xs md:text-sm text-secondary font-body">Trending</p>
+                <p className="text-xl md:text-2xl font-bold text-primary font-body mt-1">{stats.prompts.trending}</p>
               </div>
               <div>
-                <p className="text-sm text-secondary font-body">Total Likes</p>
-                <p className="text-2xl font-bold text-primary font-body mt-1">{stats.prompts.totalLikes}</p>
+                <p className="text-xs md:text-sm text-secondary font-body">Total Likes</p>
+                <p className="text-xl md:text-2xl font-bold text-primary font-body mt-1">{stats.prompts.totalLikes}</p>
               </div>
               <div>
-                <p className="text-sm text-secondary font-body">Total Searches</p>
-                <p className="text-2xl font-bold text-primary font-body mt-1">{stats.prompts.totalSearches}</p>
+                <p className="text-xs md:text-sm text-secondary font-body">Total Searches</p>
+                <p className="text-xl md:text-2xl font-bold text-primary font-body mt-1">{stats.prompts.totalSearches}</p>
               </div>
             </div>
           </div>
 
           {/* Subscriptions Card (Plans + User Subscriptions) */}
-          <div className="bg-white rounded-lg border border-primary/10 p-6">
+          <div className="bg-white rounded-lg border border-primary/10 p-4 md:p-6">
             <div className="flex items-center gap-3 mb-4 pb-4 border-b border-primary/10">
-              <div className="w-12 h-12 bg-secondary/20 rounded-lg flex items-center justify-center">
-                <Icons.subscriptionPlan size={24} className="text-secondary" />
+              <div className="w-10 h-10 md:w-12 md:h-12 bg-secondary/20 rounded-lg flex items-center justify-center">
+                <Icons.subscriptionPlan size={20} className="md:w-6 md:h-6 text-secondary" />
               </div>
-              <h2 className="text-xl font-bold text-primary font-heading">Subscriptions</h2>
+              <h2 className="text-lg md:text-xl font-bold text-primary font-heading">Subscriptions</h2>
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-3 md:gap-4">
               <div>
-                <p className="text-sm text-secondary font-body">Total Plans</p>
-                <p className="text-2xl font-bold text-primary font-body mt-1">{stats.subscriptionPlans.total}</p>
+                <p className="text-xs md:text-sm text-secondary font-body">Total Plans</p>
+                <p className="text-xl md:text-2xl font-bold text-primary font-body mt-1">{stats.subscriptionPlans.total}</p>
               </div>
               <div>
-                <p className="text-sm text-secondary font-body">Active Plans</p>
-                <p className="text-2xl font-bold text-primary font-body mt-1">{stats.subscriptionPlans.active}</p>
+                <p className="text-xs md:text-sm text-secondary font-body">Active Plans</p>
+                <p className="text-xl md:text-2xl font-bold text-primary font-body mt-1">{stats.subscriptionPlans.active}</p>
               </div>
               <div>
-                <p className="text-sm text-secondary font-body">User Subscriptions</p>
-                <p className="text-2xl font-bold text-primary font-body mt-1">{stats.userSubscriptions.total}</p>
+                <p className="text-xs md:text-sm text-secondary font-body">User Subscriptions</p>
+                <p className="text-xl md:text-2xl font-bold text-primary font-body mt-1">{stats.userSubscriptions.total}</p>
               </div>
               <div>
-                <p className="text-sm text-secondary font-body">Active / Expired</p>
-                <p className="text-2xl font-bold text-primary font-body mt-1">
+                <p className="text-xs md:text-sm text-secondary font-body">Active / Expired</p>
+                <p className="text-lg md:text-2xl font-bold text-primary font-body mt-1">
                   {stats.userSubscriptions.active} / {stats.userSubscriptions.expired}
                 </p>
               </div>
@@ -381,61 +381,61 @@ export default function DashboardPage() {
           </div>
 
           {/* Feedback Card */}
-          <div className="bg-white rounded-lg border border-primary/10 p-6">
+          <div className="bg-white rounded-lg border border-primary/10 p-4 md:p-6">
             <div className="flex items-center gap-3 mb-4 pb-4 border-b border-primary/10">
-              <div className="w-12 h-12 bg-accent/20 rounded-lg flex items-center justify-center">
-                <Icons.feedback size={24} className="text-accent" />
+              <div className="w-10 h-10 md:w-12 md:h-12 bg-accent/20 rounded-lg flex items-center justify-center">
+                <Icons.feedback size={20} className="md:w-6 md:h-6 text-accent" />
               </div>
-              <h2 className="text-xl font-bold text-primary font-heading">Feedback</h2>
+              <h2 className="text-lg md:text-xl font-bold text-primary font-heading">Feedback</h2>
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-3 md:gap-4">
               <div>
-                <p className="text-sm text-secondary font-body">Total Feedback</p>
-                <p className="text-2xl font-bold text-primary font-body mt-1">{stats.feedback.total}</p>
+                <p className="text-xs md:text-sm text-secondary font-body">Total Feedback</p>
+                <p className="text-xl md:text-2xl font-bold text-primary font-body mt-1">{stats.feedback.total}</p>
               </div>
               <div>
-                <p className="text-sm text-secondary font-body">Average Rating</p>
-                <p className="text-2xl font-bold text-primary font-body mt-1">{stats.feedback.averageRating.toFixed(1)}</p>
+                <p className="text-xs md:text-sm text-secondary font-body">Average Rating</p>
+                <p className="text-xl md:text-2xl font-bold text-primary font-body mt-1">{stats.feedback.averageRating.toFixed(1)}</p>
               </div>
               <div>
-                <p className="text-sm text-secondary font-body">5-Star Ratings</p>
-                <p className="text-2xl font-bold text-primary font-body mt-1">{stats.feedback.fiveStars}</p>
+                <p className="text-xs md:text-sm text-secondary font-body">5-Star Ratings</p>
+                <p className="text-xl md:text-2xl font-bold text-primary font-body mt-1">{stats.feedback.fiveStars}</p>
               </div>
               <div>
-                <p className="text-sm text-secondary font-body">1-Star Ratings</p>
-                <p className="text-2xl font-bold text-primary font-body mt-1">{stats.feedback.oneStar}</p>
+                <p className="text-xs md:text-sm text-secondary font-body">1-Star Ratings</p>
+                <p className="text-xl md:text-2xl font-bold text-primary font-body mt-1">{stats.feedback.oneStar}</p>
               </div>
             </div>
           </div>
 
           {/* Countries & App Info Card */}
-          <div className="bg-white rounded-lg border border-primary/10 p-6">
+          <div className="bg-white rounded-lg border border-primary/10 p-4 md:p-6">
             <div className="flex items-center gap-3 mb-4 pb-4 border-b border-primary/10">
-              <div className="w-12 h-12 bg-secondary/20 rounded-lg flex items-center justify-center">
-                <Icons.globe size={24} className="text-secondary" />
+              <div className="w-10 h-10 md:w-12 md:h-12 bg-secondary/20 rounded-lg flex items-center justify-center">
+                <Icons.globe size={20} className="md:w-6 md:h-6 text-secondary" />
               </div>
-              <h2 className="text-xl font-bold text-primary font-heading">Countries & App Info</h2>
+              <h2 className="text-lg md:text-xl font-bold text-primary font-heading">Countries & App Info</h2>
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-3 md:gap-4">
               <div>
-                <p className="text-sm text-secondary font-body">Total Countries</p>
-                <p className="text-2xl font-bold text-primary font-body mt-1">{stats.countries.total}</p>
+                <p className="text-xs md:text-sm text-secondary font-body">Total Countries</p>
+                <p className="text-xl md:text-2xl font-bold text-primary font-body mt-1">{stats.countries.total}</p>
               </div>
               <div>
-                <p className="text-sm text-secondary font-body">With Categories</p>
-                <p className="text-2xl font-bold text-primary font-body mt-1">{stats.countries.withCategories}</p>
+                <p className="text-xs md:text-sm text-secondary font-body">With Categories</p>
+                <p className="text-xl md:text-2xl font-bold text-primary font-body mt-1">{stats.countries.withCategories}</p>
               </div>
               <div>
-                <p className="text-sm text-secondary font-body">Minimum Version</p>
-                <p className="text-xl font-bold text-primary font-body mt-1">{stats.appSettings.minimumVersion}</p>
+                <p className="text-xs md:text-sm text-secondary font-body">Minimum Version</p>
+                <p className="text-lg md:text-xl font-bold text-primary font-body mt-1">{stats.appSettings.minimumVersion}</p>
               </div>
               <div>
-                <p className="text-sm text-secondary font-body">Live Version</p>
-                <p className="text-xl font-bold text-primary font-body mt-1">{stats.appSettings.liveVersion}</p>
+                <p className="text-xs md:text-sm text-secondary font-body">Live Version</p>
+                <p className="text-lg md:text-xl font-bold text-primary font-body mt-1">{stats.appSettings.liveVersion}</p>
               </div>
               <div>
-                <p className="text-sm text-secondary font-body">Languages</p>
-                <p className="text-2xl font-bold text-primary font-body mt-1">{stats.appSettings.languagesCount}</p>
+                <p className="text-xs md:text-sm text-secondary font-body">Languages</p>
+                <p className="text-xl md:text-2xl font-bold text-primary font-body mt-1">{stats.appSettings.languagesCount}</p>
               </div>
             </div>
           </div>
