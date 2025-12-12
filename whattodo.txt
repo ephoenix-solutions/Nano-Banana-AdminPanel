@@ -1,581 +1,454 @@
-# NANO BANANA ADMIN PANEL - SESSION WORK COMPLETED & NEXT STEPS
+# NANO BANANA ADMIN PANEL - PROJECT CONTEXT & TRAINING GUIDE
 
-## 📋 SESSION SUMMARY
-This document details all the work completed in the current session and provides guidance for continuing development.
+## 🎯 PROJECT OVERVIEW
+This is a Next.js 16 admin panel for the Nano Banana application built with TypeScript, Firebase, and Redux Toolkit.
 
----
-
-## ✅ COMPLETED WORK IN THIS SESSION
-
-### 1. BREADCRUMBS IMPLEMENTATION (COMPLETED ✅)
-
-**What Was Done:**
-- Created a reusable Breadcrumbs component at `components/Breadcrumbs.tsx`
-- Added breadcrumbs to ALL pages in the application (21 pages total)
-- Breadcrumbs show navigation path: `Home > Section > Page`
-
-**Files Created:**
-- `components/Breadcrumbs.tsx` - Reusable breadcrumb component
-
-**Files Modified (Breadcrumbs Added):**
-1. Dashboard:
-   - `app/page.tsx`
-
-2. Users (3 pages):
-   - `app/users/page.tsx`
-   - `app/users/add/page.tsx`
-   - `app/users/edit/[id]/page.tsx`
-
-3. Categories (5 pages):
-   - `app/categories/page.tsx`
-   - `app/categories/add/page.tsx`
-   - `app/categories/edit/[id]/page.tsx`
-   - `app/categories/[categoryId]/subcategories/add/page.tsx`
-   - `app/categories/[categoryId]/subcategories/edit/[subcategoryId]/page.tsx`
-
-4. Prompts (3 pages):
-   - `app/prompts/page.tsx`
-   - `app/prompts/add/page.tsx`
-   - `app/prompts/edit/[id]/page.tsx`
-
-5. Countries (3 pages):
-   - `app/countries/page.tsx`
-   - `app/countries/add/page.tsx`
-   - `app/countries/edit/[id]/page.tsx`
-
-6. Subscription Plans (3 pages):
-   - `app/subscription-plan/page.tsx`
-   - `app/subscription-plan/add/page.tsx`
-   - `app/subscription-plan/edit/[id]/page.tsx`
-
-7. Other Pages (3 pages):
-   - `app/user-subscription/page.tsx`
-   - `app/feedback/page.tsx`
-   - `app/app-settings/page.tsx`
-
-**Breadcrumb Pattern:**
-```tsx
-<Breadcrumbs items={[{ label: 'Section' }]} />  // List page
-<Breadcrumbs items={[
-  { label: 'Section', href: '/section' },
-  { label: 'Action' }
-]} />  // Add/Edit/View pages
-```
+**Tech Stack:**
+- Next.js 16.0.7 (App Router)
+- React 19.2.0
+- TypeScript 5
+- Firebase (Firestore)
+- Redux Toolkit (State Management)
+- Tailwind CSS 4
+- Lucide React (Icons)
+- JWT Authentication
 
 ---
 
-### 2. DASHBOARD REDESIGN (COMPLETED ✅)
+## 📁 CRITICAL FILES TO READ & ANALYZE
 
-**What Was Done:**
-- Changed all stat numbers from `font-heading` (Playfair Display) to `font-body` (Inter)
-- Combined related statistics into single cards instead of separate cards
-- Improved layout with 2-column grid for better organization
+### **1. Authentication System**
+READ THESE FILES IN ORDER:
 
-**File Modified:**
-- `app/page.tsx`
+1. `lib/types/auth.types.ts` - Authentication type definitions
+2. `lib/types/user.types.ts` - User data structure (includes role field)
+3. `app/api/auth/login/route.ts` - Server-side login API
+4. `app/api/auth/logout/route.ts` - Server-side logout API
+5. `app/api/auth/verify/route.ts` - Server-side token verification
+6. `lib/services/auth.service.ts` - Client-side auth service
+7. `lib/store/authSlice.ts` - Redux auth state management
+8. `lib/store/store.ts` - Redux store configuration
+9. `lib/hooks/useAuth.ts` - Custom auth hook
+10. `components/auth/AuthInitializer.tsx` - App-level auth checker
+11. `components/auth/ProtectedRoute.tsx` - Route protection component
+12. `app/login/page.tsx` - Login page
 
-**Changes Made:**
-1. Font Change:
-   - All numbers now use `font-body` for better readability
-   - Section headings still use `font-heading` for hierarchy
-
-2. Combined Cards:
-   - **Users Card**: Total Users, Active Today, Google Users, Apple Users
-   - **Categories Card**: Total Categories, Subcategories, Total Searches
-   - **Prompts Card**: Total Prompts, Trending, Total Likes, Total Searches
-   - **Subscriptions Card**: Total Plans, Active Plans, User Subscriptions, Active/Expired
-   - **Feedback Card**: Total Feedback, Average Rating, 5-Star, 1-Star
-   - **Countries & App Info Card**: Total Countries, With Categories, Current Version, Languages
-
-**Design Pattern:**
-```tsx
-<div className="bg-white rounded-lg border border-primary/10 p-6">
-  <div className="flex items-center gap-3 mb-4">
-    <div className="w-12 h-12 bg-accent/20 rounded-lg flex items-center justify-center">
-      <Icon size={24} className="text-accent" />
-    </div>
-    <h2 className="text-xl font-bold text-primary font-heading">Section</h2>
-  </div>
-  <div className="grid grid-cols-2 gap-4">
-    {/* Stats */}
-  </div>
-</div>
-```
+**KEY AUTHENTICATION CONCEPTS:**
+- JWT-based authentication with 7-day expiry
+- Two cookies: `admin_token` (HTTP-only, secure) and `admin_token_client` (readable by JS)
+- Only users with `role: 'admin'` can access the panel
+- Redux manages auth state globally
+- Auth checked ONCE at app level (AuthInitializer) to prevent infinite API calls
+- Session persists on page reload via cookie verification
 
 ---
 
-### 3. VIEW PAGES IMPLEMENTATION (COMPLETED ✅)
+### **2. Redux State Management**
+READ THESE FILES:
 
-**What Was Done:**
-- Created view pages for 5 main collections
-- Updated Table component to support `onView` prop
-- Added View buttons to all list pages
+1. `lib/store/store.ts` - Store configuration
+2. `lib/store/authSlice.ts` - Auth slice with async thunks
+3. `lib/store/hooks.ts` - Typed Redux hooks
+4. `lib/store/ReduxProvider.tsx` - Redux provider wrapper
+5. `lib/hooks/useAuth.ts` - Auth hook using Redux
 
-**Files Created:**
-1. `app/users/view/[id]/page.tsx` - User view page
-2. `app/categories/view/[id]/page.tsx` - Category view page
-3. `app/prompts/view/[id]/page.tsx` - Prompt view page
-4. `app/subscription-plan/view/[id]/page.tsx` - Subscription plan view page
-5. `app/countries/view/[id]/page.tsx` - Country view page
-
-**Files Modified:**
-1. `components/Table.tsx` - Added `onView` prop support
-2. `app/users/page.tsx` - Added View button
-3. `app/categories/page.tsx` - Added View button
-4. `app/prompts/page.tsx` - Added View button
-5. `app/subscription-plan/page.tsx` - Added View button
-6. `app/countries/page.tsx` - Added View button
-
-**View Page Features:**
-- ✅ Breadcrumbs navigation
-- ✅ Gradient header sections with large icons/images
-- ✅ Icon-based information cards
-- ✅ Image preview with fallback
-- ✅ Hover effects on images
-- ✅ External link options for URLs
-- ✅ Back and Edit action buttons
-- ✅ Responsive grid layouts
-- ✅ Empty states where applicable
-
-**View Page Pattern:**
-```tsx
-// Header Section
-<div className="bg-gradient-to-r from-accent/10 to-secondary/10 p-8">
-  <div className="flex items-center gap-6">
-    {/* Large Image/Icon */}
-    {/* Title and Badges */}
-  </div>
-</div>
-
-// Information Cards
-<div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-  <div className="bg-background rounded-lg p-4 border border-primary/10">
-    <div className="flex items-start gap-3">
-      <div className="w-10 h-10 bg-accent/20 rounded-lg">
-        <Icon />
-      </div>
-      <div>
-        <p className="text-sm text-secondary">Label</p>
-        <p className="text-base font-semibold text-primary">Value</p>
-      </div>
-    </div>
-  </div>
-</div>
-```
+**IMPORTANT:**
+- We REMOVED Context API and sessionStorage
+- Now using Redux Toolkit for state management
+- Auth state: { user, isLoading, isAuthenticated, error }
+- Async thunks: loginUser, checkAuth, logoutUser
 
 ---
 
-### 4. BUG FIXES (COMPLETED ✅)
+### **3. Project Structure**
+READ THESE FILES:
 
-**React Key Warning Fix:**
-- Fixed React key warning in `app/categories/page.tsx`
-- Changed fragment shorthand `<>` to `<React.Fragment key={category.id}>`
-- Added React import: `import React, { useEffect, useState } from 'react';`
-
-**File Modified:**
-- `app/categories/page.tsx`
-
----
-
-## 📊 STATISTICS
-
-**Total Files Created:** 6
-- 1 Component (Breadcrumbs)
-- 5 View Pages
-
-**Total Files Modified:** 27
-- 21 Pages (Breadcrumbs added)
-- 1 Component (Table)
-- 5 List Pages (View button added)
-- 1 Dashboard (Redesigned)
-
-**Total Lines of Code Added:** ~3,500+ lines
+1. `app/layout.tsx` - Root layout with ReduxProvider and AuthInitializer
+2. `components/AdminLayout.tsx` - Admin panel layout with sidebar
+3. `components/Sidebar.tsx` - Navigation sidebar
+4. `components/Header.tsx` - Top header with user dropdown
+5. `config/icons.ts` - Centralized icon configuration
 
 ---
 
-## 🎨 DESIGN SYSTEM USED
+### **4. User Management**
+READ THESE FILES:
 
-### Colors:
-- **Primary (Black):** `#000000` - Main text, headings
-- **Secondary (Brown):** `#854836` - Buttons, accents, alerts
-- **Accent (Yellow):** `#FFB22C` - Primary actions, highlights
-- **Background (White):** `#F7F7F7` - Page background
+1. `lib/types/user.types.ts` - User interface with ALL fields
+2. `lib/services/user.service.ts` - User CRUD operations
+3. `app/users/page.tsx` - Users list page
+4. `app/users/view/[id]/page.tsx` - User detail view
 
-### Fonts:
-- **Heading Font:** `font-heading` - Playfair Display (serif)
-- **Body Font:** `font-body` - Inter (sans-serif)
-
-### Component Patterns:
-- **Breadcrumbs:** Home icon + chevron separators
-- **Cards:** White background, border, rounded corners
-- **Buttons:** Accent color for primary, background for secondary
-- **Icons:** Lucide React icons from `config/icons.ts`
-- **Gradients:** `from-accent/10 to-secondary/10` for headers
+**USER FIELDS:**
+- id, email, name, photoURL, role, provider, language, createdAt, lastLogin
 
 ---
 
-## 🔧 KEY IMPLEMENTATION DETAILS
+### **5. Feedback System**
+READ THESE FILES:
 
-### 1. Breadcrumbs Component
-**Location:** `components/Breadcrumbs.tsx`
+1. `lib/types/feedback.types.ts` - Feedback data structure
+2. `lib/services/feedback.service.ts` - Feedback operations
+3. `app/feedback/page.tsx` - Feedback list with emoji ratings
+4. `app/feedback/view/[id]/page.tsx` - Feedback detail view
 
-**Props:**
-```typescript
-interface BreadcrumbItem {
-  label: string;
-  href?: string;
-}
-
-interface BreadcrumbsProps {
-  items: BreadcrumbItem[];
-}
-```
-
-**Usage:**
-```tsx
-// List page
-<Breadcrumbs items={[{ label: 'Users' }]} />
-
-// Add/Edit page
-<Breadcrumbs items={[
-  { label: 'Users', href: '/users' },
-  { label: 'Add User' }
-]} />
-```
-
-### 2. Table Component Enhancement
-**Location:** `components/Table.tsx`
-
-**New Prop:**
-```typescript
-interface TableProps<T> {
-  data: T[];
-  columns: Column<T>[];
-  onView?: (item: T) => void;  // NEW
-  onEdit?: (item: T) => void;
-  onDelete?: (item: T) => void;
-  loading?: boolean;
-}
-```
-
-**Button Order:** View | Edit | Delete
-
-### 3. View Page Structure
-**Common Sections:**
-1. Breadcrumbs
-2. Page Header (with Back button and Edit button)
-3. Gradient Header Section (with large image/icon)
-4. Information Cards Grid
-5. Additional Sections (features, categories, etc.)
-6. Action Buttons (Back and Edit)
+**FEEDBACK FEATURES:**
+- Emoji ratings: ["😡", "😕", "😐", "🙂", "🥰"] for ratings 1-5
+- Device info displayed in badges (OS, Model, App Version)
+- User info populated from userId
 
 ---
 
-## 📝 NEXT STEPS & RECOMMENDATIONS
+### **6. Admin User Creation Script**
+READ THIS FILE:
 
-### Immediate Next Steps:
-1. ✅ All breadcrumbs implemented
-2. ✅ All view pages created
-3. ✅ Dashboard redesigned
-4. ✅ Bug fixes completed
+1. `scripts/create-admin.js` - Script to create admin users in Firestore
 
-### Future Enhancements (Not Yet Done):
+**HOW TO USE:**
+```bash
+npm run create-admin
+```
 
-#### 1. Search Functionality
-- Add search bars to list pages
-- Implement real-time filtering
-- Add advanced filters (date range, status, etc.)
+**ADMIN USERS DEFINED IN SCRIPT:**
+- dhvanil@nanobanana.com - Dhvanil Pansuriya
+- deep@nanobanana.com - Deep Surti
+- hardik@nanobanana.com - Hardik Ramoliya
 
-#### 2. Pagination
-- Implement pagination for large datasets
-- Add page size selector
-- Show total records count
-
-#### 3. Sorting
-- Add column sorting to tables
-- Implement multi-column sorting
-- Save sort preferences
-
-#### 4. Export Functionality
-- Export data to CSV/Excel
-- Export filtered/searched results
-- Bulk export options
-
-#### 5. Bulk Actions
-- Select multiple items
-- Bulk delete
-- Bulk status update
-- Bulk export
-
-#### 6. Image Upload
-- Replace URL inputs with file upload
-- Image cropping/resizing
-- Multiple image upload
-- Image gallery view
-
-#### 7. Authentication
-- Implement admin login
-- Role-based access control
-- Session management
-- Password reset
-
-#### 8. Analytics Dashboard
-- Charts and graphs
-- Trend analysis
-- User activity tracking
-- Revenue analytics
-
-#### 9. Notifications
-- Toast notifications for actions
-- Success/error messages
-- Real-time updates
-- Email notifications
-
-#### 10. Dark Mode
-- Toggle dark/light theme
-- Save theme preference
-- Consistent color scheme
+All have `role: 'admin'` and `provider: 'manual'`
 
 ---
 
-## 🚀 HOW TO TRAIN NEXT SESSION
+### **7. Package Configuration**
+READ THIS FILE:
 
-### Step 1: Load Context
-Tell the new session:
-```
-"I'm continuing work on the Nano Banana Admin Panel. Please read the following files to understand what was completed in the last session:
+1. `package.json` - All dependencies and scripts
 
-1. Read whattodonext.txt (this file) completely
-2. Read whattodo.txt for overall project context
-3. Review the Breadcrumbs component: components/Breadcrumbs.tsx
-4. Review one view page example: app/users/view/[id]/page.tsx
-5. Review the updated Table component: components/Table.tsx
-6. Review the redesigned dashboard: app/page.tsx
-
-After reading, confirm you understand:
-- Breadcrumbs have been added to all 21 pages
-- View pages have been created for 5 collections
-- Dashboard has been redesigned with combined cards
-- Table component now supports View action
-- All changes follow the established design system
-"
-```
-
-### Step 2: Verify Understanding
-Ask the new session:
-```
-"Can you explain:
-1. What is the breadcrumb pattern used in this project?
-2. Which collections have view pages?
-3. What font is used for numbers in the dashboard?
-4. What are the three action buttons in the Table component?
-5. What is the color scheme used in the project?
-"
-```
-
-### Step 3: Test Knowledge
-Give a sample task:
-```
-"If I wanted to add a search bar to the users list page, what approach would you take based on the existing patterns?"
-
-Expected answer should mention:
-- Adding a search state with useState
-- Creating a search input with the search icon from Icons
-- Filtering the users array based on search term
-- Using the existing card/input styling patterns
-- Positioning it above the table
-```
+**KEY PACKAGES:**
+- @reduxjs/toolkit: ^2.2.1
+- react-redux: ^9.1.0
+- firebase: ^12.6.0
+- jsonwebtoken: ^9.0.2
+- js-cookie: ^3.0.5
+- bcryptjs: ^2.4.3
+- dotenv: ^16.4.5
 
 ---
 
-## 📂 FILE STRUCTURE REFERENCE
+## 🔑 CRITICAL CONCEPTS TO UNDERSTAND
+
+### **1. Authentication Flow**
+```
+Login → Server verifies → Generate JWT → Set 2 cookies → Update Redux → Redirect to dashboard
+Page Reload → AuthInitializer checks cookie → Verify with API → Update Redux → Stay logged in
+```
+
+### **2. Cookie Strategy**
+- `admin_token`: HTTP-only (server reads, JS cannot) - SECURE
+- `admin_token_client`: Readable by JS (for client-side checks) - CONVENIENCE
+- Both contain same JWT token
+- Both expire in 7 days
+
+### **3. Redux vs Context API**
+- We MIGRATED from Context API to Redux Toolkit
+- Reason: Better performance, DevTools, scalability
+- Auth state is now in Redux store
+- No more sessionStorage usage
+
+### **4. API Routes (Server-side)**
+- `/api/auth/login` - POST - Login with email/password
+- `/api/auth/logout` - POST - Clear cookies
+- `/api/auth/verify` - GET - Verify JWT and return user data
+
+### **5. Role-Based Access**
+- User interface has `role` field: 'user' or 'admin'
+- Only `role: 'admin'` can access admin panel
+- Checked on login and on every verify call
+
+---
+
+## 🚨 KNOWN ISSUES & SOLUTIONS
+
+### **Issue 1: Infinite API Calls**
+**Problem:** `/api/auth/verify` called repeatedly
+**Solution:** Auth check moved to `AuthInitializer` at app level, called ONCE
+**Files:** `components/auth/AuthInitializer.tsx`, `components/auth/ProtectedRoute.tsx`
+
+### **Issue 2: Session Lost on Reload**
+**Problem:** User logged out on page refresh
+**Solution:** 
+- Verify route fetches full user from Firestore (not just JWT decode)
+- Returns all user fields including name
+**Files:** `app/api/auth/verify/route.ts`
+
+### **Issue 3: JWT in Browser**
+**Problem:** `jsonwebtoken` doesn't work in browser
+**Solution:** Moved JWT operations to API routes (server-side)
+**Files:** All files in `app/api/auth/`
+
+---
+
+## 📋 DEVELOPMENT WORKFLOW
+
+### **1. Install Dependencies**
+```bash
+npm install
+```
+
+### **2. Environment Variables**
+Create `.env.local` with:
+```
+NEXT_PUBLIC_FIREBASE_API_KEY=your_key
+NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=your_domain
+NEXT_PUBLIC_FIREBASE_PROJECT_ID=your_project
+NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=your_bucket
+NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
+NEXT_PUBLIC_FIREBASE_APP_ID=your_app_id
+NEXT_PUBLIC_JWT_SECRET=your_secret_key
+```
+
+### **3. Create Admin Users**
+```bash
+npm run create-admin
+```
+
+### **4. Run Development Server**
+```bash
+npm run dev
+```
+
+### **5. Login**
+- Go to http://localhost:3000/login
+- Use any admin email from script
+- Password: any (temporary - not verified yet)
+
+---
+
+## 🎨 UI/UX PATTERNS
+
+### **Header Component**
+- User avatar (or gradient placeholder with initial)
+- Dropdown with user info and logout
+- ChevronDown icon (rotates 180° when open)
+- Width: w-72 for dropdown
+- NO gradients (solid colors only)
+
+### **Feedback Page**
+- Emoji ratings instead of stars
+- Device info in inline badges
+- User name and email populated from userId
+- View button for detailed feedback
+
+### **User Page**
+- Role badge (admin = secondary color, user = accent color)
+- All user fields displayed
+- View/Edit/Delete actions
+
+---
+
+## 🔧 CODING STANDARDS
+
+### **1. File Naming**
+- Components: PascalCase (e.g., `AdminLayout.tsx`)
+- Utilities: camelCase (e.g., `auth.service.ts`)
+- Types: camelCase with .types.ts (e.g., `user.types.ts`)
+
+### **2. Import Order**
+1. React/Next imports
+2. Third-party libraries
+3. Local components
+4. Services/Utils
+5. Types
+6. Styles
+
+### **3. TypeScript**
+- Always use interfaces for data structures
+- Use `type` for unions/intersections
+- Avoid `any` (use `unknown` or proper types)
+
+### **4. Redux Patterns**
+- Use `createAsyncThunk` for API calls
+- Use `createSlice` for state management
+- Use typed hooks: `useAppDispatch`, `useAppSelector`
+
+### **5. API Routes**
+- Always use try-catch
+- Return proper HTTP status codes
+- Use NextResponse.json()
+- Validate input data
+
+---
+
+## 📝 IMPORTANT NOTES FOR NEW SESSION
+
+### **DO:**
+✅ Read all files mentioned above before making changes
+✅ Understand Redux state management (we use Redux, NOT Context API)
+✅ Know that auth is checked ONCE at app level
+✅ Remember two cookies exist for security + convenience
+✅ Use typed Redux hooks (useAppDispatch, useAppSelector)
+✅ Check user.role === 'admin' for access control
+✅ Return all user fields in API responses (not just id, email, role)
+
+### **DON'T:**
+❌ Create Context API (we use Redux)
+❌ Use sessionStorage (we use Redux + cookies)
+❌ Call checkAuth() in multiple places (only in AuthInitializer)
+❌ Use JWT in client-side code (only in API routes)
+❌ Create summary/guide files (user doesn't want them)
+❌ Use gradients in UI (user preference: solid colors)
+❌ Forget to include all user fields in AuthUser interface
+
+---
+
+## 🗂️ FILE STRUCTURE OVERVIEW
 
 ```
 nano-banana-admin-panel/
 ├── app/
-│   ├── page.tsx (Dashboard - MODIFIED)
-│   ├── users/
-│   │   ├── page.tsx (MODIFIED - breadcrumbs + view button)
-│   │   ├── add/page.tsx (MODIFIED - breadcrumbs)
-│   │   ├── edit/[id]/page.tsx (MODIFIED - breadcrumbs)
-│   │   └── view/[id]/page.tsx (NEW - view page)
-│   ├── categories/
-│   │   ├── page.tsx (MODIFIED - breadcrumbs + view button + bug fix)
-│   │   ├── add/page.tsx (MODIFIED - breadcrumbs)
-│   │   ├── edit/[id]/page.tsx (MODIFIED - breadcrumbs)
-│   │   ├── view/[id]/page.tsx (NEW - view page)
-│   │   └── [categoryId]/subcategories/
-│   │       ├── add/page.tsx (MODIFIED - breadcrumbs)
-│   │       └── edit/[subcategoryId]/page.tsx (MODIFIED - breadcrumbs)
-│   ├── prompts/
-│   │   ├── page.tsx (MODIFIED - breadcrumbs + view button)
-│   │   ├── add/page.tsx (MODIFIED - breadcrumbs)
-│   │   ├── edit/[id]/page.tsx (MODIFIED - breadcrumbs)
-│   │   └── view/[id]/page.tsx (NEW - view page)
-│   ├── countries/
-│   │   ├── page.tsx (MODIFIED - breadcrumbs + view button)
-│   │   ├── add/page.tsx (MODIFIED - breadcrumbs)
-│   │   ├── edit/[id]/page.tsx (MODIFIED - breadcrumbs)
-│   │   └── view/[id]/page.tsx (NEW - view page)
-│   ├── subscription-plan/
-│   │   ├── page.tsx (MODIFIED - breadcrumbs + view button)
-│   │   ├── add/page.tsx (MODIFIED - breadcrumbs)
-│   │   ├── edit/[id]/page.tsx (MODIFIED - breadcrumbs)
-│   │   └── view/[id]/page.tsx (NEW - view page)
-│   ├── user-subscription/
-│   │   └── page.tsx (MODIFIED - breadcrumbs)
-│   ├── feedback/
-│   │   └── page.tsx (MODIFIED - breadcrumbs)
-│   └── app-settings/
-│       └── page.tsx (MODIFIED - breadcrumbs)
+│   ├── api/auth/          # Server-side auth routes
+│   ├── login/             # Login page
+│   ├── users/             # User management
+│   ├── feedback/          # Feedback management
+│   ├── categories/        # Categories
+│   ├── countries/         # Countries
+│   ├── prompts/           # Prompts
+│   ├── subscription-plan/ # Subscription plans
+│   ├── user-subscription/ # User subscriptions
+│   ├── app-settings/      # App settings
+│   ├── developer-guide/   # Developer guide
+│   └── layout.tsx         # Root layout
 ├── components/
-│   ├── Breadcrumbs.tsx (NEW - breadcrumb component)
-│   ├── Table.tsx (MODIFIED - added onView prop)
-│   ├── AdminLayout.tsx
-│   ├── Sidebar.tsx
-│   ├── Header.tsx
-│   ├── Modal.tsx
-│   └── ConfirmModal.tsx
-├── config/
-│   ├── firebase.ts
-│   ├── icons.ts
-│   └── theme.ts
+│   ├── auth/              # Auth components
+│   ├── AdminLayout.tsx    # Main layout
+│   ├── Sidebar.tsx        # Navigation
+│   └── Header.tsx         # Top header
 ├── lib/
-│   ├── types/
-│   └── services/
-├── whattodo.txt (Original project documentation)
-└── whattodonext.txt (THIS FILE - Session work summary)
+│   ├── store/             # Redux store
+│   ├── hooks/             # Custom hooks
+│   ├── services/          # API services
+│   ├── types/             # TypeScript types
+│   └── contexts/          # (DEPRECATED - we use Redux now)
+├── config/
+│   ├── firebase.ts        # Firebase config
+│   └── icons.ts           # Icon exports
+├── scripts/
+│   └── create-admin.js    # Admin creation script
+└── package.json           # Dependencies
 ```
 
 ---
 
-## 🎯 IMPORTANT NOTES FOR NEXT SESSION
+## 🎓 TRAINING INSTRUCTIONS FOR NEW SESSION
 
-### DO's:
-✅ Follow the established breadcrumb pattern
-✅ Use the Breadcrumbs component for all new pages
-✅ Maintain the view page design pattern
-✅ Use `font-body` for numbers and data
-✅ Use `font-heading` for section titles
-✅ Follow the color scheme (accent, secondary, primary)
-✅ Add proper loading states
-✅ Include error handling
-✅ Use icons from `config/icons.ts`
-✅ Maintain responsive design (grid layouts)
-✅ Add empty states where applicable
+**Step 1:** Read this entire file carefully
 
-### DON'Ts:
-❌ Don't create pages without breadcrumbs
-❌ Don't use inline styles
-❌ Don't skip loading/error states
-❌ Don't forget to add keys to mapped elements
-❌ Don't use different icon libraries
-❌ Don't change the established color scheme
-❌ Don't create inconsistent button styles
-❌ Don't forget responsive design
-❌ Don't skip TypeScript types
-❌ Don't create fragments without keys in maps
+**Step 2:** Read these files in order:
+1. `package.json` - Understand dependencies
+2. `lib/types/user.types.ts` - User data structure
+3. `lib/types/auth.types.ts` - Auth data structure
+4. `lib/store/authSlice.ts` - Redux auth logic
+5. `app/api/auth/login/route.ts` - Login logic
+6. `app/api/auth/verify/route.ts` - Verification logic
+7. `components/auth/AuthInitializer.tsx` - Auth initialization
+8. `app/layout.tsx` - App structure
+
+**Step 3:** Understand these concepts:
+- Redux Toolkit state management
+- JWT authentication with two cookies
+- Role-based access control
+- Server-side API routes vs client-side code
+
+**Step 4:** Remember these rules:
+- No Context API (use Redux)
+- No sessionStorage (use Redux + cookies)
+- Auth checked once at app level
+- All user fields in AuthUser interface
+- No gradients in UI
+- No summary files
+
+**Step 5:** You're ready to help!
 
 ---
 
-## 🔍 QUICK REFERENCE
+## 🆘 QUICK REFERENCE
 
-### Common Patterns:
+### **Add New Admin User**
+Edit `scripts/create-admin.js` → Add to ADMIN_USERS array → Run `npm run create-admin`
 
-**1. Breadcrumbs:**
-```tsx
-<Breadcrumbs items={[
-  { label: 'Section', href: '/section' },
-  { label: 'Page' }
-]} />
-```
+### **Check Auth State**
+Redux DevTools → State → auth → { user, isLoading, isAuthenticated, error }
 
-**2. Information Card:**
-```tsx
-<div className="bg-background rounded-lg p-4 border border-primary/10">
-  <div className="flex items-start gap-3">
-    <div className="w-10 h-10 bg-accent/20 rounded-lg flex items-center justify-center flex-shrink-0">
-      <Icons.icon size={20} className="text-accent" />
-    </div>
-    <div className="flex-1 min-w-0">
-      <p className="text-sm text-secondary font-body mb-1">Label</p>
-      <p className="text-base font-semibold text-primary font-body">Value</p>
-    </div>
-  </div>
-</div>
-```
+### **Debug Auth Issues**
+1. Check cookies in browser DevTools
+2. Check Redux state
+3. Check `/api/auth/verify` response
+4. Check Firestore user document has `role: 'admin'`
 
-**3. Gradient Header:**
-```tsx
-<div className="bg-gradient-to-r from-accent/10 to-secondary/10 p-8 border-b border-primary/10">
-  {/* Content */}
-</div>
-```
-
-**4. Action Buttons:**
-```tsx
-<div className="flex items-center justify-end gap-3">
-  <button className="px-6 py-3 text-sm font-medium text-primary bg-background hover:bg-primary/5 rounded-lg transition-all border border-primary/10">
-    Cancel
-  </button>
-  <button className="flex items-center gap-2 px-6 py-3 bg-accent text-primary rounded-lg font-semibold hover:bg-accent/90 transition-all">
-    <Icons.icon size={20} />
-    <span>Action</span>
-  </button>
-</div>
+### **Common Commands**
+```bash
+npm install              # Install dependencies
+npm run dev             # Start dev server
+npm run create-admin    # Create admin users
+npm run build           # Build for production
 ```
 
 ---
 
-## 📊 SESSION METRICS
+## 📞 PROJECT CONTACTS
 
-**Session Duration:** Full session
-**Features Completed:** 4 major features
-**Files Created:** 6
-**Files Modified:** 27
-**Bug Fixes:** 1
-**Code Quality:** High (TypeScript, proper types, error handling)
-**Design Consistency:** Excellent (all patterns followed)
-**Documentation:** Comprehensive
+**Admin Users:**
+- Dhvanil Pansuriya - dhvanil@nanobanana.com
+- Deep Surti - deep@nanobanana.com
+- Hardik Ramoliya - hardik@nanobanana.com
 
 ---
 
-## ✨ FINAL CHECKLIST
+## ✅ VERIFICATION CHECKLIST
 
-- [x] Breadcrumbs component created
-- [x] Breadcrumbs added to all 21 pages
-- [x] Dashboard redesigned with combined cards
-- [x] Font changed to font-body for numbers
-- [x] Table component enhanced with onView
-- [x] 5 view pages created (Users, Categories, Prompts, Plans, Countries)
-- [x] View buttons added to all list pages
-- [x] React key warning fixed
-- [x] All changes tested and working
-- [x] Documentation created (this file)
+Before helping with this project, verify you understand:
 
----
-
-## 🎓 TRAINING VERIFICATION CHECKLIST
-
-Before considering the new session trained, verify it can:
-
-□ Explain the breadcrumb pattern used
-□ List all collections that have view pages
-□ Describe the dashboard card structure
-□ Identify the font used for numbers vs headings
-□ Explain the Table component's action buttons
-□ Describe the view page layout pattern
-□ List the four main colors in the design system
-□ Explain how to add breadcrumbs to a new page
-□ Describe the information card pattern
-□ Explain the gradient header pattern
-□ Identify when to use React.Fragment with keys
-□ Describe the proper button styling patterns
+- [ ] Redux Toolkit is used (NOT Context API)
+- [ ] Two cookies exist: admin_token (HTTP-only) and admin_token_client (readable)
+- [ ] Auth checked once in AuthInitializer component
+- [ ] Only role: 'admin' users can access panel
+- [ ] AuthUser interface has ALL user fields
+- [ ] JWT operations only in API routes (server-side)
+- [ ] No sessionStorage usage
+- [ ] No gradient backgrounds in UI
+- [ ] Feedback uses emoji ratings
+- [ ] User data populated from Firestore
 
 ---
 
-END OF SESSION DOCUMENTATION
-Version: 1.0
-Date: Current Session
-Project: Nano Banana Admin Panel
-Status: ✅ ALL TASKS COMPLETED SUCCESSFULLY
+## 🎯 CURRENT STATE OF PROJECT
+
+**Authentication:** ✅ Fully implemented with Redux + JWT
+**User Management:** ✅ CRUD operations complete
+**Feedback System:** ✅ List and detail views with emojis
+**Admin Creation:** ✅ Script ready with 3 admins
+**State Management:** ✅ Redux Toolkit configured
+**Session Persistence:** ✅ Works on page reload
+**API Routes:** ✅ Login, logout, verify implemented
+**Protected Routes:** ✅ Only admins can access
+
+**Status:** Production-ready admin panel with secure authentication
+
+---
+
+## 🚀 NEXT STEPS (If User Asks)
+
+Potential improvements:
+1. Add password hashing and verification (currently accepts any password)
+2. Add "Remember Me" functionality
+3. Add 2FA (Two-Factor Authentication)
+4. Add password reset flow
+5. Add user profile editing
+6. Add audit logs
+7. Add more Redux slices for other entities
+8. Add Redux Persist for offline support
+
+---
+
+**END OF TRAINING GUIDE**
+
+This file contains everything needed to train a new AI session to have the same context and understanding as the current session. Read all mentioned files and understand the concepts above.
