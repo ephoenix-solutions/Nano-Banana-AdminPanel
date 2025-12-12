@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import AdminLayout from '@/components/AdminLayout';
 import Breadcrumbs from '@/components/Breadcrumbs';
@@ -16,6 +16,10 @@ import {
 import { getAllCategories } from '@/lib/services/category.service';
 import { Timestamp } from 'firebase/firestore';
 
+type SortField = 'title' | 'likes' | 'createdAt';
+type SortOrder = 'asc' | 'desc';
+type TrendingFilter = 'all' | 'trending' | 'not-trending';
+
 export default function PromptsPage() {
   const router = useRouter();
   const [prompts, setPrompts] = useState<Prompt[]>([]);
@@ -29,6 +33,15 @@ export default function PromptsPage() {
     isOpen: false,
     prompt: null,
   });
+
+  // Search and Filter States
+  const [searchQuery, setSearchQuery] = useState('');
+  const [sortField, setSortField] = useState<SortField>('createdAt');
+  const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
+  const [categoryFilter, setCategoryFilter] = useState<string>('all');
+  const [subcategoryFilter, setSubcategoryFilter] = useState<string>('all');
+  const [trendingFilter, setTrendingFilter] = useState<TrendingFilter>('all');
+  const [showFilters, setShowFilters] = useState(false);
 
   useEffect(() => {
     fetchData();
@@ -116,6 +129,103 @@ export default function PromptsPage() {
     }).format(date);
   };
 
+  // Get subcategories for selected category
+  const availableSubcategories = useMemo(() => {
+    if (categoryFilter === 'all') return [];
+    const category = categories.find((c) => c.id === categoryFilter);
+    return category?.subcategories || [];
+  }, [categoryFilter, categories]);
+
+  // Filter and Sort Prompts
+  const filteredAndSortedPrompts = useMemo(() => {
+    let filtered = [...prompts];
+
+    // Search filter (title, tags, or prompt content)
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      filtered = filtered.filter((prompt) => {
+        // Check title
+        if (prompt.title.toLowerCase().includes(query)) return true;
+        // Check tags
+        if (prompt.tags && prompt.tags.some((tag) => tag.toLowerCase().includes(query))) return true;
+        // Check prompt content
+        if (prompt.prompt.toLowerCase().includes(query)) return true;
+        return false;
+      });
+    }
+
+    // Category filter
+    if (categoryFilter !== 'all') {
+      filtered = filtered.filter((prompt) => prompt.categoryId === categoryFilter);
+    }
+
+    // Subcategory filter
+    if (subcategoryFilter !== 'all') {
+      filtered = filtered.filter((prompt) => prompt.subCategoryId === subcategoryFilter);
+    }
+
+    // Trending filter
+    if (trendingFilter === 'trending') {
+      filtered = filtered.filter((prompt) => prompt.isTrending);
+    } else if (trendingFilter === 'not-trending') {
+      filtered = filtered.filter((prompt) => !prompt.isTrending);
+    }
+
+    // Sort
+    filtered.sort((a, b) => {
+      let aValue: any;
+      let bValue: any;
+
+      if (sortField === 'title') {
+        aValue = a.title.toLowerCase();
+        bValue = b.title.toLowerCase();
+      } else if (sortField === 'likes') {
+        aValue = a.likes;
+        bValue = b.likes;
+      } else if (sortField === 'createdAt') {
+        aValue = a.createdAt.toDate().getTime();
+        bValue = b.createdAt.toDate().getTime();
+      }
+
+      if (sortOrder === 'asc') {
+        return aValue > bValue ? 1 : -1;
+      } else {
+        return aValue < bValue ? 1 : -1;
+      }
+    });
+
+    return filtered;
+  }, [prompts, searchQuery, sortField, sortOrder, categoryFilter, subcategoryFilter, trendingFilter]);
+
+  // Clear all filters
+  const clearFilters = () => {
+    setSearchQuery('');
+    setSortField('createdAt');
+    setSortOrder('desc');
+    setCategoryFilter('all');
+    setSubcategoryFilter('all');
+    setTrendingFilter('all');
+  };
+
+  // Check if any filters are active
+  const hasActiveFilters = useMemo(() => {
+    return (
+      searchQuery.trim() !== '' ||
+      sortField !== 'createdAt' ||
+      sortOrder !== 'desc' ||
+      categoryFilter !== 'all' ||
+      subcategoryFilter !== 'all' ||
+      trendingFilter !== 'all'
+    );
+  }, [searchQuery, sortField, sortOrder, categoryFilter, subcategoryFilter, trendingFilter]);
+
+  // Reset subcategory filter when category changes
+  useEffect(() => {
+    if (categoryFilter === 'all') {
+      setSubcategoryFilter('all');
+    }
+  }, [categoryFilter]);
+
   if (loading) {
     return (
       <AdminLayout>
@@ -149,6 +259,169 @@ export default function PromptsPage() {
             <Icons.plus size={20} />
             <span>Add Prompt</span>
           </button>
+        </div>
+
+        {/* Search and Filter Bar */}
+        <div className="bg-white rounded-lg border border-primary/10 p-4">
+          <div className="flex flex-col lg:flex-row gap-4">
+            {/* Search Input */}
+            <div className="flex-1">
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <Icons.search size={20} className="text-secondary" />
+                </div>
+                <input
+                  type="text"
+                  placeholder="Search by title, tags, or content..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full pl-10 pr-4 py-2.5 border border-primary/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent font-body text-primary placeholder-secondary/50"
+                />
+              </div>
+            </div>
+
+            {/* Filter Toggle Button */}
+            <button
+              onClick={() => setShowFilters(!showFilters)}
+              className={`flex items-center gap-2 px-4 py-2.5 border rounded-lg font-semibold transition-all ${
+                showFilters || hasActiveFilters
+                  ? 'bg-accent/20 border-accent text-primary'
+                  : 'border-primary/20 text-secondary hover:bg-accent/10'
+              }`}
+            >
+              <Icons.filter size={20} />
+              <span>Filters</span>
+              {hasActiveFilters && (
+                <span className="ml-1 px-2 py-0.5 bg-accent text-primary text-xs rounded-full font-bold">
+                  {[
+                    searchQuery.trim() !== '',
+                    categoryFilter !== 'all',
+                    subcategoryFilter !== 'all',
+                    trendingFilter !== 'all',
+                    sortField !== 'createdAt' || sortOrder !== 'desc',
+                  ].filter(Boolean).length}
+                </span>
+              )}
+            </button>
+
+            {/* Clear Filters Button */}
+            {hasActiveFilters && (
+              <button
+                onClick={clearFilters}
+                className="flex items-center gap-2 px-4 py-2.5 border border-secondary/20 text-secondary rounded-lg font-semibold hover:bg-secondary/10 transition-all"
+              >
+                <Icons.close size={20} />
+                <span>Clear</span>
+              </button>
+            )}
+          </div>
+
+          {/* Filter Options */}
+          {showFilters && (
+            <div className="mt-4 pt-4 border-t border-primary/10 space-y-4">
+              {/* First Row: Sort By, Order, Trending */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {/* Sort By */}
+                <div>
+                  <label className="block text-sm font-semibold text-primary font-body mb-2">
+                    Sort By
+                  </label>
+                  <select
+                    value={sortField}
+                    onChange={(e) => setSortField(e.target.value as SortField)}
+                    className="w-full px-3 py-2 border border-primary/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent font-body text-primary"
+                  >
+                    <option value="createdAt">Created Date</option>
+                    <option value="title">Title</option>
+                    <option value="likes">Likes</option>
+                  </select>
+                </div>
+
+                {/* Sort Order */}
+                <div>
+                  <label className="block text-sm font-semibold text-primary font-body mb-2">
+                    Order
+                  </label>
+                  <select
+                    value={sortOrder}
+                    onChange={(e) => setSortOrder(e.target.value as SortOrder)}
+                    className="w-full px-3 py-2 border border-primary/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent font-body text-primary"
+                  >
+                    <option value="asc">Ascending</option>
+                    <option value="desc">Descending</option>
+                  </select>
+                </div>
+
+                {/* Trending Filter */}
+                <div>
+                  <label className="block text-sm font-semibold text-primary font-body mb-2">
+                    Trending Status
+                  </label>
+                  <select
+                    value={trendingFilter}
+                    onChange={(e) => setTrendingFilter(e.target.value as TrendingFilter)}
+                    className="w-full px-3 py-2 border border-primary/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent font-body text-primary"
+                  >
+                    <option value="all">All Prompts</option>
+                    <option value="trending">Trending Only</option>
+                    <option value="not-trending">Not Trending</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Second Row: Category, Subcategory */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Category Filter */}
+                <div>
+                  <label className="block text-sm font-semibold text-primary font-body mb-2">
+                    Category
+                  </label>
+                  <select
+                    value={categoryFilter}
+                    onChange={(e) => setCategoryFilter(e.target.value)}
+                    className="w-full px-3 py-2 border border-primary/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent font-body text-primary"
+                  >
+                    <option value="all">All Categories</option>
+                    {categories.map((category) => (
+                      <option key={category.id} value={category.id}>
+                        {category.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Subcategory Filter */}
+                <div>
+                  <label className="block text-sm font-semibold text-primary font-body mb-2">
+                    Subcategory
+                  </label>
+                  <select
+                    value={subcategoryFilter}
+                    onChange={(e) => setSubcategoryFilter(e.target.value)}
+                    disabled={categoryFilter === 'all'}
+                    className="w-full px-3 py-2 border border-primary/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent font-body text-primary disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <option value="all">
+                      {categoryFilter === 'all' ? 'Select category first' : 'All Subcategories'}
+                    </option>
+                    {availableSubcategories.map((subcategory) => (
+                      <option key={subcategory.id} value={subcategory.id}>
+                        {subcategory.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Results Count */}
+          <div className="mt-4 pt-4 border-t border-primary/10">
+            <p className="text-sm text-secondary font-body">
+              Showing <span className="font-semibold text-primary">{filteredAndSortedPrompts.length}</span> of{' '}
+              <span className="font-semibold text-primary">{prompts.length}</span> prompts
+            </p>
+          </div>
         </div>
 
         {/* Stats Cards */}
@@ -228,43 +501,44 @@ export default function PromptsPage() {
           </div>
         )}
 
-        {/* Prompts Table */}
-        <div className="bg-white rounded-lg border border-primary/10 overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-background border-b border-primary/10">
-                <tr>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-primary font-body">
-                    Image
-                  </th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-primary font-body">
-                    Title
-                  </th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-primary font-body">
-                    Tags
-                  </th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-primary font-body">
-                    Category
-                  </th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-primary font-body">
-                    Subcategory
-                  </th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-primary font-body">
-                    Trending
-                  </th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-primary font-body">
-                    Likes
-                  </th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-primary font-body">
-                    Created
-                  </th>
-                  <th className="px-6 py-4 text-right text-sm font-semibold text-primary font-body">
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-primary/10">
-                {prompts.map((prompt) => (
+        {/* Prompts Table - Only show if there are results OR if loading */}
+        {(loading || filteredAndSortedPrompts.length > 0) && (
+          <div className="bg-white rounded-lg border border-primary/10 overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-background border-b border-primary/10">
+                  <tr>
+                    <th className="px-6 py-4 text-left text-sm font-semibold text-primary font-body">
+                      Image
+                    </th>
+                    <th className="px-6 py-4 text-left text-sm font-semibold text-primary font-body">
+                      Title
+                    </th>
+                    <th className="px-6 py-4 text-left text-sm font-semibold text-primary font-body">
+                      Tags
+                    </th>
+                    <th className="px-6 py-4 text-left text-sm font-semibold text-primary font-body">
+                      Category
+                    </th>
+                    <th className="px-6 py-4 text-left text-sm font-semibold text-primary font-body">
+                      Subcategory
+                    </th>
+                    <th className="px-6 py-4 text-left text-sm font-semibold text-primary font-body">
+                      Trending
+                    </th>
+                    <th className="px-6 py-4 text-left text-sm font-semibold text-primary font-body">
+                      Likes
+                    </th>
+                    <th className="px-6 py-4 text-left text-sm font-semibold text-primary font-body">
+                      Created
+                    </th>
+                    <th className="px-6 py-4 text-right text-sm font-semibold text-primary font-body">
+                      Actions
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-primary/10">
+                  {filteredAndSortedPrompts.map((prompt) => (
                   <tr
                     key={prompt.id}
                     className="hover:bg-background/50 transition-colors"
@@ -366,10 +640,46 @@ export default function PromptsPage() {
                     </td>
                   </tr>
                 ))}
-              </tbody>
-            </table>
+                </tbody>
+              </table>
+            </div>
           </div>
-        </div>
+        )}
+
+        {/* No Results Message - Show when filters are active but no matches */}
+        {!loading && filteredAndSortedPrompts.length === 0 && prompts.length > 0 && (
+          <div className="bg-white rounded-lg border border-primary/10 p-12 text-center">
+            <Icons.search size={48} className="text-secondary/30 mx-auto mb-4" />
+            <h3 className="text-xl font-semibold text-primary mb-2">No prompts found</h3>
+            <p className="text-secondary mb-4">
+              No prompts match your current filters. Try adjusting your search or filters.
+            </p>
+            <button
+              onClick={clearFilters}
+              className="px-4 py-2 bg-accent text-primary rounded-lg font-semibold hover:bg-accent/90 transition-all"
+            >
+              Clear Filters
+            </button>
+          </div>
+        )}
+
+        {/* No Data Message - Show when database is truly empty */}
+        {!loading && prompts.length === 0 && (
+          <div className="bg-white rounded-lg border border-primary/10 p-12 text-center">
+            <Icons.file size={48} className="text-secondary/30 mx-auto mb-4" />
+            <h3 className="text-xl font-semibold text-primary mb-2">No prompts yet</h3>
+            <p className="text-secondary mb-4">
+              There are no prompts in the system. Add your first prompt to get started.
+            </p>
+            <button
+              onClick={handleAddPrompt}
+              className="px-4 py-2 bg-accent text-primary rounded-lg font-semibold hover:bg-accent/90 transition-all inline-flex items-center gap-2"
+            >
+              <Icons.plus size={20} />
+              <span>Add Prompt</span>
+            </button>
+          </div>
+        )}
 
         {/* Delete Confirmation Modal */}
         <ConfirmModal

@@ -64,19 +64,39 @@ const menuItems: MenuItem[] = [
 
 interface SidebarProps {
   onWidthChange?: (width: number) => void;
+  isMobileOpen?: boolean;
+  onMobileClose?: () => void;
 }
 
-export default function Sidebar({ onWidthChange }: SidebarProps) {
+export default function Sidebar({ onWidthChange, isMobileOpen = false, onMobileClose }: SidebarProps) {
   const pathname = usePathname();
-  const [isCollapsed, setIsCollapsed] = useState(false);
+  // Initialize from localStorage to persist across page navigations
+  const [isCollapsed, setIsCollapsed] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('sidebarCollapsed');
+      return saved === 'true';
+    }
+    return false;
+  });
   const [openDropdowns, setOpenDropdowns] = useState<string[]>([]);
 
+  // Save collapse state to localStorage whenever it changes
   useEffect(() => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('sidebarCollapsed', String(isCollapsed));
+    }
     onWidthChange?.(isCollapsed ? 80 : 280);
+    // Close all dropdowns when collapsing sidebar
+    if (isCollapsed) {
+      setOpenDropdowns([]);
+    }
   }, [isCollapsed, onWidthChange]);
 
   // Initialize and maintain open dropdowns based on current path
   useEffect(() => {
+    // Don't auto-open dropdowns when sidebar is collapsed
+    if (isCollapsed) return;
+    
     const shouldBeOpen: string[] = [];
     
     menuItems.forEach((item) => {
@@ -93,19 +113,12 @@ export default function Sidebar({ onWidthChange }: SidebarProps) {
       }
     });
 
-    // Only update if there's a change to avoid unnecessary re-renders
-    setOpenDropdowns((prev) => {
-      const prevSet = new Set(prev);
-      const newSet = new Set(shouldBeOpen);
-      
-      // Merge: keep manually opened dropdowns + auto-open for active paths
-      prev.forEach(id => newSet.add(id));
-      
-      return Array.from(newSet);
-    });
-  }, [pathname]);
+    // Set dropdowns without merging - just use what should be open
+    setOpenDropdowns(shouldBeOpen);
+  }, [pathname, isCollapsed]);
 
   const toggleDropdown = (itemId: string) => {
+    // Don't toggle dropdowns when sidebar is collapsed
     if (isCollapsed) return;
     
     setOpenDropdowns((prev) => {
@@ -124,11 +137,29 @@ export default function Sidebar({ onWidthChange }: SidebarProps) {
   };
 
   return (
-    <aside
-      className={`fixed left-0 top-0 h-screen bg-primary flex flex-col z-[1000] transition-all duration-300 ${
-        isCollapsed ? 'w-20' : 'w-[280px]'
-      }`}
-    >
+    <>
+      {/* Mobile Overlay */}
+      {isMobileOpen && (
+        <div
+          className="fixed inset-0 bg-black/50 z-[999] lg:hidden"
+          onClick={onMobileClose}
+        />
+      )}
+
+      {/* Sidebar */}
+      <aside
+        className={`fixed left-0 top-0 h-screen bg-primary flex flex-col z-[1000] transition-all duration-300 overflow-x-hidden
+          ${
+            isCollapsed ? 'w-20' : 'w-[280px]'
+          }
+          ${
+            // Mobile: slide in/out from left
+            isMobileOpen
+              ? 'translate-x-0'
+              : '-translate-x-full lg:translate-x-0'
+          }
+        `}
+      >
       {/* Logo Section */}
       <div className={`px-6 py-5 border-b border-accent/20 flex items-center ${isCollapsed ? 'justify-center' : 'justify-start'}`}>
         <div className="flex items-center gap-3">
@@ -144,7 +175,7 @@ export default function Sidebar({ onWidthChange }: SidebarProps) {
       </div>
 
       {/* Navigation Menu */}
-      <nav className="flex-1 py-6 overflow-y-auto">
+      <nav className="flex-1 py-6 overflow-y-auto overflow-x-hidden">
         <ul className="flex flex-col gap-2 px-3">
           {menuItems.map((item) => {
             const IconComponent = item.icon;
@@ -155,7 +186,7 @@ export default function Sidebar({ onWidthChange }: SidebarProps) {
             return (
               <li key={item.id}>
                 {/* Main Menu Item */}
-                <div className="relative">
+                <div className="relative group">
                   <Link
                     href={item.href}
                     className={`
@@ -193,6 +224,26 @@ export default function Sidebar({ onWidthChange }: SidebarProps) {
                       </>
                     )}
                   </Link>
+                  
+                  {/* Tooltip for collapsed state */}
+                  {isCollapsed && (
+                    <div className="absolute left-full ml-2 top-1/2 -translate-y-1/2 px-3 py-2 bg-primary text-background text-sm font-medium rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 whitespace-nowrap z-50">
+                      {item.label}
+                      {hasSubItems && (
+                        <div className="mt-2 pt-2 border-t border-accent/20 space-y-1">
+                          {item.subItems!.map((subItem) => (
+                            <Link
+                              key={subItem.id}
+                              href={subItem.href}
+                              className="block px-2 py-1 hover:bg-accent/20 rounded text-xs"
+                            >
+                              {subItem.label}
+                            </Link>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
 
                 {/* Dropdown Sub-items */}
@@ -228,8 +279,8 @@ export default function Sidebar({ onWidthChange }: SidebarProps) {
         </ul>
       </nav>
 
-      {/* Toggle Button */}
-      <div className="p-4 border-t border-accent/20">
+      {/* Toggle Button - Hidden on mobile */}
+      <div className="hidden lg:block p-4 border-t border-accent/20">
         <button
           onClick={() => setIsCollapsed(!isCollapsed)}
           className="w-full px-4 py-3 bg-secondary text-background rounded-lg text-sm font-medium transition-all duration-200 hover:bg-accent hover:text-primary flex items-center justify-center gap-2 font-body"
@@ -244,6 +295,18 @@ export default function Sidebar({ onWidthChange }: SidebarProps) {
           )}
         </button>
       </div>
+
+      {/* Close Button - Mobile only */}
+      <div className="lg:hidden p-4 border-t border-accent/20">
+        <button
+          onClick={onMobileClose}
+          className="w-full px-4 py-3 bg-secondary text-background rounded-lg text-sm font-medium transition-all duration-200 hover:bg-accent hover:text-primary flex items-center justify-center gap-2 font-body"
+        >
+          <Icons.close size={18} strokeWidth={2} />
+          <span>Close Menu</span>
+        </button>
+      </div>
     </aside>
+    </>
   );
 }
