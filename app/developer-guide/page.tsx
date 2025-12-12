@@ -93,7 +93,7 @@ const collections: Collection[] = [
     name: 'Countries',
     icon: Icons.globe,
     description: 'Country-specific category assignments',
-    firebaseCollection: 'country',
+    firebaseCollection: 'countries',
     fields: [
       { name: 'id', type: 'string', required: true, description: 'Unique country ID', example: 'country_us' },
       { name: 'name', type: 'string', required: true, description: 'Country name', example: 'United States' },

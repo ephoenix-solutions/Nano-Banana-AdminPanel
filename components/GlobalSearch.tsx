@@ -59,6 +59,8 @@ export default function GlobalSearch({ isOpen, onClose }: GlobalSearchProps) {
   const [selectedIndex, setSelectedIndex] = useState(0);
   const resultsRef = useRef<HTMLDivElement>(null);
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const scrollRafRef = useRef<number | null>(null);
+  const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Debounce search query
   useEffect(() => {
@@ -163,22 +165,63 @@ export default function GlobalSearch({ isOpen, onClose }: GlobalSearchProps) {
     }
   }, [debouncedQuery]);
 
-  // Scroll selected item into view
+  // Scroll selected item into view with proper timing and visibility checking
   useEffect(() => {
-    if (!isOpen || !resultsRef.current) return;
+    if (!isOpen) return;
 
-    const selectedElement = resultsRef.current.querySelector(
-      `[data-index="${selectedIndex}"]`
-    ) as HTMLElement;
-
-    if (selectedElement) {
-      // Use scrollIntoView with nearest - only scrolls when item is out of view
-      selectedElement.scrollIntoView({
-        behavior: 'smooth',
-        block: 'nearest',
-        inline: 'nearest'
-      });
+    // Cancel any pending scroll operations
+    if (scrollRafRef.current !== null) {
+      cancelAnimationFrame(scrollRafRef.current);
+      scrollRafRef.current = null;
     }
+    if (scrollTimeoutRef.current !== null) {
+      clearTimeout(scrollTimeoutRef.current);
+      scrollTimeoutRef.current = null;
+    }
+
+    // Use requestAnimationFrame to ensure DOM is ready
+    scrollRafRef.current = requestAnimationFrame(() => {
+      if (!resultsRef.current) return;
+
+      const container = resultsRef.current;
+      const selectedElement = container.querySelector(
+        `[data-index="${selectedIndex}"]`
+      ) as HTMLElement;
+
+      if (!selectedElement) return;
+
+      // Get positions relative to viewport
+      const containerRect = container.getBoundingClientRect();
+      const elementRect = selectedElement.getBoundingClientRect();
+
+      // Calculate if element is out of view
+      const isAboveView = elementRect.top < containerRect.top;
+      const isBelowView = elementRect.bottom > containerRect.bottom;
+      
+      // Scroll if element is out of view
+      if (isAboveView) {
+        // Element is above viewport - scroll up
+        // Calculate how much to scroll: current scroll + difference between tops
+        const scrollAdjustment = elementRect.top - containerRect.top;
+        container.scrollTop += scrollAdjustment - 8; // 8px padding from top
+      } else if (isBelowView) {
+        // Element is below viewport - scroll down
+        // Calculate how much to scroll: current scroll + difference between bottoms
+        const scrollAdjustment = elementRect.bottom - containerRect.bottom;
+        container.scrollTop += scrollAdjustment + 8; // 8px padding from bottom
+      }
+      // If element is visible, don't scroll
+    });
+
+    // Cleanup function
+    return () => {
+      if (scrollRafRef.current !== null) {
+        cancelAnimationFrame(scrollRafRef.current);
+      }
+      if (scrollTimeoutRef.current !== null) {
+        clearTimeout(scrollTimeoutRef.current);
+      }
+    };
   }, [selectedIndex, isOpen]);
 
   // Handle keyboard navigation

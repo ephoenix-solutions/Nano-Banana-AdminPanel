@@ -71,7 +71,7 @@ export default function Header({ onMenuClick }: HeaderProps) {
           </div>
           <div className="absolute right-3 flex items-center gap-1">
             <kbd className="px-2 py-1 text-xs font-semibold text-secondary bg-white border border-primary/20 rounded shadow-sm">
-              {isMac ? '⌘' : 'Ctrl'}
+              {isMac ? 'Cmd' : 'Ctrl'}
             </kbd>
             <span className="text-secondary text-xs">+</span>
             <kbd className="px-2 py-1 text-xs font-semibold text-secondary bg-white border border-primary/20 rounded shadow-sm">

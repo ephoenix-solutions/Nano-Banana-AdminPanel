@@ -16,3 +16,4 @@ export interface UpdateCountryInput {
   isoCode?: string;
   categories?: string[];
 }
+  
