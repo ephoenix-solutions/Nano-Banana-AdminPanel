@@ -12,7 +12,8 @@
 
 require('dotenv').config({ path: '.env.local' });
 const { initializeApp } = require('firebase/app');
-const { getFirestore, collection, addDoc, Timestamp, query, where, getDocs } = require('firebase/firestore');
+const { getFirestore, collection, addDoc, Timestamp, query, where, getDocs, updateDoc, doc } = require('firebase/firestore');
+const bcrypt = require('bcryptjs');
 
 // ============================================
 // ADMIN USERS CONFIGURATION
@@ -21,15 +22,21 @@ const { getFirestore, collection, addDoc, Timestamp, query, where, getDocs } = r
 // Available fields:
 // - email (required): User email address
 // - name (required): Full name
+// - password (required): Plain text password (will be hashed automatically)
 // - language (optional): Language preference (default: 'en')
 // - photoURL (optional): Profile photo URL (default: '')
 // - provider (optional): Auth provider (default: 'manual')
 // - role (optional): User role (default: 'admin')
 // ============================================
+
+// Default password for all admin users (change after first login)
+const DEFAULT_PASSWORD = 'password123';
+
 const ADMIN_USERS = [
   {
     email: 'dhvanil@nanobanana.com',
     name: 'Dhvanil Pansuriya',
+    password: DEFAULT_PASSWORD,
     language: 'en',
     photoURL: '',
     provider: 'manual',
@@ -38,6 +45,7 @@ const ADMIN_USERS = [
   {
     email: 'deep@nanobanana.com',
     name: 'Deep Surti',
+    password: DEFAULT_PASSWORD,
     language: 'en',
     photoURL: '',
     provider: 'manual',
@@ -46,6 +54,7 @@ const ADMIN_USERS = [
   {
     email: 'hardik@nanobanana.com',
     name: 'Hardik Ramoliya',
+    password: DEFAULT_PASSWORD,
     language: 'en',
     photoURL: '',
     provider: 'manual',
@@ -78,11 +87,29 @@ async function createAdminUser(adminUser) {
 
     if (!querySnapshot.empty) {
       const existingUser = { id: querySnapshot.docs[0].id, ...querySnapshot.docs[0].data() };
+      
+      // Update password if user exists but doesn't have a password
+      if (!existingUser.password && adminUser.password) {
+        const hashedPassword = bcrypt.hashSync(adminUser.password, 10);
+        const userDocRef = doc(db, 'users', querySnapshot.docs[0].id);
+        await updateDoc(userDocRef, { password: hashedPassword });
+        console.log('✅ User password updated');
+        console.log('   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+        console.log('   📧 Email:', existingUser.email);
+        console.log('   👤 Name:', existingUser.name);
+        console.log('   🔑 Role:', existingUser.role);
+        console.log('   🔐 Password: Updated (was missing)');
+        console.log('   🆔 User ID:', existingUser.id);
+        console.log('   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+        return { exists: true, updated: true, email: adminUser.email, id: existingUser.id };
+      }
+      
       console.log('⚠️  User already exists');
       console.log('   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
       console.log('   📧 Email:', existingUser.email);
       console.log('   👤 Name:', existingUser.name);
       console.log('   🔑 Role:', existingUser.role);
+      console.log('   🔐 Password:', existingUser.password ? 'Set' : 'Not Set');
       console.log('   🆔 User ID:', existingUser.id);
       console.log('   🌐 Language:', existingUser.language);
       console.log('   🔗 Provider:', existingUser.provider);
@@ -95,10 +122,14 @@ async function createAdminUser(adminUser) {
       return { exists: true, email: adminUser.email, id: existingUser.id, data: existingUser };
     }
 
+    // Hash password before storing
+    const hashedPassword = bcrypt.hashSync(adminUser.password, 10);
+
     // Create admin user with all fields from User interface
     const adminData = {
       email: adminUser.email,
       name: adminUser.name,
+      password: hashedPassword,
       role: adminUser.role || 'admin',
       provider: adminUser.provider || 'manual',
       language: adminUser.language || 'en',
@@ -113,6 +144,7 @@ async function createAdminUser(adminUser) {
     console.log('   📧 Email:', adminData.email);
     console.log('   👤 Name:', adminData.name);
     console.log('   🔑 Role:', adminData.role);
+    console.log('   🔐 Password: Set (hashed)');
     console.log('   🆔 User ID:', docRef.id);
     console.log('   🌐 Language:', adminData.language);
     console.log('   🔗 Provider:', adminData.provider);
@@ -154,15 +186,26 @@ async function createAllAdmins() {
     const existing = results.filter(r => r.exists);
     const failed = results.filter(r => r.error);
 
+    const updated = results.filter(r => r.updated);
+    
     console.log(`✅ Created: ${created.length}`);
-    console.log(`⚠️  Already existed: ${existing.length}`);
+    console.log(`🔄 Updated (password added): ${updated.length}`);
+    console.log(`⚠️  Already existed: ${existing.length - updated.length}`);
     console.log(`❌ Failed: ${failed.length}`);
+    console.log('\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    console.log('🔐 LOGIN CREDENTIALS');
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
     console.log('\n📝 Login Instructions:');
     console.log('1. Go to: http://localhost:3000/login');
     console.log('2. Use any of the admin emails above');
-    console.log('3. Password: (any password - temporary)');
-    console.log('\n⚠️  Note: Password authentication is temporary.');
-    console.log('   For production, implement proper password hashing.\n');
+    console.log(`3. Password: ${DEFAULT_PASSWORD}`);
+    console.log('\n⚠️  IMPORTANT SECURITY NOTES:');
+    console.log('   ✅ Passwords are now properly hashed using bcrypt');
+    console.log('   ✅ Password validation is enabled');
+    console.log('   ✅ Wrong passwords will be rejected');
+    console.log(`   🔑 Default password for all admins: ${DEFAULT_PASSWORD}`);
+    console.log('   ⚠️  Please change your password after first login\n');
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
 
   } catch (error) {
     console.error('❌ Error in admin creation process:', error);

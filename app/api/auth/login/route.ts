@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import { db } from '@/config/firebase';
 import jwt from 'jsonwebtoken';
+import bcrypt from 'bcryptjs';
 import { User } from '@/lib/types/user.types';
 
 const JWT_SECRET = process.env.NEXT_PUBLIC_JWT_SECRET || 'your-secret-key-change-this-in-production';
@@ -38,6 +39,22 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { success: false, message: 'Access denied. Admin privileges required.' },
         { status: 403 }
+      );
+    }
+
+    // Verify password
+    if (!user.password) {
+      return NextResponse.json(
+        { success: false, message: 'Password not set for this account. Please contact administrator.' },
+        { status: 401 }
+      );
+    }
+
+    const isPasswordValid = bcrypt.compareSync(password, user.password);
+    if (!isPasswordValid) {
+      return NextResponse.json(
+        { success: false, message: 'Invalid email or password' },
+        { status: 401 }
       );
     }
 

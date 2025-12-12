@@ -1,12 +1,11 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useAppDispatch, useAppSelector } from '@/lib/store/hooks';
+import { useAppDispatch } from '@/lib/store/hooks';
 import { checkAuth } from '@/lib/store/authSlice';
 
 export default function AuthInitializer({ children }: { children: React.ReactNode }) {
   const dispatch = useAppDispatch();
-  const { isLoading } = useAppSelector((state) => state.auth);
   const [initialized, setInitialized] = useState(false);
 
   useEffect(() => {
@@ -15,7 +14,8 @@ export default function AuthInitializer({ children }: { children: React.ReactNod
     }
   }, [dispatch, initialized]);
 
-  if (!initialized || isLoading) {
+  // Only show loading during initial auth check, not during login attempts
+  if (!initialized) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center">
