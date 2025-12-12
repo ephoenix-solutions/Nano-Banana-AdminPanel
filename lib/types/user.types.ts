@@ -10,6 +10,7 @@ export interface User {
   photoURL: string;
   provider: string;
   role: string; // 'user' or 'admin'
+  password?: string; // Hashed password (optional for backward compatibility)
 }
 
 export interface CreateUserInput {
@@ -19,6 +20,7 @@ export interface CreateUserInput {
   photoURL?: string;
   provider: string;
   role?: string; // Optional, defaults to 'user'
+  password?: string; // Hashed password (optional)
 }
 
 export interface UpdateUserInput {
@@ -28,4 +30,5 @@ export interface UpdateUserInput {
   photoURL?: string;
   provider?: string;
   role?: string;
+  password?: string; // Hashed password (optional)
 }
