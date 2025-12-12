@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import { ReduxProvider } from "@/lib/store/ReduxProvider";
+import AuthInitializer from "@/components/auth/AuthInitializer";
 
 export const metadata: Metadata = {
   title: "Nano Banana - Admin Panel",
@@ -14,7 +16,11 @@ export default function RootLayout({
   return (
     <html lang="en"  data-arp="">
       <body className="antialiased">
-        {children}
+        <ReduxProvider>
+          <AuthInitializer>
+            {children}
+          </AuthInitializer>
+        </ReduxProvider>
       </body>
     </html>
   );

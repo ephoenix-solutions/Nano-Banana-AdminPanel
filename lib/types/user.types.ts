@@ -9,6 +9,7 @@ export interface User {
   name: string;
   photoURL: string;
   provider: string;
+  role: string; // 'user' or 'admin'
 }
 
 export interface CreateUserInput {
@@ -17,6 +18,7 @@ export interface CreateUserInput {
   name: string;
   photoURL?: string;
   provider: string;
+  role?: string; // Optional, defaults to 'user'
 }
 
 export interface UpdateUserInput {
@@ -25,4 +27,5 @@ export interface UpdateUserInput {
   name?: string;
   photoURL?: string;
   provider?: string;
+  role?: string;
 }

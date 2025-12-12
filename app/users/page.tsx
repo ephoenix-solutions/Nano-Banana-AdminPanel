@@ -119,6 +119,19 @@ export default function UsersPage() {
       ),
     },
     {
+      key: 'role',
+      header: 'Role',
+      render: (user: User) => (
+        <span className={`inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium capitalize ${
+          user.role === 'admin' 
+            ? 'bg-secondary/20 text-secondary' 
+            : 'bg-accent/20 text-primary'
+        }`}>
+          {user.role || 'user'}
+        </span>
+      ),
+    },
+    {
       key: 'language',
       header: 'Language',
       render: (user: User) => (

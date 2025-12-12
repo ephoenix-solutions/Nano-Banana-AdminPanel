@@ -185,6 +185,14 @@ export default function ViewUserPage() {
                   {user.email}
                 </p>
                 <div className="flex items-center gap-3">
+                  <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium capitalize ${
+                    user.role === 'admin' 
+                      ? 'bg-secondary/20 text-secondary' 
+                      : 'bg-accent/20 text-primary'
+                  }`}>
+                    <Icons.users size={16} className="mr-2" />
+                    {user.role || 'user'}
+                  </span>
                   <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-accent/20 text-primary capitalize">
                     <Icons.globe size={16} className="mr-2" />
                     {user.provider}
@@ -230,6 +238,23 @@ export default function ViewUserPage() {
                     <p className="text-sm text-secondary font-body mb-1">Email Address</p>
                     <p className="text-base font-semibold text-primary font-body break-all">
                       {user.email}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Role */}
+              <div className="bg-background rounded-lg p-4 border border-primary/10">
+                <div className="flex items-start gap-3">
+                  <div className={`w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 ${
+                    user.role === 'admin' ? 'bg-secondary/20' : 'bg-accent/20'
+                  }`}>
+                    <Icons.users size={20} className={user.role === 'admin' ? 'text-secondary' : 'text-accent'} />
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-sm text-secondary font-body mb-1">User Role</p>
+                    <p className="text-base font-semibold text-primary font-body capitalize">
+                      {user.role || 'user'}
                     </p>
                   </div>
                 </div>
