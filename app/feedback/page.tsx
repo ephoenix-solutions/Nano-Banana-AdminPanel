@@ -1,16 +1,21 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import AdminLayout from '@/components/AdminLayout';
 import Breadcrumbs from '@/components/Breadcrumbs';
 import ConfirmModal from '@/components/ConfirmModal';
 import { Icons } from '@/config/icons';
 import { Feedback } from '@/lib/types/feedback.types';
 import { getAllFeedback, deleteFeedback } from '@/lib/services/feedback.service';
+import { getUserById } from '@/lib/services/user.service';
+import { User } from '@/lib/types/user.types';
 import { Timestamp } from 'firebase/firestore';
 
 export default function FeedbackPage() {
+  const router = useRouter();
   const [feedback, setFeedback] = useState<Feedback[]>([]);
+  const [users, setUsers] = useState<Record<string, User>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [deleteModal, setDeleteModal] = useState<{
@@ -31,6 +36,25 @@ export default function FeedbackPage() {
       setError(null);
       const data = await getAllFeedback();
       setFeedback(data);
+      
+      // Fetch user data for each unique userId
+      const uniqueUserIds = [...new Set(data.map(f => f.userId))];
+      const userDataMap: Record<string, User> = {};
+      
+      await Promise.all(
+        uniqueUserIds.map(async (userId) => {
+          try {
+            const user = await getUserById(userId);
+            if (user) {
+              userDataMap[userId] = user;
+            }
+          } catch (err) {
+            console.error(`Error fetching user ${userId}:`, err);
+          }
+        })
+      );
+      
+      setUsers(userDataMap);
     } catch (err) {
       console.error('Error fetching feedback:', err);
       setError('Failed to load feedback');
@@ -71,16 +95,13 @@ export default function FeedbackPage() {
   };
 
   const renderStars = (rating: number) => {
+    const emojis = ["😡", "😕", "😐", "🙂", "🥰"];
+    const emoji = emojis[rating - 1] || "😐";
+    
     return (
-      <div className="flex items-center gap-1">
-        {[1, 2, 3, 4, 5].map((star) => (
-          <Icons.check
-            key={star}
-            size={16}
-            className={star <= rating ? 'text-accent fill-accent' : 'text-secondary/30'}
-          />
-        ))}
-        <span className="ml-1 text-sm font-semibold text-primary">
+      <div className="flex items-center gap-2">
+        <span className="text-2xl">{emoji}</span>
+        <span className="text-sm font-semibold text-primary">
           {rating}/5
         </span>
       </div>
@@ -205,7 +226,7 @@ export default function FeedbackPage() {
               <thead className="bg-background border-b border-primary/10">
                 <tr>
                   <th className="px-6 py-4 text-left text-sm font-semibold text-primary font-body">
-                    User ID
+                    User
                   </th>
                   <th className="px-6 py-4 text-left text-sm font-semibold text-primary font-body">
                     Message
@@ -214,7 +235,10 @@ export default function FeedbackPage() {
                     Rating
                   </th>
                   <th className="px-6 py-4 text-left text-sm font-semibold text-primary font-body">
-                    Device Info
+                    OS & Version
+                  </th>
+                  <th className="px-6 py-4 text-left text-sm font-semibold text-primary font-body">
+                    Model
                   </th>
                   <th className="px-6 py-4 text-left text-sm font-semibold text-primary font-body">
                     Date
@@ -231,9 +255,22 @@ export default function FeedbackPage() {
                     className="hover:bg-background/50 transition-colors"
                   >
                     <td className="px-6 py-4">
-                      <span className="text-sm text-primary font-mono">
-                        {item.userId.substring(0, 8)}...
-                      </span>
+                      <div className="flex flex-col gap-1">
+                        {users[item.userId] ? (
+                          <>
+                            <span className="text-sm font-medium text-primary">
+                              {users[item.userId].name}
+                            </span>
+                            <span className="text-xs text-secondary">
+                              {users[item.userId].email}
+                            </span>
+                          </>
+                        ) : (
+                          <span className="text-sm text-secondary font-mono">
+                            {item.userId.substring(0, 8)}
+                          </span>
+                        )}
+                      </div>
                     </td>
                     <td className="px-6 py-4">
                       <div className="max-w-md">
@@ -244,37 +281,51 @@ export default function FeedbackPage() {
                     </td>
                     <td className="px-6 py-4">{renderStars(item.rating)}</td>
                     <td className="px-6 py-4">
-                      <div className="text-sm text-primary space-y-1">
-                        <div className="flex items-center gap-2">
-                          <span className="text-secondary">OS:</span>
-                          <span className="font-medium capitalize">
+                      <div className="flex flex-wrap gap-2">
+                        {item.deviceInfo?.os ? (
+                          <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-accent/20 text-primary">
                             {item.deviceInfo.os}
                           </span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <span className="text-secondary">Model:</span>
-                          <span className="font-medium">
-                            {item.deviceInfo.model}
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <span className="text-secondary">Version:</span>
-                          <span className="font-medium">
+                        ) : null}
+                        {item.deviceInfo?.appVersion ? (
+                          <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-accent/20 text-primary">
                             {item.deviceInfo.appVersion}
                           </span>
-                        </div>
+                        ) : null}
+                        {!item.deviceInfo?.os && !item.deviceInfo?.appVersion && (
+                          <span className="text-sm text-secondary">None</span>
+                        )}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="flex flex-wrap gap-2">
+                        {item.deviceInfo?.model ? (
+                          <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-accent/20 text-primary">
+                            {item.deviceInfo.model}
+                          </span>
+                        ) : (
+                          <span className="text-sm text-secondary">None</span>
+                        )}
                       </div>
                     </td>
                     <td className="px-6 py-4 text-sm text-primary">
                       {formatTimestamp(item.createdAt)}
                     </td>
                     <td className="px-6 py-4 text-right">
-                      <button
-                        onClick={() => handleDeleteClick(item)}
-                        className="px-3 py-1.5 text-sm font-medium text-white bg-secondary hover:bg-secondary/90 rounded-md transition-all"
-                      >
-                        Delete
-                      </button>
+                      <div className="flex items-center justify-end gap-2">
+                        <button
+                          onClick={() => router.push(`/feedback/view/${item.id}`)}
+                          className="px-3 py-1.5 text-sm font-medium text-primary bg-accent/20 hover:bg-accent/30 rounded-md transition-all"
+                        >
+                          View
+                        </button>
+                        <button
+                          onClick={() => handleDeleteClick(item)}
+                          className="px-3 py-1.5 text-sm font-medium text-white bg-secondary hover:bg-secondary/90 rounded-md transition-all"
+                        >
+                          Delete
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
