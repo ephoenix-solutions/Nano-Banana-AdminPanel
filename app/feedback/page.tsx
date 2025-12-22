@@ -12,7 +12,7 @@ import { getUserById } from '@/lib/services/user.service';
 import { User } from '@/lib/types/user.types';
 import { Timestamp } from 'firebase/firestore';
 
-type SortField = 'createdAt' | 'rating';
+type SortField = 'user' | 'rating' | 'createdAt';
 type SortOrder = 'asc' | 'desc';
 type RatingFilter = 'all' | '1' | '2' | '3' | '4' | '5';
 
@@ -35,7 +35,6 @@ export default function FeedbackPage() {
   const [sortField, setSortField] = useState<SortField>('createdAt');
   const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
   const [ratingFilter, setRatingFilter] = useState<RatingFilter>('all');
-  const [showFilters, setShowFilters] = useState(false);
 
   useEffect(() => {
     fetchFeedback();
@@ -129,6 +128,20 @@ export default function FeedbackPage() {
     return feedback.filter((f) => f.rating === rating).length;
   };
 
+  const getUserName = (userId: string) => {
+    return users[userId]?.name || 'Unknown User';
+  };
+
+  // Handle sorting
+  const handleSort = (field: SortField) => {
+    if (sortField === field) {
+      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortField(field);
+      setSortOrder('asc');
+    }
+  };
+
   // Filter and Sort Feedback
   const filteredAndSortedFeedback = useMemo(() => {
     let filtered = [...feedback];
@@ -160,12 +173,22 @@ export default function FeedbackPage() {
       let aValue: any;
       let bValue: any;
 
-      if (sortField === 'createdAt') {
-        aValue = a.createdAt.toDate().getTime();
-        bValue = b.createdAt.toDate().getTime();
-      } else {
-        aValue = a.rating;
-        bValue = b.rating;
+      switch (sortField) {
+        case 'user':
+          aValue = getUserName(a.userId).toLowerCase();
+          bValue = getUserName(b.userId).toLowerCase();
+          break;
+        case 'rating':
+          aValue = a.rating;
+          bValue = b.rating;
+          break;
+        case 'createdAt':
+          aValue = a.createdAt.toDate().getTime();
+          bValue = b.createdAt.toDate().getTime();
+          break;
+        default:
+          aValue = a.createdAt.toDate().getTime();
+          bValue = b.createdAt.toDate().getTime();
       }
 
       if (sortOrder === 'asc') {
@@ -190,11 +213,61 @@ export default function FeedbackPage() {
   const hasActiveFilters = useMemo(() => {
     return (
       searchQuery.trim() !== '' ||
-      sortField !== 'createdAt' ||
-      sortOrder !== 'desc' ||
       ratingFilter !== 'all'
     );
-  }, [searchQuery, sortField, sortOrder, ratingFilter]);
+  }, [searchQuery, ratingFilter]);
+
+  // Sortable header component
+  const SortableHeader = ({ field, label }: { field: SortField; label: string }) => {
+    const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
+      e.preventDefault();
+      e.currentTarget.blur();
+      if (document.activeElement instanceof HTMLElement) {
+        document.activeElement.blur();
+      }
+      handleSort(field);
+    };
+
+    const handleMouseDown = (e: React.MouseEvent<HTMLButtonElement>) => {
+      e.preventDefault();
+    };
+
+    const handlePointerDown = (e: React.PointerEvent<HTMLButtonElement>) => {
+      e.preventDefault();
+    };
+
+    return (
+      <button
+        type="button"
+        onClick={handleClick}
+        onMouseDown={handleMouseDown}
+        onPointerDown={handlePointerDown}
+        className="flex items-center gap-2 transition-all cursor-pointer group"
+        style={{ outline: 'none', WebkitTapHighlightColor: 'transparent' }}
+        tabIndex={-1}
+      >
+        <span>{label}</span>
+        <div className="flex flex-col">
+          <Icons.chevronUp
+            size={16}
+            className={`-mb-1 transition-all group-hover:scale-110 ${
+              sortField === field && sortOrder === 'asc'
+                ? 'text-accent'
+                : 'text-secondary/30'
+            }`}
+          />
+          <Icons.chevronDown
+            size={16}
+            className={`-mt-1 transition-all group-hover:scale-110 ${
+              sortField === field && sortOrder === 'desc'
+                ? 'text-accent'
+                : 'text-secondary/30'
+            }`}
+          />
+        </div>
+      </button>
+    );
+  };
 
   if (loading) {
     return (
@@ -226,7 +299,7 @@ export default function FeedbackPage() {
 
         {/* Search and Filter Bar */}
         <div className="bg-white rounded-lg border border-primary/10 p-4">
-          <div className="flex flex-col lg:flex-row gap-4">
+          <div className="flex flex-col md:flex-row gap-4">
             {/* Search Input */}
             <div className="flex-1">
               <div className="relative">
@@ -243,93 +316,33 @@ export default function FeedbackPage() {
               </div>
             </div>
 
-            {/* Filter Toggle Button */}
-            <button
-              onClick={() => setShowFilters(!showFilters)}
-              className={`flex items-center gap-2 px-4 py-2.5 border rounded-lg font-semibold transition-all ${
-                showFilters || hasActiveFilters
-                  ? 'bg-accent/20 border-accent text-primary'
-                  : 'border-primary/20 text-secondary hover:bg-accent/10'
-              }`}
-            >
-              <Icons.filter size={20} />
-              <span>Filters</span>
-              {hasActiveFilters && (
-                <span className="ml-1 px-2 py-0.5 bg-accent text-primary text-xs rounded-full font-bold">
-                  {[
-                    searchQuery.trim() !== '',
-                    ratingFilter !== 'all',
-                    sortField !== 'createdAt' || sortOrder !== 'desc',
-                  ].filter(Boolean).length}
-                </span>
-              )}
-            </button>
+            {/* Rating Filter */}
+            <div className="w-full md:w-48">
+              <select
+                value={ratingFilter}
+                onChange={(e) => setRatingFilter(e.target.value as RatingFilter)}
+                className="w-full px-3 py-2.5 border border-primary/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent font-body text-primary"
+              >
+                <option value="all">All Ratings</option>
+                <option value="5">5 Stars (🥰)</option>
+                <option value="4">4 Stars (🙂)</option>
+                <option value="3">3 Stars (😐)</option>
+                <option value="2">2 Stars (😕)</option>
+                <option value="1">1 Star (😡)</option>
+              </select>
+            </div>
 
             {/* Clear Filters Button */}
             {hasActiveFilters && (
               <button
                 onClick={clearFilters}
-                className="flex items-center gap-2 px-4 py-2.5 border border-secondary/20 text-secondary rounded-lg font-semibold hover:bg-secondary/10 transition-all"
+                className="flex items-center justify-center gap-2 px-4 py-2.5 border border-secondary/20 text-secondary rounded-lg font-semibold hover:bg-secondary/10 transition-all whitespace-nowrap"
               >
                 <Icons.close size={20} />
                 <span>Clear</span>
               </button>
             )}
           </div>
-
-          {/* Filter Options */}
-          {showFilters && (
-            <div className="mt-4 pt-4 border-t border-primary/10 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {/* Sort By */}
-              <div>
-                <label className="block text-sm font-semibold text-primary font-body mb-2">
-                  Sort By
-                </label>
-                <select
-                  value={sortField}
-                  onChange={(e) => setSortField(e.target.value as SortField)}
-                  className="w-full px-3 py-2 border border-primary/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent font-body text-primary"
-                >
-                  <option value="createdAt">Date</option>
-                  <option value="rating">Rating</option>
-                </select>
-              </div>
-
-              {/* Sort Order */}
-              <div>
-                <label className="block text-sm font-semibold text-primary font-body mb-2">
-                  Order
-                </label>
-                <select
-                  value={sortOrder}
-                  onChange={(e) => setSortOrder(e.target.value as SortOrder)}
-                  className="w-full px-3 py-2 border border-primary/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent font-body text-primary"
-                >
-                  <option value="asc">Ascending</option>
-                  <option value="desc">Descending</option>
-                </select>
-              </div>
-
-              {/* Rating Filter */}
-              <div>
-                <label className="block text-sm font-semibold text-primary font-body mb-2">
-                  Rating
-                </label>
-                <select
-                  value={ratingFilter}
-                  onChange={(e) => setRatingFilter(e.target.value as RatingFilter)}
-                  className="w-full px-3 py-2 border border-primary/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent font-body text-primary"
-                >
-                  <option value="all">All Ratings</option>
-                  <option value="5">5 Stars (🥰)</option>
-                  <option value="4">4 Stars (🙂)</option>
-                  <option value="3">3 Stars (😐)</option>
-                  <option value="2">2 Stars (😕)</option>
-                  <option value="1">1 Star (😡)</option>
-                </select>
-              </div>
-            </div>
-          )}
 
           {/* Results Count */}
           <div className="mt-4 pt-4 border-t border-primary/10">
@@ -421,13 +434,13 @@ export default function FeedbackPage() {
                 <thead className="bg-background border-b border-primary/10">
                   <tr>
                     <th className="px-6 py-4 text-left text-sm font-semibold text-primary font-body">
-                      User
+                      <SortableHeader field="user" label="User" />
                     </th>
                     <th className="px-6 py-4 text-left text-sm font-semibold text-primary font-body">
                       Message
                     </th>
                     <th className="px-6 py-4 text-left text-sm font-semibold text-primary font-body">
-                      Rating
+                      <SortableHeader field="rating" label="Rating" />
                     </th>
                     <th className="px-6 py-4 text-left text-sm font-semibold text-primary font-body">
                       OS & Version
@@ -436,18 +449,22 @@ export default function FeedbackPage() {
                       Model
                     </th>
                     <th className="px-6 py-4 text-left text-sm font-semibold text-primary font-body">
-                      Date
+                      <SortableHeader field="createdAt" label="Date" />
                     </th>
                     <th className="px-6 py-4 text-right text-sm font-semibold text-primary font-body">
                       Actions
                     </th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-primary/10">
-                  {filteredAndSortedFeedback.map((item) => (
+                <tbody>
+                  {filteredAndSortedFeedback.map((item, index) => (
                   <tr
                     key={item.id}
-                    className="hover:bg-background/50 transition-colors"
+                    className={`transition-colors ${
+                      index % 2 === 0
+                        ? 'bg-white hover:bg-background/50'
+                        : 'bg-background hover:bg-background-200'
+                    }`}
                   >
                     <td className="px-6 py-4">
                       <div className="flex flex-col gap-1">

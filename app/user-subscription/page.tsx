@@ -18,7 +18,7 @@ import { getAllUsers } from '@/lib/services/user.service';
 import { getAllSubscriptionPlans } from '@/lib/services/subscription-plan.service';
 import { Timestamp } from 'firebase/firestore';
 
-type SortField = 'startDate' | 'endDate';
+type SortField = 'user' | 'plan' | 'startDate' | 'endDate' | 'paymentMethod';
 type SortOrder = 'asc' | 'desc';
 type StatusFilter = 'all' | 'active' | 'inactive' | 'expired';
 type PaymentMethodFilter = 'all' | 'google' | 'apple';
@@ -45,7 +45,6 @@ export default function UserSubscriptionsPage() {
   const [planFilter, setPlanFilter] = useState<string>('all');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
   const [paymentMethodFilter, setPaymentMethodFilter] = useState<PaymentMethodFilter>('all');
-  const [showFilters, setShowFilters] = useState(false);
 
   useEffect(() => {
     fetchData();
@@ -132,6 +131,16 @@ export default function UserSubscriptionsPage() {
     return endDate.toDate() < new Date();
   };
 
+  // Handle sorting
+  const handleSort = (field: SortField) => {
+    if (sortField === field) {
+      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortField(field);
+      setSortOrder('asc');
+    }
+  };
+
   // Filter and Sort Subscriptions
   const filteredAndSortedSubscriptions = useMemo(() => {
     let filtered = [...subscriptions];
@@ -167,15 +176,33 @@ export default function UserSubscriptionsPage() {
 
     // Sort
     filtered.sort((a, b) => {
-      let aValue: number;
-      let bValue: number;
+      let aValue: any;
+      let bValue: any;
 
-      if (sortField === 'startDate') {
-        aValue = a.startDate.toDate().getTime();
-        bValue = b.startDate.toDate().getTime();
-      } else {
-        aValue = a.endDate.toDate().getTime();
-        bValue = b.endDate.toDate().getTime();
+      switch (sortField) {
+        case 'user':
+          aValue = getUserName(a.userId).toLowerCase();
+          bValue = getUserName(b.userId).toLowerCase();
+          break;
+        case 'plan':
+          aValue = getPlanName(a.planId).toLowerCase();
+          bValue = getPlanName(b.planId).toLowerCase();
+          break;
+        case 'startDate':
+          aValue = a.startDate.toDate().getTime();
+          bValue = b.startDate.toDate().getTime();
+          break;
+        case 'endDate':
+          aValue = a.endDate.toDate().getTime();
+          bValue = b.endDate.toDate().getTime();
+          break;
+        case 'paymentMethod':
+          aValue = (a.paymentMethod || '').toLowerCase();
+          bValue = (b.paymentMethod || '').toLowerCase();
+          break;
+        default:
+          aValue = a.startDate.toDate().getTime();
+          bValue = b.startDate.toDate().getTime();
       }
 
       if (sortOrder === 'asc') {
@@ -186,7 +213,7 @@ export default function UserSubscriptionsPage() {
     });
 
     return filtered;
-  }, [subscriptions, searchQuery, sortField, sortOrder, planFilter, statusFilter, paymentMethodFilter, users]);
+  }, [subscriptions, searchQuery, sortField, sortOrder, planFilter, statusFilter, paymentMethodFilter, users, plans]);
 
   // Clear all filters
   const clearFilters = () => {
@@ -202,13 +229,63 @@ export default function UserSubscriptionsPage() {
   const hasActiveFilters = useMemo(() => {
     return (
       searchQuery.trim() !== '' ||
-      sortField !== 'startDate' ||
-      sortOrder !== 'desc' ||
       planFilter !== 'all' ||
       statusFilter !== 'all' ||
       paymentMethodFilter !== 'all'
     );
-  }, [searchQuery, sortField, sortOrder, planFilter, statusFilter, paymentMethodFilter]);
+  }, [searchQuery, planFilter, statusFilter, paymentMethodFilter]);
+
+  // Sortable header component
+  const SortableHeader = ({ field, label }: { field: SortField; label: string }) => {
+    const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
+      e.preventDefault();
+      e.currentTarget.blur();
+      if (document.activeElement instanceof HTMLElement) {
+        document.activeElement.blur();
+      }
+      handleSort(field);
+    };
+
+    const handleMouseDown = (e: React.MouseEvent<HTMLButtonElement>) => {
+      e.preventDefault();
+    };
+
+    const handlePointerDown = (e: React.PointerEvent<HTMLButtonElement>) => {
+      e.preventDefault();
+    };
+
+    return (
+      <button
+        type="button"
+        onClick={handleClick}
+        onMouseDown={handleMouseDown}
+        onPointerDown={handlePointerDown}
+        className="flex items-center gap-2 transition-all cursor-pointer group"
+        style={{ outline: 'none', WebkitTapHighlightColor: 'transparent' }}
+        tabIndex={-1}
+      >
+        <span>{label}</span>
+        <div className="flex flex-col">
+          <Icons.chevronUp
+            size={16}
+            className={`-mb-1 transition-all group-hover:scale-110 ${
+              sortField === field && sortOrder === 'asc'
+                ? 'text-accent'
+                : 'text-secondary/30'
+            }`}
+          />
+          <Icons.chevronDown
+            size={16}
+            className={`-mt-1 transition-all group-hover:scale-110 ${
+              sortField === field && sortOrder === 'desc'
+                ? 'text-accent'
+                : 'text-secondary/30'
+            }`}
+          />
+        </div>
+      </button>
+    );
+  };
 
   if (loading) {
     return (
@@ -240,7 +317,7 @@ export default function UserSubscriptionsPage() {
 
         {/* Search and Filter Bar */}
         <div className="bg-white rounded-lg border border-primary/10 p-4">
-          <div className="flex flex-col lg:flex-row gap-4">
+          <div className="flex flex-col md:flex-row gap-4">
             {/* Search Input */}
             <div className="flex-1">
               <div className="relative">
@@ -257,134 +334,60 @@ export default function UserSubscriptionsPage() {
               </div>
             </div>
 
-            {/* Filter Toggle Button */}
-            <button
-              onClick={() => setShowFilters(!showFilters)}
-              className={`flex items-center gap-2 px-4 py-2.5 border rounded-lg font-semibold transition-all ${
-                showFilters || hasActiveFilters
-                  ? 'bg-accent/20 border-accent text-primary'
-                  : 'border-primary/20 text-secondary hover:bg-accent/10'
-              }`}
-            >
-              <Icons.filter size={20} />
-              <span>Filters</span>
-              {hasActiveFilters && (
-                <span className="ml-1 px-2 py-0.5 bg-accent text-primary text-xs rounded-full font-bold">
-                  {[
-                    searchQuery.trim() !== '',
-                    planFilter !== 'all',
-                    statusFilter !== 'all',
-                    paymentMethodFilter !== 'all',
-                    sortField !== 'startDate' || sortOrder !== 'desc',
-                  ].filter(Boolean).length}
-                </span>
-              )}
-            </button>
+            {/* Plan Filter */}
+            <div className="w-full md:w-48">
+              <select
+                value={planFilter}
+                onChange={(e) => setPlanFilter(e.target.value)}
+                className="w-full px-3 py-2.5 border border-primary/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent font-body text-primary"
+              >
+                <option value="all">All Plans</option>
+                {plans.map((plan) => (
+                  <option key={plan.id} value={plan.id}>
+                    {plan.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Status Filter */}
+            <div className="w-full md:w-48">
+              <select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value as StatusFilter)}
+                className="w-full px-3 py-2.5 border border-primary/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent font-body text-primary"
+              >
+                <option value="all">All Status</option>
+                <option value="active">Active</option>
+                <option value="inactive">Inactive</option>
+                <option value="expired">Expired</option>
+              </select>
+            </div>
+
+            {/* Payment Method Filter */}
+            <div className="w-full md:w-48">
+              <select
+                value={paymentMethodFilter}
+                onChange={(e) => setPaymentMethodFilter(e.target.value as PaymentMethodFilter)}
+                className="w-full px-3 py-2.5 border border-primary/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent font-body text-primary"
+              >
+                <option value="all">All Methods</option>
+                <option value="google">Google Pay</option>
+                <option value="apple">Apple Pay</option>
+              </select>
+            </div>
 
             {/* Clear Filters Button */}
             {hasActiveFilters && (
               <button
                 onClick={clearFilters}
-                className="flex items-center gap-2 px-4 py-2.5 border border-secondary/20 text-secondary rounded-lg font-semibold hover:bg-secondary/10 transition-all"
+                className="flex items-center justify-center gap-2 px-4 py-2.5 border border-secondary/20 text-secondary rounded-lg font-semibold hover:bg-secondary/10 transition-all whitespace-nowrap"
               >
                 <Icons.close size={20} />
                 <span>Clear</span>
               </button>
             )}
           </div>
-
-          {/* Filter Options */}
-          {showFilters && (
-            <div className="mt-4 pt-4 border-t border-primary/10 space-y-4">
-              {/* First Row: Sort By, Order, Status */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {/* Sort By */}
-                <div>
-                  <label className="block text-sm font-semibold text-primary font-body mb-2">
-                    Sort By
-                  </label>
-                  <select
-                    value={sortField}
-                    onChange={(e) => setSortField(e.target.value as SortField)}
-                    className="w-full px-3 py-2 border border-primary/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent font-body text-primary"
-                  >
-                    <option value="startDate">Start Date</option>
-                    <option value="endDate">End Date</option>
-                  </select>
-                </div>
-
-                {/* Sort Order */}
-                <div>
-                  <label className="block text-sm font-semibold text-primary font-body mb-2">
-                    Order
-                  </label>
-                  <select
-                    value={sortOrder}
-                    onChange={(e) => setSortOrder(e.target.value as SortOrder)}
-                    className="w-full px-3 py-2 border border-primary/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent font-body text-primary"
-                  >
-                    <option value="asc">Ascending (Old-New)</option>
-                    <option value="desc">Descending (New-Old)</option>
-                  </select>
-                </div>
-
-                {/* Status Filter */}
-                <div>
-                  <label className="block text-sm font-semibold text-primary font-body mb-2">
-                    Status
-                  </label>
-                  <select
-                    value={statusFilter}
-                    onChange={(e) => setStatusFilter(e.target.value as StatusFilter)}
-                    className="w-full px-3 py-2 border border-primary/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent font-body text-primary"
-                  >
-                    <option value="all">All Subscriptions</option>
-                    <option value="active">Active Only</option>
-                    <option value="inactive">Inactive Only</option>
-                    <option value="expired">Expired Only</option>
-                  </select>
-                </div>
-              </div>
-
-              {/* Second Row: Plan, Payment Method */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {/* Plan Filter */}
-                <div>
-                  <label className="block text-sm font-semibold text-primary font-body mb-2">
-                    Subscription Plan
-                  </label>
-                  <select
-                    value={planFilter}
-                    onChange={(e) => setPlanFilter(e.target.value)}
-                    className="w-full px-3 py-2 border border-primary/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent font-body text-primary"
-                  >
-                    <option value="all">All Plans</option>
-                    {plans.map((plan) => (
-                      <option key={plan.id} value={plan.id}>
-                        {plan.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                {/* Payment Method Filter */}
-                <div>
-                  <label className="block text-sm font-semibold text-primary font-body mb-2">
-                    Payment Method
-                  </label>
-                  <select
-                    value={paymentMethodFilter}
-                    onChange={(e) => setPaymentMethodFilter(e.target.value as PaymentMethodFilter)}
-                    className="w-full px-3 py-2 border border-primary/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent font-body text-primary"
-                  >
-                    <option value="all">All Methods</option>
-                    <option value="google">Google Pay</option>
-                    <option value="apple">Apple Pay</option>
-                  </select>
-                </div>
-              </div>
-            </div>
-          )}
 
           {/* Results Count */}
           <div className="mt-4 pt-4 border-t border-primary/10">
@@ -438,7 +441,7 @@ export default function UserSubscriptionsPage() {
                 </p>
               </div>
               <div className="w-12 h-12 bg-accent/20 rounded-lg flex items-center justify-center">
-                <Icons.clock size={24} className="text-acfcent" />
+                <Icons.clock size={24} className="text-accent" />
               </div>
             </div>
           </div>
@@ -479,19 +482,19 @@ export default function UserSubscriptionsPage() {
                 <thead className="bg-background border-b border-primary/10">
                   <tr>
                     <th className="px-6 py-4 text-left text-sm font-semibold text-primary font-body">
-                      User
+                      <SortableHeader field="user" label="User" />
                     </th>
                     <th className="px-6 py-4 text-left text-sm font-semibold text-primary font-body">
-                      Plan
+                      <SortableHeader field="plan" label="Plan" />
                     </th>
                     <th className="px-6 py-4 text-left text-sm font-semibold text-primary font-body">
-                      Start Date
+                      <SortableHeader field="startDate" label="Start Date" />
                     </th>
                     <th className="px-6 py-4 text-left text-sm font-semibold text-primary font-body">
-                      End Date
+                      <SortableHeader field="endDate" label="End Date" />
                     </th>
                     <th className="px-6 py-4 text-left text-sm font-semibold text-primary font-body">
-                      Payment Method
+                      <SortableHeader field="paymentMethod" label="Payment Method" />
                     </th>
                     <th className="px-6 py-4 text-left text-sm font-semibold text-primary font-body">
                       Status
@@ -501,13 +504,17 @@ export default function UserSubscriptionsPage() {
                     </th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-primary/10">
-                  {filteredAndSortedSubscriptions.map((subscription) => {
+                <tbody>
+                  {filteredAndSortedSubscriptions.map((subscription, index) => {
                   const expired = isExpired(subscription.endDate);
                   return (
                     <tr
                       key={subscription.id}
-                      className="hover:bg-background/50 transition-colors"
+                      className={`transition-colors ${
+                        index % 2 === 0
+                          ? 'bg-white hover:bg-background/50'
+                          : 'bg-background hover:bg-background-200'
+                      }`}
                     >
                       <td className="px-6 py-4">
                         <div>
@@ -515,7 +522,7 @@ export default function UserSubscriptionsPage() {
                             {getUserName(subscription.userId)}
                           </p>
                           <p className="text-xs text-secondary font-mono">
-                            {subscription.userId.substring(0, 8)}...
+                            {subscription.userId}
                           </p>
                         </div>
                       </td>

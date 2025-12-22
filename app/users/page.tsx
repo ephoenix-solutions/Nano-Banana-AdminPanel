@@ -4,14 +4,13 @@ import { useEffect, useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import AdminLayout from '@/components/AdminLayout';
 import Breadcrumbs from '@/components/Breadcrumbs';
-import Table from '@/components/Table';
 import ConfirmModal from '@/components/ConfirmModal';
 import { Icons } from '@/config/icons';
 import { User } from '@/lib/types/user.types';
 import { getAllUsers, deleteUser } from '@/lib/services/user.service';
 import { Timestamp } from 'firebase/firestore';
 
-type SortField = 'name';
+type SortField = 'name' | 'email' | 'role' | 'provider' | 'createdAt' | 'lastLogin';
 type SortOrder = 'asc' | 'desc';
 type RoleFilter = 'all' | 'admin' | 'user';
 type ProviderFilter = 'all' | 'google' | 'apple' | 'manual';
@@ -35,7 +34,6 @@ export default function UsersPage() {
   const [sortOrder, setSortOrder] = useState<SortOrder>('asc');
   const [roleFilter, setRoleFilter] = useState<RoleFilter>('all');
   const [providerFilter, setProviderFilter] = useState<ProviderFilter>('all');
-  const [showFilters, setShowFilters] = useState(false);
 
   useEffect(() => {
     fetchUsers();
@@ -98,6 +96,18 @@ export default function UsersPage() {
     }).format(date);
   };
 
+  // Handle sorting
+  const handleSort = (field: SortField) => {
+    if (sortField === field) {
+      // Toggle sort order if clicking the same field
+      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+    } else {
+      // Set new field and default to ascending
+      setSortField(field);
+      setSortOrder('asc');
+    }
+  };
+
   // Filter and Sort Users
   const filteredAndSortedUsers = useMemo(() => {
     let filtered = [...users];
@@ -127,10 +137,40 @@ export default function UsersPage() {
       });
     }
 
-    // Sort by name
+    // Sort by selected field
     filtered.sort((a, b) => {
-      const aValue = a.name.toLowerCase();
-      const bValue = b.name.toLowerCase();
+      let aValue: any;
+      let bValue: any;
+
+      switch (sortField) {
+        case 'name':
+          aValue = (a.name || '').toLowerCase();
+          bValue = (b.name || '').toLowerCase();
+          break;
+        case 'email':
+          aValue = (a.email || '').toLowerCase();
+          bValue = (b.email || '').toLowerCase();
+          break;
+        case 'role':
+          aValue = (a.role || 'user').toLowerCase();
+          bValue = (b.role || 'user').toLowerCase();
+          break;
+        case 'provider':
+          aValue = (a.provider || '').toLowerCase();
+          bValue = (b.provider || '').toLowerCase();
+          break;
+        case 'createdAt':
+          aValue = a.createdAt?.toMillis() || 0;
+          bValue = b.createdAt?.toMillis() || 0;
+          break;
+        case 'lastLogin':
+          aValue = a.lastLogin?.toMillis() || 0;
+          bValue = b.lastLogin?.toMillis() || 0;
+          break;
+        default:
+          aValue = (a.name || '').toLowerCase();
+          bValue = (b.name || '').toLowerCase();
+      }
 
       if (sortOrder === 'asc') {
         return aValue > bValue ? 1 : -1;
@@ -155,100 +195,68 @@ export default function UsersPage() {
   const hasActiveFilters = useMemo(() => {
     return (
       searchQuery.trim() !== '' ||
-      sortField !== 'name' ||
-      sortOrder !== 'asc' ||
       roleFilter !== 'all' ||
       providerFilter !== 'all'
     );
-  }, [searchQuery, sortField, sortOrder, roleFilter, providerFilter]);
+  }, [searchQuery, roleFilter, providerFilter]);
 
-  const columns = [
-    {
-      key: 'name',
-      header: 'Name',
-      render: (user: User) => (
-        <div className="flex items-center gap-3">
-          {user.photoURL ? (
-            <img
-              src={user.photoURL}
-              alt={user.name}
-              className="w-10 h-10 rounded-full object-cover"
-            />
-          ) : (
-            <div className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center text-white font-semibold text-sm">
-              {user.name.charAt(0).toUpperCase()}
-            </div>
-          )}
-          <div>
-            <div className="flex items-center gap-2">
-              <p className="font-semibold text-primary">{user.name}</p>
-            </div>
-            <p className="text-xs text-secondary">{user.email}</p>
-          </div>
+  // Sortable header component with comprehensive focus prevention
+  const SortableHeader = ({ field, label }: { field: SortField; label: string }) => {
+    const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
+      // Prevent default behavior
+      e.preventDefault();
+      // Immediately blur the button to prevent focus outline
+      e.currentTarget.blur();
+      // Remove focus from any active element
+      if (document.activeElement instanceof HTMLElement) {
+        document.activeElement.blur();
+      }
+      // Call the sort handler
+      handleSort(field);
+    };
+
+    const handleMouseDown = (e: React.MouseEvent<HTMLButtonElement>) => {
+      // Prevent focus on mouse down
+      e.preventDefault();
+    };
+
+    const handlePointerDown = (e: React.PointerEvent<HTMLButtonElement>) => {
+      // Prevent focus on pointer down (for touch devices)
+      e.preventDefault();
+    };
+
+    return (
+      <button
+        type="button"
+        onClick={handleClick}
+        onMouseDown={handleMouseDown}
+        onPointerDown={handlePointerDown}
+        className="flex items-center gap-2 transition-all cursor-pointer group"
+        style={{ outline: 'none', WebkitTapHighlightColor: 'transparent' }}
+        tabIndex={-1}
+      >
+        <span>{label}</span>
+        <div className="flex flex-col">
+          <Icons.chevronUp
+            size={16}
+            className={`-mb-1 transition-all group-hover:scale-110 ${
+              sortField === field && sortOrder === 'asc'
+                ? 'text-accent'
+                : 'text-secondary/30'
+            }`}
+          />
+          <Icons.chevronDown
+            size={16}
+            className={`-mt-1 transition-all group-hover:scale-110 ${
+              sortField === field && sortOrder === 'desc'
+                ? 'text-accent'
+                : 'text-secondary/30'
+            }`}
+          />
         </div>
-      ),
-    },
-    {
-      key: 'provider',
-      header: 'Provider',
-      render: (user: User) => {
-        // Determine color based on provider using app color palette
-        let colorClasses = '';
-        const provider = user.provider.toLowerCase();
-        
-        if (provider === 'google') {
-          colorClasses = 'bg-accent-100 text-accent-700 ';
-        } else if (provider === 'apple' || provider === 'ios') {
-          colorClasses = 'bg-primary-100 text-primary-700';
-        } else if (provider === 'manual') {
-          colorClasses = 'bg-secondary-100 text-secondary-700';
-        } else {
-          // Fallback for any other provider
-          colorClasses = 'bg-accent/20 text-primary';
-        }
-        
-        return (
-          <span className={`inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium capitalize ${colorClasses}`}>
-            {user.provider}
-          </span>
-        );
-      },
-    },
-    {
-      key: 'role',
-      header: 'Role',
-      render: (user: User) => (
-        <span className={`inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium capitalize ${
-          user.role === 'admin' 
-            ? 'bg-secondary/20 text-secondary' 
-            : 'bg-accent/20 text-primary'
-        }`}>
-          {user.role || 'user'}
-        </span>
-      ),
-    },
-    {
-      key: 'language',
-      header: 'Language',
-      render: (user: User) => (
-        <span className="uppercase text-sm font-medium">{user.language}</span>
-      ),
-    },
-    {
-      key: 'createdAt',
-      header: 'Created At',
-      render: (user: User) => (
-        <span className="text-sm">{formatTimestamp(user.createdAt)}</span>
-      ),
-    },
-    {
-      key: 'lastLogin',
-      header: 'Last Login',
-      render: (user: User) => (
-        <span className="text-sm">{formatTimestamp(user.lastLogin)}</span>
-      ),
-    },
-  ];
+      </button>
+    );
+  };
 
   return (
     <AdminLayout>
@@ -277,7 +285,7 @@ export default function UsersPage() {
 
         {/* Search and Filter Bar */}
         <div className="bg-white rounded-lg border border-primary/10 p-4">
-          <div className="flex flex-col lg:flex-row gap-4">
+          <div className="flex flex-col md:flex-row gap-4">
             {/* Search Input */}
             <div className="flex-1">
               <div className="relative">
@@ -294,93 +302,44 @@ export default function UsersPage() {
               </div>
             </div>
 
-            {/* Filter Toggle Button */}
-            <button
-              onClick={() => setShowFilters(!showFilters)}
-              className={`flex items-center gap-2 px-4 py-2.5 border rounded-lg font-semibold transition-all ${
-                showFilters || hasActiveFilters
-                  ? 'bg-accent/20 border-accent text-primary'
-                  : 'border-primary/20 text-secondary hover:bg-accent/10'
-              }`}
-            >
-              <Icons.filter size={20} />
-              <span>Filters</span>
-              {hasActiveFilters && (
-                <span className="ml-1 px-2 py-0.5 bg-accent text-primary text-xs rounded-full font-bold">
-                  {[
-                    searchQuery.trim() !== '',
-                    roleFilter !== 'all',
-                    providerFilter !== 'all',
-                    sortOrder !== 'asc',
-                  ].filter(Boolean).length}
-                </span>
-              )}
-            </button>
+            {/* Role Filter */}
+            <div className="w-full md:w-40">
+              <select
+                value={roleFilter}
+                onChange={(e) => setRoleFilter(e.target.value as RoleFilter)}
+                className="w-full px-3 py-2.5 border border-primary/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent font-body text-primary"
+              >
+                <option value="all">All Roles</option>
+                <option value="admin">Admin</option>
+                <option value="user">User</option>
+              </select>
+            </div>
+
+            {/* Provider Filter */}
+            <div className="w-full md:w-40">
+              <select
+                value={providerFilter}
+                onChange={(e) => setProviderFilter(e.target.value as ProviderFilter)}
+                className="w-full px-3 py-2.5 border border-primary/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent font-body text-primary"
+              >
+                <option value="all">All Providers</option>
+                <option value="google">Google</option>
+                <option value="apple">Apple</option>
+                <option value="manual">Manual</option>
+              </select>
+            </div>
 
             {/* Clear Filters Button */}
             {hasActiveFilters && (
               <button
                 onClick={clearFilters}
-                className="flex items-center gap-2 px-4 py-2.5 border border-secondary/20 text-secondary rounded-lg font-semibold hover:bg-secondary/10 transition-all"
+                className="flex items-center justify-center gap-2 px-4 py-2.5 border border-secondary/20 text-secondary rounded-lg font-semibold hover:bg-secondary/10 transition-all whitespace-nowrap"
               >
                 <Icons.close size={20} />
                 <span>Clear</span>
               </button>
             )}
           </div>
-
-          {/* Filter Options */}
-          {showFilters && (
-            <div className="mt-4 pt-4 border-t border-primary/10 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {/* Sort Order */}
-              <div>
-                <label className="block text-sm font-semibold text-primary font-body mb-2">
-                  Sort by Name
-                </label>
-                <select
-                  value={sortOrder}
-                  onChange={(e) => setSortOrder(e.target.value as SortOrder)}
-                  className="w-full px-3 py-2 border border-primary/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent font-body text-primary"
-                >
-                  <option value="asc">Ascending (A-Z)</option>
-                  <option value="desc">Descending (Z-A)</option>
-                </select>
-              </div>
-
-              {/* Role Filter */}
-              <div>
-                <label className="block text-sm font-semibold text-primary font-body mb-2">
-                  Role
-                </label>
-                <select
-                  value={roleFilter}
-                  onChange={(e) => setRoleFilter(e.target.value as RoleFilter)}
-                  className="w-full px-3 py-2 border border-primary/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent font-body text-primary"
-                >
-                  <option value="all">All Roles</option>
-                  <option value="admin">Admin</option>
-                  <option value="user">User</option>
-                </select>
-              </div>
-
-              {/* Provider Filter */}
-              <div>
-                <label className="block text-sm font-semibold text-primary font-body mb-2">
-                  Provider
-                </label>
-                <select
-                  value={providerFilter}
-                  onChange={(e) => setProviderFilter(e.target.value as ProviderFilter)}
-                  className="w-full px-3 py-2 border border-primary/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent font-body text-primary"
-                >
-                  <option value="all">All Providers</option>
-                  <option value="google">Google</option>
-                  <option value="apple">Apple</option>
-                  <option value="manual">Manual</option>
-                </select>
-              </div>
-            </div>
-          )}
 
           {/* Results Count */}
           <div className="mt-4 pt-4 border-t border-primary/10">
@@ -472,20 +431,158 @@ export default function UsersPage() {
           </div>
         )}
 
-        {/* Users Table - Only show if there are results OR if loading */}
-        {(loading || filteredAndSortedUsers.length > 0) && (
-          <Table
-            data={filteredAndSortedUsers}
-            columns={columns}
-            onView={handleView}
-            onEdit={handleEdit}
-            onDelete={handleDeleteClick}
-            loading={loading}
-            getRowClassName={(user) => user.role === 'admin' ? 'bg-accent/5' : ''}
-            isEditDisabled={(user) => user.role === 'admin'}
-            isDeleteDisabled={(user) => user.role === 'admin'}
-          />
-        )}
+        {/* Users Table with Sortable Headers */}
+        {loading ? (
+          <div className="bg-white rounded-lg border border-primary/10 p-12">
+            <div className="flex items-center justify-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-accent"></div>
+            </div>
+          </div>
+        ) : filteredAndSortedUsers.length > 0 ? (
+          <div className="bg-white rounded-lg border border-primary/10 overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-background border-b border-primary/10">
+                  <tr>
+                    <th className="px-6 py-4 text-left text-sm font-semibold text-primary font-body">
+                      <SortableHeader field="name" label="Name" />
+                    </th>
+                    <th className="px-6 py-4 text-left text-sm font-semibold text-primary font-body">
+                      <SortableHeader field="provider" label="Provider" />
+                    </th>
+                    <th className="px-6 py-4 text-left text-sm font-semibold text-primary font-body">
+                      <SortableHeader field="role" label="Role" />
+                    </th>
+                    <th className="px-6 py-4 text-left text-sm font-semibold text-primary font-body">
+                      Language
+                    </th>
+                    <th className="px-6 py-4 text-left text-sm font-semibold text-primary font-body">
+                      <SortableHeader field="createdAt" label="Created At" />
+                    </th>
+                    <th className="px-6 py-4 text-left text-sm font-semibold text-primary font-body">
+                      <SortableHeader field="lastLogin" label="Last Login" />
+                    </th>
+                    <th className="px-6 py-4 text-right text-sm font-semibold text-primary font-body">
+                      Actions
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredAndSortedUsers.map((user, index) => {
+                    const editDisabled = user.role === 'admin';
+                    const deleteDisabled = user.role === 'admin';
+                    
+                    return (
+                      <tr
+                        key={user.id}
+                        className={`transition-colors ${
+                          index % 2 === 0
+                            ? 'bg-white hover:bg-background/50'
+                            : 'bg-background hover:bg-background-200'
+                        }`}
+                      >
+                        {/* Name Column */}
+                        <td className="px-6 py-4 text-sm text-primary font-body">
+                          <div className="flex items-center gap-3">
+                            {user.photoURL ? (
+                              <img
+                                src={user.photoURL}
+                                alt={user.name}
+                                className="w-10 h-10 rounded-full object-cover"
+                              />
+                            ) : (
+                              <div className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center text-white font-semibold text-sm">
+                                {user.name.charAt(0).toUpperCase()}
+                              </div>
+                            )}
+                            <div>
+                              <p className="font-semibold text-primary">{user.name}</p>
+                              <p className="text-xs text-secondary">{user.email}</p>
+                            </div>
+                          </div>
+                        </td>
+
+                        {/* Provider Column */}
+                        <td className="px-6 py-4 text-sm text-primary font-body">
+                          <span
+                            className={`inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium capitalize ${
+                              user.provider.toLowerCase() === 'google'
+                                ? 'bg-accent-100 text-accent-700'
+                                : user.provider.toLowerCase() === 'apple' || user.provider.toLowerCase() === 'ios'
+                                ? 'bg-primary-100 text-primary-700'
+                                : user.provider.toLowerCase() === 'manual'
+                                ? 'bg-secondary-100 text-secondary-700'
+                                : 'bg-accent/20 text-primary'
+                            }`}
+                          >
+                            {user.provider}
+                          </span>
+                        </td>
+
+                        {/* Role Column */}
+                        <td className="px-6 py-4 text-sm text-primary font-body">
+                          <span
+                            className={`inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium capitalize ${
+                              user.role === 'admin'
+                                ? 'bg-secondary/20 text-secondary'
+                                : 'bg-accent/20 text-primary'
+                            }`}
+                          >
+                            {user.role || 'user'}
+                          </span>
+                        </td>
+
+                        {/* Language Column */}
+                        <td className="px-6 py-4 text-sm text-primary font-body">
+                          <span className="uppercase text-sm font-medium">{user.language}</span>
+                        </td>
+
+                        {/* Created At Column */}
+                        <td className="px-6 py-4 text-sm text-primary font-body">
+                          <span className="text-sm">{formatTimestamp(user.createdAt)}</span>
+                        </td>
+
+                        {/* Last Login Column */}
+                        <td className="px-6 py-4 text-sm text-primary font-body">
+                          <span className="text-sm">{formatTimestamp(user.lastLogin)}</span>
+                        </td>
+
+                        {/* Actions Column */}
+                        <td className="px-6 py-4 text-right">
+                          <div className="flex items-center justify-end gap-2">
+                            <button
+                              onClick={() => handleView(user)}
+                              className="p-2 text-white bg-accent hover:bg-accent/90 rounded-md transition-all cursor-pointer"
+                              title="View"
+                            >
+                              <Icons.eye size={18} />
+                            </button>
+                            <button
+                              onClick={() => !editDisabled && handleEdit(user)}
+                              disabled={editDisabled}
+                              className="p-2 text-primary bg-background hover:bg-accent hover:text-primary rounded-md transition-all border border-primary/10 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-background"
+                              title={editDisabled ? 'Cannot edit admin users' : 'Edit'}
+                            >
+                              <Icons.edit size={18} />
+                            </button>
+                            <button
+                              onClick={() => !deleteDisabled && handleDeleteClick(user)}
+                              disabled={deleteDisabled}
+                              className="p-2 text-white bg-secondary hover:bg-secondary/90 rounded-md transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-secondary"
+                              title={deleteDisabled ? 'Cannot delete admin users' : 'Delete'}
+                            >
+                              <Icons.trash size={18} />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        ) : null}
 
         {/* No Results Message - Show when filters are active but no matches */}
         {!loading && filteredAndSortedUsers.length === 0 && users.length > 0 && (

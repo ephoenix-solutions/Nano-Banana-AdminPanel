@@ -15,7 +15,7 @@ import {
 import { getUserById } from '@/lib/services/user.service';
 import { Timestamp } from 'firebase/firestore';
 
-type SortField = 'name' | 'order';
+type SortField = 'name' | 'order' | 'searchCount' | 'subcategories' | 'createdAt' | 'updatedAt';
 type SortOrder = 'asc' | 'desc';
 type SubcategoryFilter = 'all' | 'with' | 'without';
 
@@ -116,7 +116,6 @@ export default function CategoriesPage() {
   const [sortField, setSortField] = useState<SortField>('order');
   const [sortOrder, setSortOrder] = useState<SortOrder>('asc');
   const [subcategoryFilter, setSubcategoryFilter] = useState<SubcategoryFilter>('all');
-  const [showFilters, setShowFilters] = useState(false);
 
   useEffect(() => {
     fetchCategories();
@@ -162,10 +161,10 @@ export default function CategoriesPage() {
 
   const toggleCategory = (categoryId: string) => {
     setExpandedCategories((prev) => {
-      const newSet = new Set(prev);
-      if (newSet.has(categoryId)) {
-        newSet.delete(categoryId);
-      } else {
+      const newSet = new Set<string>();
+      // If clicking the same category that's already open, close it
+      // Otherwise, open only the clicked category
+      if (!prev.has(categoryId)) {
         newSet.add(categoryId);
       }
       return newSet;
@@ -239,19 +238,27 @@ export default function CategoriesPage() {
     }
   };
 
+  // Handle sorting
+  const handleSort = (field: SortField) => {
+    if (sortField === field) {
+      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortField(field);
+      setSortOrder('asc');
+    }
+  };
+
   // Filter and Sort Categories
   const filteredAndSortedCategories = useMemo(() => {
     let filtered = [...categories];
 
-    // Search filter (category name or subcategory name)
+    // Search filter
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase();
       filtered = filtered.filter((category) => {
-        // Check category name
         if (category.name.toLowerCase().includes(query)) {
           return true;
         }
-        // Check subcategory names
         if (category.subcategories && category.subcategories.length > 0) {
           return category.subcategories.some((sub) =>
             sub.name.toLowerCase().includes(query)
@@ -277,12 +284,34 @@ export default function CategoriesPage() {
       let aValue: any;
       let bValue: any;
 
-      if (sortField === 'name') {
-        aValue = a.name.toLowerCase();
-        bValue = b.name.toLowerCase();
-      } else if (sortField === 'order') {
-        aValue = a.order;
-        bValue = b.order;
+      switch (sortField) {
+        case 'name':
+          aValue = (a.name || '').toLowerCase();
+          bValue = (b.name || '').toLowerCase();
+          break;
+        case 'order':
+          aValue = a.order || 0;
+          bValue = b.order || 0;
+          break;
+        case 'searchCount':
+          aValue = a.searchCount || 0;
+          bValue = b.searchCount || 0;
+          break;
+        case 'subcategories':
+          aValue = a.subcategories?.length || 0;
+          bValue = b.subcategories?.length || 0;
+          break;
+        case 'createdAt':
+          aValue = a.createdAt?.toDate().getTime() || 0;
+          bValue = b.createdAt?.toDate().getTime() || 0;
+          break;
+        case 'updatedAt':
+          aValue = a.updatedAt?.toDate().getTime() || 0;
+          bValue = b.updatedAt?.toDate().getTime() || 0;
+          break;
+        default:
+          aValue = a.order || 0;
+          bValue = b.order || 0;
       }
 
       if (sortOrder === 'asc') {
@@ -307,11 +336,61 @@ export default function CategoriesPage() {
   const hasActiveFilters = useMemo(() => {
     return (
       searchQuery.trim() !== '' ||
-      sortField !== 'order' ||
-      sortOrder !== 'asc' ||
       subcategoryFilter !== 'all'
     );
-  }, [searchQuery, sortField, sortOrder, subcategoryFilter]);
+  }, [searchQuery, subcategoryFilter]);
+
+  // Sortable header component
+  const SortableHeader = ({ field, label }: { field: SortField; label: string }) => {
+    const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
+      e.preventDefault();
+      e.currentTarget.blur();
+      if (document.activeElement instanceof HTMLElement) {
+        document.activeElement.blur();
+      }
+      handleSort(field);
+    };
+
+    const handleMouseDown = (e: React.MouseEvent<HTMLButtonElement>) => {
+      e.preventDefault();
+    };
+
+    const handlePointerDown = (e: React.PointerEvent<HTMLButtonElement>) => {
+      e.preventDefault();
+    };
+
+    return (
+      <button
+        type="button"
+        onClick={handleClick}
+        onMouseDown={handleMouseDown}
+        onPointerDown={handlePointerDown}
+        className="flex items-center gap-2 transition-all cursor-pointer group"
+        style={{ outline: 'none', WebkitTapHighlightColor: 'transparent' }}
+        tabIndex={-1}
+      >
+        <span>{label}</span>
+        <div className="flex flex-col">
+          <Icons.chevronUp
+            size={16}
+            className={`-mb-1 transition-all group-hover:scale-110 ${
+              sortField === field && sortOrder === 'asc'
+                ? 'text-accent'
+                : 'text-secondary/30'
+            }`}
+          />
+          <Icons.chevronDown
+            size={16}
+            className={`-mt-1 transition-all group-hover:scale-110 ${
+              sortField === field && sortOrder === 'desc'
+                ? 'text-accent'
+                : 'text-secondary/30'
+            }`}
+          />
+        </div>
+      </button>
+    );
+  };
 
   if (loading) {
     return (
@@ -350,7 +429,7 @@ export default function CategoriesPage() {
 
         {/* Search and Filter Bar */}
         <div className="bg-white rounded-lg border border-primary/10 p-4">
-          <div className="flex flex-col lg:flex-row gap-4">
+          <div className="flex flex-col md:flex-row gap-4">
             {/* Search Input */}
             <div className="flex-1">
               <div className="relative">
@@ -367,90 +446,30 @@ export default function CategoriesPage() {
               </div>
             </div>
 
-            {/* Filter Toggle Button */}
-            <button
-              onClick={() => setShowFilters(!showFilters)}
-              className={`flex items-center gap-2 px-4 py-2.5 border rounded-lg font-semibold transition-all ${
-                showFilters || hasActiveFilters
-                  ? 'bg-accent/20 border-accent text-primary'
-                  : 'border-primary/20 text-secondary hover:bg-accent/10'
-              }`}
-            >
-              <Icons.filter size={20} />
-              <span>Filters</span>
-              {hasActiveFilters && (
-                <span className="ml-1 px-2 py-0.5 bg-accent text-primary text-xs rounded-full font-bold">
-                  {[
-                    searchQuery.trim() !== '',
-                    subcategoryFilter !== 'all',
-                    sortField !== 'order' || sortOrder !== 'asc',
-                  ].filter(Boolean).length}
-                </span>
-              )}
-            </button>
+            {/* Subcategory Filter */}
+            <div className="w-full md:w-48">
+              <select
+                value={subcategoryFilter}
+                onChange={(e) => setSubcategoryFilter(e.target.value as SubcategoryFilter)}
+                className="w-full px-3 py-2.5 border border-primary/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent font-body text-primary"
+              >
+                <option value="all">All Categories</option>
+                <option value="with">With Subcategories</option>
+                <option value="without">Without Subcategories</option>
+              </select>
+            </div>
 
             {/* Clear Filters Button */}
             {hasActiveFilters && (
               <button
                 onClick={clearFilters}
-                className="flex items-center gap-2 px-4 py-2.5 border border-secondary/20 text-secondary rounded-lg font-semibold hover:bg-secondary/10 transition-all"
+                className="flex items-center justify-center gap-2 px-4 py-2.5 border border-secondary/20 text-secondary rounded-lg font-semibold hover:bg-secondary/10 transition-all whitespace-nowrap"
               >
                 <Icons.close size={20} />
                 <span>Clear</span>
               </button>
             )}
           </div>
-
-          {/* Filter Options */}
-          {showFilters && (
-            <div className="mt-4 pt-4 border-t border-primary/10 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {/* Sort By */}
-              <div>
-                <label className="block text-sm font-semibold text-primary font-body mb-2">
-                  Sort By
-                </label>
-                <select
-                  value={sortField}
-                  onChange={(e) => setSortField(e.target.value as SortField)}
-                  className="w-full px-3 py-2 border border-primary/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent font-body text-primary"
-                >
-                  <option value="order">Order</option>
-                  <option value="name">Name</option>
-                </select>
-              </div>
-
-              {/* Sort Order */}
-              <div>
-                <label className="block text-sm font-semibold text-primary font-body mb-2">
-                  Order
-                </label>
-                <select
-                  value={sortOrder}
-                  onChange={(e) => setSortOrder(e.target.value as SortOrder)}
-                  className="w-full px-3 py-2 border border-primary/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent font-body text-primary"
-                >
-                  <option value="asc">Ascending</option>
-                  <option value="desc">Descending</option>
-                </select>
-              </div>
-
-              {/* Subcategory Filter */}
-              <div>
-                <label className="block text-sm font-semibold text-primary font-body mb-2">
-                  Subcategories
-                </label>
-                <select
-                  value={subcategoryFilter}
-                  onChange={(e) => setSubcategoryFilter(e.target.value as SubcategoryFilter)}
-                  className="w-full px-3 py-2 border border-primary/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent font-body text-primary"
-                >
-                  <option value="all">All Categories</option>
-                  <option value="with">With Subcategories</option>
-                  <option value="without">Without Subcategories</option>
-                </select>
-              </div>
-            </div>
-          )}
 
           {/* Results Count */}
           <div className="mt-4 pt-4 border-t border-primary/10">
@@ -529,8 +548,8 @@ export default function CategoriesPage() {
           </div>
         )}
 
-        {/* Categories Table - Only show if there are results OR if loading */}
-        {(loading || filteredAndSortedCategories.length > 0) && (
+        {/* Categories Table with Sortable Headers */}
+        {filteredAndSortedCategories.length > 0 ? (
           <div className="bg-white rounded-lg border border-primary/10 overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full">
@@ -538,30 +557,30 @@ export default function CategoriesPage() {
                   <tr>
                     <th className="px-6 py-4 text-left text-sm font-semibold text-primary font-body w-12"></th>
                     <th className="px-6 py-4 text-left text-sm font-semibold text-primary font-body">
-                      Name
+                      <SortableHeader field="name" label="Name" />
                     </th>
                     <th className="px-6 py-4 text-left text-sm font-semibold text-primary font-body">
-                      Order
+                      <SortableHeader field="order" label="Order" />
                     </th>
                     <th className="px-6 py-4 text-left text-sm font-semibold text-primary font-body">
-                      Search Count
+                      <SortableHeader field="searchCount" label="Search Count" />
                     </th>
                     <th className="px-6 py-4 text-left text-sm font-semibold text-primary font-body">
-                      Subcategories
+                      <SortableHeader field="subcategories" label="Subcategories" />
                     </th>
                     <th className="px-6 py-4 text-left text-sm font-semibold text-primary font-body">
-                      Created By
+                      <SortableHeader field="createdAt" label="Created By" />
                     </th>
                     <th className="px-6 py-4 text-left text-sm font-semibold text-primary font-body">
-                      Updated By
+                      <SortableHeader field="updatedAt" label="Updated By" />
                     </th>
                     <th className="px-6 py-4 text-right text-sm font-semibold text-primary font-body">
                       Actions
                     </th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-primary/10">
-                  {filteredAndSortedCategories.map((category) => {
+                <tbody>
+                  {filteredAndSortedCategories.map((category, index) => {
                   const isExpanded = expandedCategories.has(category.id);
                   const hasSubcategories =
                     category.subcategories && category.subcategories.length > 0;
@@ -570,7 +589,11 @@ export default function CategoriesPage() {
                     <React.Fragment key={category.id}>
                       {/* Category Row */}
                       <tr
-                        className="hover:bg-background/50 transition-colors"
+                        className={`transition-colors ${
+                          index % 2 === 0
+                            ? 'bg-white hover:bg-background/50'
+                            : 'bg-background hover:bg-background-200'
+                        }`}
                       >
                         <td className="px-6 py-4">
                           {hasSubcategories && (
@@ -689,16 +712,16 @@ export default function CategoriesPage() {
                       {/* Subcategories Rows */}
                       {isExpanded &&
                         hasSubcategories &&
-                        category.subcategories!.map((subcategory) => (
+                        category.subcategories!.map((subcategory, subIndex) => (
                           <tr
                             key={`${category.id}-${subcategory.id}`}
-                            className="bg-background/30 hover:bg-background/50 transition-colors"
+                            className="bg-accent/10 hover:bg-accent/20 transition-colors border-l-4 border-accent"
                           >
-                            <td className="px-6 py-3"></td>
-                            <td className="px-6 py-3">
-                              <div className="flex items-center gap-2 ml-8">
-                                <Icons.chevronRight
-                                  size={14}
+                            <td className="px-6 py-3 pl-10"></td>
+                            <td className="px-6 py-3 pl-10">
+                              <div className="flex items-center gap-2">
+                                <Icons.cornerDownRight
+                                  size={18}
                                   className="text-secondary"
                                 />
                                 <span className="text-sm text-primary">
@@ -706,16 +729,16 @@ export default function CategoriesPage() {
                                 </span>
                               </div>
                             </td>
-                            <td className="px-6 py-3 text-sm text-primary">
+                            <td className="px-6 py-3 pl-10 text-sm text-primary">
                               {subcategory.order}
                             </td>
-                            <td className="px-6 py-3 text-sm text-primary">
+                            <td className="px-6 py-3 pl-10 text-sm text-primary">
                               {subcategory.searchCount}
                             </td>
-                            <td className="px-6 py-3 text-sm text-secondary">
+                            <td className="px-6 py-3 pl-10 text-sm text-secondary">
                               -
                             </td>
-                            <td className="px-6 py-3 text-sm text-primary">
+                            <td className="px-6 py-3 pl-10 text-sm text-primary">
                               <div className="flex flex-col gap-1">
                                 <CreatedByCell userId={subcategory.createdBy} fetchUserName={fetchUserName} />
                                 {subcategory.createdAt && (
@@ -725,7 +748,7 @@ export default function CategoriesPage() {
                                 )}
                               </div>
                             </td>
-                            <td className="px-6 py-3 text-sm text-primary">
+                            <td className="px-6 py-3 pl-10 text-sm text-primary">
                               {subcategory.updatedBy ? (
                                 <div className="flex flex-col gap-1">
                                   <CreatedByCell userId={subcategory.updatedBy} fetchUserName={fetchUserName} />
@@ -739,7 +762,7 @@ export default function CategoriesPage() {
                                 <span className="text-secondary text-xs">Not updated</span>
                               )}
                             </td>
-                            <td className="px-6 py-3 text-right">
+                            <td className="px-6 py-3 pr-10 text-right">
                               <div className="flex items-center justify-end gap-2">
                                 <button
                                   onClick={() =>
@@ -776,9 +799,9 @@ export default function CategoriesPage() {
               </table>
             </div>
           </div>
-        )}
+        ) : null}
 
-        {/* No Results Message - Show when filters are active but no matches */}
+        {/* No Results Message */}
         {!loading && filteredAndSortedCategories.length === 0 && categories.length > 0 && (
           <div className="bg-white rounded-lg border border-primary/10 p-12 text-center">
             <Icons.search size={48} className="text-secondary/30 mx-auto mb-4" />
@@ -795,7 +818,7 @@ export default function CategoriesPage() {
           </div>
         )}
 
-        {/* No Data Message - Show when database is truly empty */}
+        {/* No Data Message */}
         {!loading && categories.length === 0 && (
           <div className="bg-white rounded-lg border border-primary/10 p-12 text-center">
             <Icons.categories size={48} className="text-secondary/30 mx-auto mb-4" />
