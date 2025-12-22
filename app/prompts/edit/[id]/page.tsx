@@ -12,10 +12,12 @@ import {
 import { getAllCategories } from '@/lib/services/category.service';
 import { UpdatePromptInput } from '@/lib/types/prompt.types';
 import { Category, Subcategory } from '@/lib/types/category.types';
+import { useAuth } from '@/lib/hooks/useAuth';
 
 export default function EditPromptPage() {
   const router = useRouter();
   const params = useParams();
+  const { user } = useAuth();
   const promptId = params.id as string;
 
   const [loading, setLoading] = useState(true);
@@ -150,7 +152,14 @@ export default function EditPromptPage() {
         throw new Error('Subcategory is required');
       }
 
-      await updatePrompt(promptId, formData);
+      if (!user?.id) {
+        throw new Error('User not authenticated');
+      }
+
+      await updatePrompt(promptId, {
+        ...formData,
+        updatedBy: user.id,
+      });
       router.push('/prompts');
     } catch (err: any) {
       console.error('Error updating prompt:', err);

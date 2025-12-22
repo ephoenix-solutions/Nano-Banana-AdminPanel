@@ -10,10 +10,12 @@ import {
   updateCategory,
 } from '@/lib/services/category.service';
 import { UpdateCategoryInput } from '@/lib/types/category.types';
+import { useAuth } from '@/lib/hooks/useAuth';
 
 export default function EditCategoryPage() {
   const router = useRouter();
   const params = useParams();
+  const { user } = useAuth();
   const categoryId = params.id as string;
 
   const [loading, setLoading] = useState(true);
@@ -72,7 +74,14 @@ export default function EditCategoryPage() {
         throw new Error('Category name is required');
       }
 
-      await updateCategory(categoryId, formData);
+      if (!user?.id) {
+        throw new Error('User not authenticated');
+      }
+
+      await updateCategory(categoryId, {
+        ...formData,
+        updatedBy: user.id,
+      });
       router.push('/categories');
     } catch (err: any) {
       console.error('Error updating category:', err);

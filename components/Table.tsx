@@ -1,6 +1,7 @@
 'use client';
 
 import { ReactNode } from 'react';
+import { Icons } from '@/config/icons';
 
 interface Column<T> {
   key: string;
@@ -15,6 +16,9 @@ interface TableProps<T> {
   onEdit?: (item: T) => void;
   onDelete?: (item: T) => void;
   loading?: boolean;
+  getRowClassName?: (item: T) => string;
+  isEditDisabled?: (item: T) => boolean;
+  isDeleteDisabled?: (item: T) => boolean;
 }
 
 export default function Table<T extends { id: string }>({
@@ -24,6 +28,9 @@ export default function Table<T extends { id: string }>({
   onEdit,
   onDelete,
   loading = false,
+  getRowClassName,
+  isEditDisabled,
+  isDeleteDisabled,
 }: TableProps<T>) {
   if (loading) {
     return (
@@ -65,10 +72,15 @@ export default function Table<T extends { id: string }>({
             </tr>
           </thead>
           <tbody className="divide-y divide-primary/10">
-            {data.map((item, index) => (
+            {data.map((item, index) => {
+              const rowClassName = getRowClassName ? getRowClassName(item) : '';
+              const editDisabled = isEditDisabled ? isEditDisabled(item) : false;
+              const deleteDisabled = isDeleteDisabled ? isDeleteDisabled(item) : false;
+              
+              return (
               <tr
                 key={item.id}
-                className="hover:bg-background/50 transition-colors"
+                className={`hover:bg-background/50 transition-colors ${rowClassName}`}
               >
                 {columns.map((column) => (
                   <td
@@ -86,32 +98,38 @@ export default function Table<T extends { id: string }>({
                       {onView && (
                         <button
                           onClick={() => onView(item)}
-                          className="px-3 py-1.5 text-sm font-medium text-white bg-accent hover:bg-accent/90 rounded-md transition-all"
+                          className="p-2 text-white bg-accent hover:bg-accent/90 rounded-md transition-all cursor-pointer"
+                          title="View"
                         >
-                          View
+                          <Icons.eye size={18} />
                         </button>
                       )}
                       {onEdit && (
                         <button
-                          onClick={() => onEdit(item)}
-                          className="px-3 py-1.5 text-sm font-medium text-primary bg-background hover:bg-accent hover:text-primary rounded-md transition-all border border-primary/10"
+                          onClick={() => !editDisabled && onEdit(item)}
+                          disabled={editDisabled}
+                          className="p-2 text-primary bg-background hover:bg-accent hover:text-primary rounded-md transition-all border border-primary/10 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-background"
+                          title={editDisabled ? "Cannot edit admin users" : "Edit"}
                         >
-                          Edit
+                          <Icons.edit size={18} />
                         </button>
                       )}
                       {onDelete && (
                         <button
-                          onClick={() => onDelete(item)}
-                          className="px-3 py-1.5 text-sm font-medium text-white bg-secondary hover:bg-secondary/90 rounded-md transition-all"
+                          onClick={() => !deleteDisabled && onDelete(item)}
+                          disabled={deleteDisabled}
+                          className="p-2 text-white bg-secondary hover:bg-secondary/90 rounded-md transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-secondary"
+                          title={deleteDisabled ? "Cannot delete admin users" : "Delete"}
                         >
-                          Delete
+                          <Icons.trash size={18} />
                         </button>
                       )}
                     </div>
                   </td>
                 )}
               </tr>
-            ))}
+            );
+            })}
           </tbody>
         </table>
       </div>

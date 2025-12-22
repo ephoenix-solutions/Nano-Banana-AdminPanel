@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { ReduxProvider } from "@/lib/store/ReduxProvider";
 import AuthInitializer from "@/components/auth/AuthInitializer";
+import NextTopLoader from 'nextjs-toploader';
 
 export const metadata: Metadata = {
   title: "Nano Banana - Admin Panel",
@@ -18,6 +19,11 @@ export default function RootLayout({
       <body className="antialiased">
         <ReduxProvider>
           <AuthInitializer>
+            <NextTopLoader 
+              color="#FFB22C"
+              height={3}
+              showSpinner={false}
+            />
             {children}
           </AuthInitializer>
         </ReduxProvider>

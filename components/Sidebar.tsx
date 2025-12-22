@@ -28,6 +28,12 @@ const menuItems: MenuItem[] = [
     href: '/',
   },
   { 
+    id: 'profile', 
+    label: 'My Profile', 
+    icon: Icons.user, 
+    href: '/profile',
+  },
+  { 
     id: 'users', 
     label: 'Users', 
     icon: Icons.users, 

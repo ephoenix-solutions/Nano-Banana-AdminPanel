@@ -7,6 +7,79 @@ import Breadcrumbs from '@/components/Breadcrumbs';
 import { Icons } from '@/config/icons';
 import { getCategoryById } from '@/lib/services/category.service';
 import { Category } from '@/lib/types/category.types';
+import { getUserById } from '@/lib/services/user.service';
+import { Timestamp } from 'firebase/firestore';
+
+// Helper function to format timestamp
+const formatTimestamp = (timestamp: any) => {
+  if (!timestamp) return 'N/A';
+  try {
+    const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+    return new Intl.DateTimeFormat('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    }).format(date);
+  } catch (error) {
+    return 'N/A';
+  }
+};
+
+// Helper component to display subcategory creator with timestamp
+function SubcategoryCreatorCell({ userId, timestamp }: { userId: string; timestamp?: any }) {
+  const [name, setName] = useState<string>('Loading...');
+  const [photoURL, setPhotoURL] = useState<string>('');
+
+  useEffect(() => {
+    if (userId) {
+      getUserById(userId).then(user => {
+        if (user) {
+          setName(user.name || 'Unknown Admin');
+          setPhotoURL(user.photoURL || '');
+        } else {
+          setName('Unknown Admin');
+        }
+      }).catch(() => {
+        setName('Unknown Admin');
+      });
+    } else {
+      setName('Unknown');
+    }
+  }, [userId]);
+
+  return (
+    <div className="flex flex-col gap-1">
+      <div className="flex items-center gap-2">
+        {photoURL ? (
+          <img
+            src={photoURL}
+            alt={name}
+            className="w-6 h-6 rounded-full object-cover border border-accent/20"
+            onError={(e) => {
+              e.currentTarget.style.display = 'none';
+              const placeholder = e.currentTarget.nextElementSibling as HTMLElement;
+              if (placeholder) placeholder.style.display = 'flex';
+            }}
+          />
+        ) : null}
+        <div 
+          className="w-6 h-6 rounded-full bg-accent/20 flex items-center justify-center"
+          style={{ display: photoURL ? 'none' : 'flex' }}
+        >
+          <Icons.users size={12} className="text-accent" />
+        </div>
+        <span className="text-sm">{name}</span>
+      </div>
+      {timestamp && (
+        <span className="text-xs text-secondary ml-8">
+          {formatTimestamp(timestamp)}
+        </span>
+      )}
+    </div>
+  );
+}
 
 export default function ViewCategoryPage() {
   const router = useRouter();
@@ -16,6 +89,10 @@ export default function ViewCategoryPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [category, setCategory] = useState<Category | null>(null);
+  const [creatorName, setCreatorName] = useState<string>('Loading...');
+  const [creatorPhoto, setCreatorPhoto] = useState<string>('');
+  const [updaterName, setUpdaterName] = useState<string>('Loading...');
+  const [updaterPhoto, setUpdaterPhoto] = useState<string>('');
 
   useEffect(() => {
     fetchCategory();
@@ -27,6 +104,40 @@ export default function ViewCategoryPage() {
       const categoryData = await getCategoryById(categoryId);
       if (categoryData) {
         setCategory(categoryData);
+        
+        // Fetch creator information
+        if (categoryData.createdBy) {
+          try {
+            const creator = await getUserById(categoryData.createdBy);
+            if (creator) {
+              setCreatorName(creator.name || 'Unknown Admin');
+              setCreatorPhoto(creator.photoURL || '');
+            } else {
+              setCreatorName('Unknown Admin');
+            }
+          } catch (err) {
+            console.error('Error fetching creator:', err);
+            setCreatorName('Unknown Admin');
+          }
+        } else {
+          setCreatorName('Unknown');
+        }
+        
+        // Fetch updater information
+        if (categoryData.updatedBy) {
+          try {
+            const updater = await getUserById(categoryData.updatedBy);
+            if (updater) {
+              setUpdaterName(updater.name || 'Unknown Admin');
+              setUpdaterPhoto(updater.photoURL || '');
+            } else {
+              setUpdaterName('Unknown Admin');
+            }
+          } catch (err) {
+            console.error('Error fetching updater:', err);
+            setUpdaterName('Unknown Admin');
+          }
+        }
       } else {
         setError('Category not found');
       }
@@ -264,6 +375,88 @@ export default function ViewCategoryPage() {
                   </div>
                 </div>
               </div>
+
+              {/* Created By */}
+              <div className="bg-background rounded-lg p-4 border border-primary/10">
+                <div className="flex items-start gap-3">
+                  <div className="w-10 h-10 bg-accent/20 rounded-lg flex items-center justify-center flex-shrink-0">
+                    {creatorPhoto ? (
+                        <img
+                          src={creatorPhoto}
+                          alt={creatorName}
+                          className="w-10 h-10 rounded-lg object-cover"
+                          onError={(e) => {
+                            e.currentTarget.style.display = 'none';
+                            const placeholder = e.currentTarget.nextElementSibling as HTMLElement;
+                            if (placeholder) placeholder.style.display = 'flex';
+                          }}
+                        />
+                      ) : null}
+                      <div 
+                        className="w-10 h-10 bg-accent/20 rounded-lg flex items-center justify-center"
+                        style={{ display: creatorPhoto ? 'none' : 'flex' }}
+                      >
+                        <Icons.users size={20} className="text-accent" />
+                      </div>
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-sm text-secondary font-body mb-1">Created By</p>
+                    <p className="text-base font-semibold text-primary font-body">
+                      {creatorName}
+                    </p>
+                    {category.createdAt && (
+                      <p className="text-xs text-secondary font-body mt-1">
+                        {formatTimestamp(category.createdAt)}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Updated By */}
+              <div className="bg-background rounded-lg p-4 border border-primary/10">
+                <div className="flex items-start gap-3">
+                  <div className="w-10 h-10 bg-secondary/20 rounded-lg flex items-center justify-center flex-shrink-0">
+                    {category.updatedBy && updaterPhoto ? (
+                        <img
+                          src={updaterPhoto}
+                          alt={updaterName}
+                          className="w-10 h-10 rounded-lg object-cover"
+                          onError={(e) => {
+                            e.currentTarget.style.display = 'none';
+                            const placeholder = e.currentTarget.nextElementSibling as HTMLElement;
+                            if (placeholder) placeholder.style.display = 'flex';
+                          }}
+                        />
+                      ) : null}
+                      <div 
+                        className="w-10 h-10 bg-secondary/20 rounded-lg flex items-center justify-center"
+                        style={{ display: (category.updatedBy && updaterPhoto) ? 'none' : 'flex' }}
+                      >
+                        <Icons.users size={20} className="text-secondary" />
+                      </div>
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-sm text-secondary font-body mb-1">Updated By</p>
+                    {category.updatedBy ? (
+                      <>
+                        <p className="text-base font-semibold text-primary font-body">
+                          {updaterName}
+                        </p>
+                        {category.updatedAt && (
+                          <p className="text-xs text-secondary font-body mt-1">
+                            {formatTimestamp(category.updatedAt)}
+                          </p>
+                        )}
+                      </>
+                    ) : (
+                      <p className="text-base text-secondary font-body italic">
+                        Not updated yet
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </div>
             </div>
 
             {/* Icon Image URL Section */}
@@ -332,6 +525,12 @@ export default function ViewCategoryPage() {
                     <th className="px-6 py-4 text-left text-sm font-semibold text-primary font-body">
                       Search Count
                     </th>
+                    <th className="px-6 py-4 text-left text-sm font-semibold text-primary font-body">
+                      Created By
+                    </th>
+                    <th className="px-6 py-4 text-left text-sm font-semibold text-primary font-body">
+                      Updated By
+                    </th>
                     <th className="px-6 py-4 text-right text-sm font-semibold text-primary font-body">
                       Actions
                     </th>
@@ -357,12 +556,23 @@ export default function ViewCategoryPage() {
                       <td className="px-6 py-4 text-sm text-primary font-body">
                         {subcategory.searchCount}
                       </td>
+                      <td className="px-6 py-4 text-sm text-primary font-body">
+                        <SubcategoryCreatorCell userId={subcategory.createdBy} timestamp={subcategory.createdAt} />
+                      </td>
+                      <td className="px-6 py-4 text-sm text-primary font-body">
+                        {subcategory.updatedBy ? (
+                          <SubcategoryCreatorCell userId={subcategory.updatedBy} timestamp={subcategory.updatedAt} />
+                        ) : (
+                          <span className="text-secondary text-xs italic">Not updated</span>
+                        )}
+                      </td>
                       <td className="px-6 py-4 text-right">
                         <button
                           onClick={() => handleEditSubcategory(subcategory.id)}
-                          className="px-3 py-1.5 text-sm font-medium text-primary bg-background hover:bg-accent hover:text-primary rounded-md transition-all border border-primary/10"
+                          className="p-2 text-primary bg-background hover:bg-accent hover:text-primary rounded-md transition-all border border-primary/10 cursor-pointer"
+                          title="Edit"
                         >
-                          Edit
+                          <Icons.edit size={18} />
                         </button>
                       </td>
                     </tr>

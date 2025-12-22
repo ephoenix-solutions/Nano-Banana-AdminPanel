@@ -13,10 +13,81 @@ import {
   deleteCountry,
 } from '@/lib/services/country.service';
 import { getAllCategories } from '@/lib/services/category.service';
+import { getUserById } from '@/lib/services/user.service';
+import { Timestamp } from 'firebase/firestore';
 
 type SortField = 'name' | 'isoCode';
 type SortOrder = 'asc' | 'desc';
 type CategoryFilter = 'all' | 'with' | 'without' | string; // 'all', 'with', 'without', or specific category ID
+
+// Helper function to format timestamp
+const formatTimestamp = (timestamp: any) => {
+  if (!timestamp) return null;
+  try {
+    const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+    return new Intl.DateTimeFormat('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    }).format(date);
+  } catch (error) {
+    return null;
+  }
+};
+
+// Helper component to display creator name
+function CreatedByCell({ 
+  userId, 
+  fetchUserName 
+}: { 
+  userId: string; 
+  fetchUserName: (id: string) => Promise<string>;
+}) {
+  const [name, setName] = useState<string>('Loading...');
+  const [photoURL, setPhotoURL] = useState<string>('');
+
+  useEffect(() => {
+    if (userId) {
+      fetchUserName(userId).then(setName);
+      // Fetch user photo
+      getUserById(userId).then(user => {
+        if (user?.photoURL) {
+          setPhotoURL(user.photoURL);
+        }
+      }).catch(() => {
+        setPhotoURL('');
+      });
+    } else {
+      setName('Unknown');
+    }
+  }, [userId, fetchUserName]);
+
+  return (
+    <div className="flex items-center gap-2">
+      {photoURL ? (
+        <img
+          src={photoURL}
+          alt={name}
+          className="w-6 h-6 rounded-full object-cover border border-accent/20"
+          onError={(e) => {
+            e.currentTarget.style.display = 'none';
+            const placeholder = e.currentTarget.nextElementSibling as HTMLElement;
+            if (placeholder) placeholder.style.display = 'flex';
+          }}
+        />
+      ) : null}
+      <div 
+        className="w-6 h-6 rounded-full bg-accent/20 flex items-center justify-center"
+        style={{ display: photoURL ? 'none' : 'flex' }}
+      >
+        <Icons.users size={12} className="text-accent" />
+      </div>
+      <span className="text-sm">{name}</span>
+    </div>
+  );
+}
 
 export default function CountriesPage() {
   const router = useRouter();
@@ -24,6 +95,7 @@ export default function CountriesPage() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [userNames, setUserNames] = useState<Record<string, string>>({});
   const [deleteModal, setDeleteModal] = useState<{
     isOpen: boolean;
     country: Country | null;
@@ -58,6 +130,30 @@ export default function CountriesPage() {
       setError('Failed to load data');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchUserName = async (userId: string): Promise<string> => {
+    if (!userId) {
+      return 'Unknown';
+    }
+
+    // Check cache first
+    if (userNames[userId]) {
+      return userNames[userId];
+    }
+
+    try {
+      const user = await getUserById(userId);
+      const name = user?.name || 'Unknown Admin';
+      
+      // Update cache
+      setUserNames(prev => ({ ...prev, [userId]: name }));
+      
+      return name;
+    } catch (error) {
+      console.error('Error fetching user:', error);
+      return 'Unknown Admin';
     }
   };
 
@@ -408,6 +504,12 @@ export default function CountriesPage() {
                     <th className="px-6 py-4 text-left text-sm font-semibold text-primary font-body">
                       Assigned Categories
                     </th>
+                    <th className="px-6 py-4 text-left text-sm font-semibold text-primary font-body">
+                      Created By
+                    </th>
+                    <th className="px-6 py-4 text-left text-sm font-semibold text-primary font-body">
+                      Updated By
+                    </th>
                     <th className="px-6 py-4 text-right text-sm font-semibold text-primary font-body">
                       Actions
                     </th>
@@ -441,25 +543,52 @@ export default function CountriesPage() {
                         )}
                       </div>
                     </td>
+                    <td className="px-6 py-4 text-sm text-primary">
+                      <div className="flex flex-col gap-1">
+                        <CreatedByCell userId={country.createdBy} fetchUserName={fetchUserName} />
+                        {country.createdAt && (
+                          <span className="text-xs text-secondary">
+                            {formatTimestamp(country.createdAt)}
+                          </span>
+                        )}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 text-sm text-primary">
+                      {country.updatedBy ? (
+                        <div className="flex flex-col gap-1">
+                          <CreatedByCell userId={country.updatedBy} fetchUserName={fetchUserName} />
+                          {country.updatedAt && (
+                            <span className="text-xs text-secondary">
+                              {formatTimestamp(country.updatedAt)}
+                            </span>
+                          )}
+                        </div>
+                      ) : (
+                        <span className="text-secondary text-xs">Not updated</span>
+                      )}
+                    </td>
                     <td className="px-6 py-4 text-right">
                       <div className="flex items-center justify-end gap-2">
                         <button
                           onClick={() => handleView(country)}
-                          className="px-3 py-1.5 text-sm font-medium text-white bg-accent hover:bg-accent/90 rounded-md transition-all"
+                          className="p-2 text-white bg-accent hover:bg-accent/90 rounded-md transition-all cursor-pointer"
+                          title="View"
                         >
-                          View
+                          <Icons.eye size={18} />
                         </button>
                         <button
                           onClick={() => handleEdit(country)}
-                          className="px-3 py-1.5 text-sm font-medium text-primary bg-background hover:bg-accent hover:text-primary rounded-md transition-all border border-primary/10"
+                          className="p-2 text-primary bg-background hover:bg-accent hover:text-primary rounded-md transition-all border border-primary/10 cursor-pointer"
+                          title="Edit"
                         >
-                          Edit
+                          <Icons.edit size={18} />
                         </button>
                         <button
                           onClick={() => handleDeleteClick(country)}
-                          className="px-3 py-1.5 text-sm font-medium text-white bg-secondary hover:bg-secondary/90 rounded-md transition-all"
+                          className="p-2 text-white bg-secondary hover:bg-secondary/90 rounded-md transition-all cursor-pointer"
+                          title="Delete"
                         >
-                          Delete
+                          <Icons.trash size={18} />
                         </button>
                       </div>
                     </td>

@@ -60,6 +60,24 @@ const ADMIN_USERS = [
     provider: 'manual',
     role: 'admin',
   },
+  {
+    email: 'nikit@nanobanana.com',
+    name: 'Nikit',
+    password: DEFAULT_PASSWORD,
+    language: 'en',
+    photoURL: '',
+    provider: 'manual',
+    role: 'admin',
+  },
+  {
+    email: 'viral@nanobanana.com',
+    name: 'Nikit',
+    password: DEFAULT_PASSWORD,
+    language: 'en',
+    photoURL: '',
+    provider: 'manual',
+    role: 'admin',
+  },
 ];
 // ============================================
 

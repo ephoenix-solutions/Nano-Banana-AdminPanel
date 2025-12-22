@@ -193,7 +193,15 @@ export default function ViewUserPage() {
                     <Icons.users size={16} className="mr-2" />
                     {user.role || 'user'}
                   </span>
-                  <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-accent/20 text-primary capitalize">
+                  <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium capitalize ${
+                    user.provider.toLowerCase() === 'google' 
+                      ? 'bg-accent-100 text-accent-700'
+                      : user.provider.toLowerCase() === 'apple' || user.provider.toLowerCase() === 'ios'
+                      ? 'bg-primary-100 text-primary-700'
+                      : user.provider.toLowerCase() === 'manual'
+                      ? 'bg-secondary-100 text-secondary-700'
+                      : 'bg-accent/20 text-primary'
+                  }`}>
                     <Icons.globe size={16} className="mr-2" />
                     {user.provider}
                   </span>

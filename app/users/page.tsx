@@ -180,7 +180,9 @@ export default function UsersPage() {
             </div>
           )}
           <div>
-            <p className="font-semibold text-primary">{user.name}</p>
+            <div className="flex items-center gap-2">
+              <p className="font-semibold text-primary">{user.name}</p>
+            </div>
             <p className="text-xs text-secondary">{user.email}</p>
           </div>
         </div>
@@ -189,11 +191,28 @@ export default function UsersPage() {
     {
       key: 'provider',
       header: 'Provider',
-      render: (user: User) => (
-        <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-accent/20 text-primary capitalize">
-          {user.provider}
-        </span>
-      ),
+      render: (user: User) => {
+        // Determine color based on provider using app color palette
+        let colorClasses = '';
+        const provider = user.provider.toLowerCase();
+        
+        if (provider === 'google') {
+          colorClasses = 'bg-accent-100 text-accent-700 ';
+        } else if (provider === 'apple' || provider === 'ios') {
+          colorClasses = 'bg-primary-100 text-primary-700';
+        } else if (provider === 'manual') {
+          colorClasses = 'bg-secondary-100 text-secondary-700';
+        } else {
+          // Fallback for any other provider
+          colorClasses = 'bg-accent/20 text-primary';
+        }
+        
+        return (
+          <span className={`inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium capitalize ${colorClasses}`}>
+            {user.provider}
+          </span>
+        );
+      },
     },
     {
       key: 'role',
@@ -462,6 +481,9 @@ export default function UsersPage() {
             onEdit={handleEdit}
             onDelete={handleDeleteClick}
             loading={loading}
+            getRowClassName={(user) => user.role === 'admin' ? 'bg-accent/5' : ''}
+            isEditDisabled={(user) => user.role === 'admin'}
+            isDeleteDisabled={(user) => user.role === 'admin'}
           />
         )}
 

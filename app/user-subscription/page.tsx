@@ -563,9 +563,10 @@ export default function UserSubscriptionsPage() {
                         <div className="flex items-center justify-end gap-2">
                           <button
                             onClick={() => handleDeleteClick(subscription)}
-                            className="px-3 py-1.5 text-sm font-medium text-white bg-secondary hover:bg-secondary/90 rounded-md transition-all"
+                            className="p-2 text-white bg-secondary hover:bg-secondary/90 rounded-md transition-all cursor-pointer"
+                            title="Delete"
                           >
-                            Delete
+                            <Icons.trash size={18} />
                           </button>
                         </div>
                       </td>

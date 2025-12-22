@@ -9,6 +9,7 @@ import {
   query,
   orderBy,
   where,
+  Timestamp,
 } from 'firebase/firestore';
 import { db } from '@/config/firebase';
 import {
@@ -105,6 +106,8 @@ export async function createSubscriptionPlan(
       features: planData.features,
       isActive: planData.isActive ?? true,
       order: planData.order,
+      createdAt: Timestamp.now(),
+      createdBy: planData.createdBy,
     };
     
     const docRef = await addDoc(plansRef, newPlan);
@@ -134,6 +137,12 @@ export async function updateSubscriptionPlan(
     if (planData.features !== undefined) updateData.features = planData.features;
     if (planData.isActive !== undefined) updateData.isActive = planData.isActive;
     if (planData.order !== undefined) updateData.order = planData.order;
+    
+    // Add updatedBy and updatedAt fields
+    if (planData.updatedBy !== undefined) {
+      updateData.updatedBy = planData.updatedBy;
+      updateData.updatedAt = Timestamp.now();
+    }
     
     await updateDoc(planRef, updateData);
   } catch (error) {

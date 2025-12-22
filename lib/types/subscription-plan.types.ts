@@ -1,3 +1,5 @@
+import { Timestamp } from 'firebase/firestore';
+
 export interface SubscriptionPlan {
   id: string;
   name: string;
@@ -8,6 +10,10 @@ export interface SubscriptionPlan {
   features: string[];
   isActive: boolean;
   order: number;
+  createdAt: Timestamp;
+  createdBy: string;
+  updatedBy?: string;
+  updatedAt?: Timestamp;
 }
 
 export interface CreateSubscriptionPlanInput {
@@ -19,6 +25,7 @@ export interface CreateSubscriptionPlanInput {
   features: string[];
   isActive?: boolean;
   order: number;
+  createdBy: string;
 }
 
 export interface UpdateSubscriptionPlanInput {
@@ -30,4 +37,5 @@ export interface UpdateSubscriptionPlanInput {
   features?: string[];
   isActive?: boolean;
   order?: number;
+  updatedBy?: string;
 }

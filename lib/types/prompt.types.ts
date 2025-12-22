@@ -12,6 +12,9 @@ export interface Prompt {
   likes: number;
   searchCount: number;
   createdAt: Timestamp;
+  createdBy: string;
+  updatedBy?: string;
+  updatedAt?: Timestamp;
 }
 
 export interface CreatePromptInput {
@@ -24,6 +27,7 @@ export interface CreatePromptInput {
   isTrending?: boolean;
   likes?: number;
   searchCount?: number;
+  createdBy: string;
 }
 
 export interface UpdatePromptInput {
@@ -36,4 +40,5 @@ export interface UpdatePromptInput {
   isTrending?: boolean;
   likes?: number;
   searchCount?: number;
+  updatedBy?: string;
 }

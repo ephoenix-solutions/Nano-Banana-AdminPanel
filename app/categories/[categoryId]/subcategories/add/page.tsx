@@ -10,16 +10,18 @@ import {
   createSubcategory,
 } from '@/lib/services/category.service';
 import { CreateSubcategoryInput } from '@/lib/types/category.types';
+import { useAuth } from '@/lib/hooks/useAuth';
 
 export default function AddSubcategoryPage() {
   const router = useRouter();
   const params = useParams();
   const categoryId = params.categoryId as string;
+  const { user } = useAuth();
 
   const [categoryName, setCategoryName] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [formData, setFormData] = useState<CreateSubcategoryInput>({
+  const [formData, setFormData] = useState<Omit<CreateSubcategoryInput, 'createdBy'>>({
     name: '',
     order: 0,
     searchCount: 0,
@@ -60,7 +62,14 @@ export default function AddSubcategoryPage() {
         throw new Error('Subcategory name is required');
       }
 
-      await createSubcategory(categoryId, formData);
+      if (!user?.id) {
+        throw new Error('User not authenticated');
+      }
+
+      await createSubcategory(categoryId, {
+        ...formData,
+        createdBy: user.id,
+      });
       router.push('/categories');
     } catch (err: any) {
       console.error('Error creating subcategory:', err);

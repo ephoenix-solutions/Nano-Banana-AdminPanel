@@ -7,6 +7,7 @@
 
 import {
   Users,
+  User,
   FolderTree,
   Image,
   CreditCard,
@@ -59,6 +60,7 @@ import {
 export const Icons = {
   // Sidebar Menu Icons
   users: Users,
+  user: User,
   categories: FolderTree,
   images: Image,
   subscriptionPlan: CreditCard,
@@ -118,6 +120,7 @@ export const Icons = {
 // Export individual icons for direct import
 export {
   Users,
+  User,
   FolderTree,
   Image,
   CreditCard,

@@ -9,14 +9,16 @@ import { createCountry } from '@/lib/services/country.service';
 import { getAllCategories } from '@/lib/services/category.service';
 import { CreateCountryInput } from '@/lib/types/country.types';
 import { Category } from '@/lib/types/category.types';
+import { useAuth } from '@/lib/hooks/useAuth';
 
 export default function AddCountryPage() {
   const router = useRouter();
+  const { user } = useAuth();
   const [loading, setLoading] = useState(false);
   const [loadingCategories, setLoadingCategories] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [categories, setCategories] = useState<Category[]>([]);
-  const [formData, setFormData] = useState<CreateCountryInput>({
+  const [formData, setFormData] = useState<Omit<CreateCountryInput, 'createdBy'>>({
     name: '',
     isoCode: '',
     categories: [],
@@ -79,7 +81,14 @@ export default function AddCountryPage() {
         throw new Error('ISO code must be exactly 2 characters');
       }
 
-      await createCountry(formData);
+      if (!user?.id) {
+        throw new Error('User not authenticated');
+      }
+
+      await createCountry({
+        ...formData,
+        createdBy: user.id,
+      });
       router.push('/countries');
     } catch (err: any) {
       console.error('Error creating country:', err);

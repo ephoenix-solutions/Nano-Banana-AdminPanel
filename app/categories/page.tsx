@@ -12,16 +12,88 @@ import {
   deleteCategory,
   deleteSubcategory,
 } from '@/lib/services/category.service';
+import { getUserById } from '@/lib/services/user.service';
+import { Timestamp } from 'firebase/firestore';
 
 type SortField = 'name' | 'order';
 type SortOrder = 'asc' | 'desc';
 type SubcategoryFilter = 'all' | 'with' | 'without';
+
+// Helper function to format timestamp
+const formatTimestamp = (timestamp: any) => {
+  if (!timestamp) return null;
+  try {
+    const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+    return new Intl.DateTimeFormat('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    }).format(date);
+  } catch (error) {
+    return null;
+  }
+};
+
+// Helper component to display creator name
+function CreatedByCell({ 
+  userId, 
+  fetchUserName 
+}: { 
+  userId: string; 
+  fetchUserName: (id: string) => Promise<string>;
+}) {
+  const [name, setName] = useState<string>('Loading...');
+  const [photoURL, setPhotoURL] = useState<string>('');
+
+  useEffect(() => {
+    if (userId) {
+      fetchUserName(userId).then(setName);
+      // Fetch user photo
+      getUserById(userId).then(user => {
+        if (user?.photoURL) {
+          setPhotoURL(user.photoURL);
+        }
+      }).catch(() => {
+        setPhotoURL('');
+      });
+    } else {
+      setName('Unknown');
+    }
+  }, [userId, fetchUserName]);
+
+  return (
+    <div className="flex items-center gap-2">
+      {photoURL ? (
+        <img
+          src={photoURL}
+          alt={name}
+          className="w-6 h-6 rounded-full object-cover border border-accent/20"
+          onError={(e) => {
+            e.currentTarget.style.display = 'none';
+            const placeholder = e.currentTarget.nextElementSibling as HTMLElement;
+            if (placeholder) placeholder.style.display = 'flex';
+          }}
+        />
+      ) : null}
+      <div 
+        className="w-6 h-6 rounded-full bg-accent/20 flex items-center justify-center"
+        style={{ display: photoURL ? 'none' : 'flex' }}
+      >
+        <Icons.users size={12} className="text-accent" />
+      </div>
+      <span className="text-sm">{name}</span>
+    </div>
+  );
+}
 
 export default function CategoriesPage() {
   const router = useRouter();
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [userNames, setUserNames] = useState<Record<string, string>>({});
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(
     new Set()
   );
@@ -61,6 +133,30 @@ export default function CategoriesPage() {
       setError('Failed to load categories');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchUserName = async (userId: string): Promise<string> => {
+    if (!userId) {
+      return 'Unknown';
+    }
+
+    // Check cache first
+    if (userNames[userId]) {
+      return userNames[userId];
+    }
+
+    try {
+      const user = await getUserById(userId);
+      const name = user?.name || 'Unknown Admin';
+      
+      // Update cache
+      setUserNames(prev => ({ ...prev, [userId]: name }));
+      
+      return name;
+    } catch (error) {
+      console.error('Error fetching user:', error);
+      return 'Unknown Admin';
     }
   };
 
@@ -453,6 +549,12 @@ export default function CategoriesPage() {
                     <th className="px-6 py-4 text-left text-sm font-semibold text-primary font-body">
                       Subcategories
                     </th>
+                    <th className="px-6 py-4 text-left text-sm font-semibold text-primary font-body">
+                      Created By
+                    </th>
+                    <th className="px-6 py-4 text-left text-sm font-semibold text-primary font-body">
+                      Updated By
+                    </th>
                     <th className="px-6 py-4 text-right text-sm font-semibold text-primary font-body">
                       Actions
                     </th>
@@ -524,34 +626,61 @@ export default function CategoriesPage() {
                             {category.subcategories?.length || 0}
                           </span>
                         </td>
+                        <td className="px-6 py-4 text-sm text-primary">
+                          <div className="flex flex-col gap-1">
+                            <CreatedByCell userId={category.createdBy} fetchUserName={fetchUserName} />
+                            {category.createdAt && (
+                              <span className="text-xs text-secondary">
+                                {formatTimestamp(category.createdAt)}
+                              </span>
+                            )}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 text-sm text-primary">
+                          {category.updatedBy ? (
+                            <div className="flex flex-col gap-1">
+                              <CreatedByCell userId={category.updatedBy} fetchUserName={fetchUserName} />
+                              {category.updatedAt && (
+                                <span className="text-xs text-secondary">
+                                  {formatTimestamp(category.updatedAt)}
+                                </span>
+                              )}
+                            </div>
+                          ) : (
+                            <span className="text-secondary text-xs">Not updated</span>
+                          )}
+                        </td>
                         <td className="px-6 py-4 text-right">
                           <div className="flex items-center justify-end gap-2">
                             <button
                               onClick={() => handleAddSubcategory(category.id)}
-                              className="px-3 py-1.5 text-sm font-medium text-white bg-secondary hover:bg-secondary/90 rounded-md transition-all"
+                              className="p-2 text-white bg-secondary hover:bg-secondary/90 rounded-md transition-all cursor-pointer"
                               title="Add Subcategory"
                             >
-                              <Icons.plus size={16} />
+                              <Icons.plus size={18} />
                             </button>
                             <button
                               onClick={() => handleViewCategory(category.id)}
-                              className="px-3 py-1.5 text-sm font-medium text-white bg-accent hover:bg-accent/90 rounded-md transition-all"
+                              className="p-2 text-white bg-accent hover:bg-accent/90 rounded-md transition-all cursor-pointer"
+                              title="View"
                             >
-                              View
+                              <Icons.eye size={18} />
                             </button>
                             <button
                               onClick={() => handleEditCategory(category.id)}
-                              className="px-3 py-1.5 text-sm font-medium text-primary bg-background hover:bg-accent hover:text-primary rounded-md transition-all border border-primary/10"
+                              className="p-2 text-primary bg-background hover:bg-accent hover:text-primary rounded-md transition-all border border-primary/10 cursor-pointer"
+                              title="Edit"
                             >
-                              Edit
+                              <Icons.edit size={18} />
                             </button>
                             <button
                               onClick={() =>
                                 handleDeleteCategoryClick(category)
                               }
-                              className="px-3 py-1.5 text-sm font-medium text-white bg-secondary hover:bg-secondary/90 rounded-md transition-all"
+                              className="p-2 text-white bg-secondary hover:bg-secondary/90 rounded-md transition-all cursor-pointer"
+                              title="Delete"
                             >
-                              Delete
+                              <Icons.trash size={18} />
                             </button>
                           </div>
                         </td>
@@ -586,6 +715,30 @@ export default function CategoriesPage() {
                             <td className="px-6 py-3 text-sm text-secondary">
                               -
                             </td>
+                            <td className="px-6 py-3 text-sm text-primary">
+                              <div className="flex flex-col gap-1">
+                                <CreatedByCell userId={subcategory.createdBy} fetchUserName={fetchUserName} />
+                                {subcategory.createdAt && (
+                                  <span className="text-xs text-secondary">
+                                    {formatTimestamp(subcategory.createdAt)}
+                                  </span>
+                                )}
+                              </div>
+                            </td>
+                            <td className="px-6 py-3 text-sm text-primary">
+                              {subcategory.updatedBy ? (
+                                <div className="flex flex-col gap-1">
+                                  <CreatedByCell userId={subcategory.updatedBy} fetchUserName={fetchUserName} />
+                                  {subcategory.updatedAt && (
+                                    <span className="text-xs text-secondary">
+                                      {formatTimestamp(subcategory.updatedAt)}
+                                    </span>
+                                  )}
+                                </div>
+                              ) : (
+                                <span className="text-secondary text-xs">Not updated</span>
+                              )}
+                            </td>
                             <td className="px-6 py-3 text-right">
                               <div className="flex items-center justify-end gap-2">
                                 <button
@@ -595,9 +748,10 @@ export default function CategoriesPage() {
                                       subcategory.id
                                     )
                                   }
-                                  className="px-3 py-1.5 text-sm font-medium text-primary bg-background hover:bg-accent hover:text-primary rounded-md transition-all border border-primary/10"
+                                  className="p-2 text-primary bg-background hover:bg-accent hover:text-primary rounded-md transition-all border border-primary/10 cursor-pointer"
+                                  title="Edit"
                                 >
-                                  Edit
+                                  <Icons.edit size={18} />
                                 </button>
                                 <button
                                   onClick={() =>
@@ -606,9 +760,10 @@ export default function CategoriesPage() {
                                       subcategory
                                     )
                                   }
-                                  className="px-3 py-1.5 text-sm font-medium text-white bg-secondary hover:bg-secondary/90 rounded-md transition-all"
+                                  className="p-2 text-white bg-secondary hover:bg-secondary/90 rounded-md transition-all cursor-pointer"
+                                  title="Delete"
                                 >
-                                  Delete
+                                  <Icons.trash size={18} />
                                 </button>
                               </div>
                             </td>

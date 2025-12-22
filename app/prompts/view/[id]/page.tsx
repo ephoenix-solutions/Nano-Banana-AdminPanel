@@ -7,6 +7,7 @@ import Breadcrumbs from '@/components/Breadcrumbs';
 import { Icons } from '@/config/icons';
 import { getPromptById } from '@/lib/services/prompt.service';
 import { getAllCategories } from '@/lib/services/category.service';
+import { getUserById } from '@/lib/services/user.service';
 import { Prompt } from '@/lib/types/prompt.types';
 import { Category } from '@/lib/types/category.types';
 import { Timestamp } from 'firebase/firestore';
@@ -20,6 +21,10 @@ export default function ViewPromptPage() {
   const [error, setError] = useState<string | null>(null);
   const [prompt, setPrompt] = useState<Prompt | null>(null);
   const [categories, setCategories] = useState<Category[]>([]);
+  const [creatorName, setCreatorName] = useState<string>('Loading...');
+  const [creatorPhoto, setCreatorPhoto] = useState<string>('');
+  const [updaterName, setUpdaterName] = useState<string>('Loading...');
+  const [updaterPhoto, setUpdaterPhoto] = useState<string>('');
 
   useEffect(() => {
     fetchData();
@@ -37,6 +42,40 @@ export default function ViewPromptPage() {
 
       if (promptData) {
         setPrompt(promptData);
+        
+        // Fetch creator information
+        if (promptData.createdBy) {
+          try {
+            const creator = await getUserById(promptData.createdBy);
+            if (creator) {
+              setCreatorName(creator.name || 'Unknown Admin');
+              setCreatorPhoto(creator.photoURL || '');
+            } else {
+              setCreatorName('Unknown Admin');
+            }
+          } catch (err) {
+            console.error('Error fetching creator:', err);
+            setCreatorName('Unknown Admin');
+          }
+        } else {
+          setCreatorName('Unknown');
+        }
+        
+        // Fetch updater information
+        if (promptData.updatedBy) {
+          try {
+            const updater = await getUserById(promptData.updatedBy);
+            if (updater) {
+              setUpdaterName(updater.name || 'Unknown Admin');
+              setUpdaterPhoto(updater.photoURL || '');
+            } else {
+              setUpdaterName('Unknown Admin');
+            }
+          } catch (err) {
+            console.error('Error fetching updater:', err);
+            setUpdaterName('Unknown Admin');
+          }
+        }
       } else {
         setError('Prompt not found');
       }
@@ -69,17 +108,21 @@ export default function ViewPromptPage() {
     return subcategory?.name || 'Unknown';
   };
 
-  const formatTimestamp = (timestamp: Timestamp) => {
-    if (!timestamp) return '-';
-    const date = timestamp.toDate();
-    return new Intl.DateTimeFormat('en-US', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-      second: '2-digit',
-    }).format(date);
+  const formatTimestamp = (timestamp: any) => {
+    if (!timestamp) return 'N/A';
+    try {
+      const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+      return new Intl.DateTimeFormat('en-US', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+      }).format(date);
+    } catch (error) {
+      return 'N/A';
+    }
   };
 
   if (loading) {
@@ -349,17 +392,84 @@ export default function ViewPromptPage() {
                 </div>
               </div>
 
-              {/* Created At */}
-              <div className="bg-background rounded-lg p-4 border border-primary/10 md:col-span-2">
+              {/* Created By */}
+              <div className="bg-background rounded-lg p-4 border border-primary/10">
                 <div className="flex items-start gap-3">
-                  <div className="w-10 h-10 bg-secondary/20 rounded-lg flex items-center justify-center flex-shrink-0">
-                    <Icons.clock size={20} className="text-secondary" />
+                  <div className="w-10 h-10 bg-accent/20 rounded-lg flex items-center justify-center flex-shrink-0">
+                    {creatorPhoto ? (
+                        <img
+                          src={creatorPhoto}
+                          alt={creatorName}
+                          className="w-10 h-10 rounded-lg object-cover"
+                          onError={(e) => {
+                            e.currentTarget.style.display = 'none';
+                            const placeholder = e.currentTarget.nextElementSibling as HTMLElement;
+                            if (placeholder) placeholder.style.display = 'flex';
+                          }}
+                        />
+                      ) : null}
+                      <div 
+                        className="w-10 h-10 bg-accent/20 rounded-lg flex items-center justify-center"
+                        style={{ display: creatorPhoto ? 'none' : 'flex' }}
+                      >
+                        <Icons.users size={20} className="text-accent" />
+                      </div>
                   </div>
                   <div className="flex-1">
-                    <p className="text-sm text-secondary font-body mb-1">Created At</p>
+                    <p className="text-sm text-secondary font-body mb-1">Created By</p>
                     <p className="text-base font-semibold text-primary font-body">
-                      {formatTimestamp(prompt.createdAt)}
+                      {creatorName}
                     </p>
+                    {prompt.createdAt && (
+                      <p className="text-xs text-secondary font-body mt-1">
+                        {formatTimestamp(prompt.createdAt)}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Updated By */}
+              <div className="bg-background rounded-lg p-4 border border-primary/10">
+                <div className="flex items-start gap-3">
+                  <div className="w-10 h-10 bg-secondary/20 rounded-lg flex items-center justify-center flex-shrink-0">
+                    {prompt.updatedBy && updaterPhoto ? (
+                        <img
+                          src={updaterPhoto}
+                          alt={updaterName}
+                          className="w-10 h-10 rounded-lg object-cover"
+                          onError={(e) => {
+                            e.currentTarget.style.display = 'none';
+                            const placeholder = e.currentTarget.nextElementSibling as HTMLElement;
+                            if (placeholder) placeholder.style.display = 'flex';
+                          }}
+                        />
+                      ) : null}
+                      <div 
+                        className="w-10 h-10 bg-secondary/20 rounded-lg flex items-center justify-center"
+                        style={{ display: (prompt.updatedBy && updaterPhoto) ? 'none' : 'flex' }}
+                      >
+                        <Icons.users size={20} className="text-secondary" />
+                      </div>
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-sm text-secondary font-body mb-1">Updated By</p>
+                    {prompt.updatedBy ? (
+                      <>
+                        <p className="text-base font-semibold text-primary font-body">
+                          {updaterName}
+                        </p>
+                        {prompt.updatedAt && (
+                          <p className="text-xs text-secondary font-body mt-1">
+                            {formatTimestamp(prompt.updatedAt)}
+                          </p>
+                        )}
+                      </>
+                    ) : (
+                      <p className="text-base text-secondary font-body italic">
+                        Not updated yet
+                      </p>
+                    )}
                   </div>
                 </div>
               </div>

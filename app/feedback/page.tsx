@@ -510,15 +510,17 @@ export default function FeedbackPage() {
                       <div className="flex items-center justify-end gap-2">
                         <button
                           onClick={() => router.push(`/feedback/view/${item.id}`)}
-                          className="px-3 py-1.5 text-sm font-medium text-primary bg-accent/20 hover:bg-accent/30 rounded-md transition-all"
+                          className="p-2 text-white bg-accent hover:bg-accent/90 rounded-md transition-all cursor-pointer"
+                          title="View"
                         >
-                          View
+                          <Icons.eye size={18} />
                         </button>
                         <button
                           onClick={() => handleDeleteClick(item)}
-                          className="px-3 py-1.5 text-sm font-medium text-white bg-secondary hover:bg-secondary/90 rounded-md transition-all"
+                          className="p-2 text-white bg-secondary hover:bg-secondary/90 rounded-md transition-all cursor-pointer"
+                          title="Delete"
                         >
-                          Delete
+                          <Icons.trash size={18} />
                         </button>
                       </div>
                     </td>

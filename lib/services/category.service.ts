@@ -9,6 +9,7 @@ import {
   query,
   orderBy,
   setDoc,
+  Timestamp,
 } from 'firebase/firestore';
 import { db } from '@/config/firebase';
 import {
@@ -97,6 +98,8 @@ export async function createCategory(categoryData: CreateCategoryInput): Promise
       iconImage: categoryData.iconImage || '',
       order: categoryData.order,
       searchCount: categoryData.searchCount || '0',
+      createdBy: categoryData.createdBy,
+      createdAt: Timestamp.now(),
     };
     
     const docRef = await addDoc(categoriesRef, newCategory);
@@ -122,6 +125,12 @@ export async function updateCategory(
     if (categoryData.iconImage !== undefined) updateData.iconImage = categoryData.iconImage;
     if (categoryData.order !== undefined) updateData.order = categoryData.order;
     if (categoryData.searchCount !== undefined) updateData.searchCount = categoryData.searchCount;
+    
+    // Add updatedBy and updatedAt fields
+    if (categoryData.updatedBy !== undefined) {
+      updateData.updatedBy = categoryData.updatedBy;
+      updateData.updatedAt = Timestamp.now();
+    }
     
     await updateDoc(categoryRef, updateData);
   } catch (error) {
@@ -230,6 +239,8 @@ export async function createSubcategory(
       name: subcategoryData.name,
       order: subcategoryData.order,
       searchCount: subcategoryData.searchCount || 0,
+      createdBy: subcategoryData.createdBy,
+      createdAt: Timestamp.now(),
     };
     
     const docRef = await addDoc(subcategoriesRef, newSubcategory);
@@ -261,6 +272,12 @@ export async function updateSubcategory(
     if (subcategoryData.name !== undefined) updateData.name = subcategoryData.name;
     if (subcategoryData.order !== undefined) updateData.order = subcategoryData.order;
     if (subcategoryData.searchCount !== undefined) updateData.searchCount = subcategoryData.searchCount;
+    
+    // Add updatedBy and updatedAt fields
+    if (subcategoryData.updatedBy !== undefined) {
+      updateData.updatedBy = subcategoryData.updatedBy;
+      updateData.updatedAt = Timestamp.now();
+    }
     
     await updateDoc(subcategoryRef, updateData);
   } catch (error) {
