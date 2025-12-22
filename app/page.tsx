@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import AdminLayout from '@/components/AdminLayout';
 import Breadcrumbs from '@/components/Breadcrumbs';
 import { Icons } from '@/config/icons';
-import { getAllUsers } from '@/lib/services/user.service';
+import { getAllUsers, getUserById } from '@/lib/services/user.service';
 import { getAllCategories } from '@/lib/services/category.service';
 import { getAllPrompts } from '@/lib/services/prompt.service';
 import { getAllSubscriptionPlans } from '@/lib/services/subscription-plan.service';
@@ -58,6 +58,16 @@ interface DashboardStats {
   };
 }
 
+interface RecentItem {
+  id: string;
+  name: string;
+  email?: string;
+  imageUrl?: string;
+  createdAt: Date;
+  additionalInfo?: string;
+  rating?: number;
+}
+
 export default function DashboardPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
@@ -73,9 +83,30 @@ export default function DashboardPage() {
     appSettings: { minimumVersion: '', liveVersion: '', languagesCount: 0 },
   });
 
+  const [recentUsers, setRecentUsers] = useState<RecentItem[]>([]);
+  const [recentCategories, setRecentCategories] = useState<RecentItem[]>([]);
+  const [recentPrompts, setRecentPrompts] = useState<RecentItem[]>([]);
+  const [recentFeedback, setRecentFeedback] = useState<RecentItem[]>([]);
+
   useEffect(() => {
     fetchDashboardData();
   }, []);
+
+  // Helper function to safely fetch user name with validation
+  const fetchUserName = async (userId: string | undefined | null): Promise<string> => {
+    // Validate userId before calling getUserById
+    if (!userId || typeof userId !== 'string' || userId.trim() === '') {
+      return 'Unknown';
+    }
+    
+    try {
+      const user = await getUserById(userId);
+      return user?.name || user?.email || 'Unknown';
+    } catch (err) {
+      console.error('Error fetching user:', err);
+      return 'Unknown';
+    }
+  };
 
   const fetchDashboardData = async () => {
     try {
@@ -187,6 +218,95 @@ export default function DashboardPage() {
         countries: countriesStats,
         appSettings: settingsStats,
       });
+
+      // Get recent items (last 5 of each)
+      // Recent Users
+      const sortedUsers = [...users]
+        .sort((a, b) => {
+          const timeA = a.createdAt?.toMillis ? a.createdAt.toMillis() : 0;
+          const timeB = b.createdAt?.toMillis ? b.createdAt.toMillis() : 0;
+          return timeB - timeA;
+        })
+        .slice(0, 5)
+        .map((user) => ({
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          imageUrl: user.photoURL || '',
+          createdAt: user.createdAt?.toDate ? user.createdAt.toDate() : new Date(),
+          additionalInfo: user.provider,
+        }));
+      setRecentUsers(sortedUsers);
+
+      // Recent Categories
+      const sortedCategories = [...categories]
+        .sort((a, b) => {
+          const timeA = a.createdAt?.toMillis ? a.createdAt.toMillis() : 0;
+          const timeB = b.createdAt?.toMillis ? b.createdAt.toMillis() : 0;
+          return timeB - timeA;
+        })
+        .slice(0, 5);
+
+      const categoriesWithCreator = await Promise.all(
+        sortedCategories.map(async (cat) => {
+          const creatorName = await fetchUserName(cat.createdBy);
+          return {
+            id: cat.id,
+            name: cat.name,
+            imageUrl: cat.iconImage || '',
+            createdAt: cat.createdAt?.toDate ? cat.createdAt.toDate() : new Date(),
+            additionalInfo: `By ${creatorName} • ${cat.subcategories?.length || 0} subcategories`,
+          };
+        })
+      );
+      setRecentCategories(categoriesWithCreator);
+
+      // Recent Prompts
+      const sortedPrompts = [...prompts]
+        .sort((a, b) => {
+          const timeA = a.createdAt?.toMillis ? a.createdAt.toMillis() : 0;
+          const timeB = b.createdAt?.toMillis ? b.createdAt.toMillis() : 0;
+          return timeB - timeA;
+        })
+        .slice(0, 5);
+
+      const promptsWithCreator = await Promise.all(
+        sortedPrompts.map(async (prompt) => {
+          const creatorName = await fetchUserName(prompt.createdBy);
+          return {
+            id: prompt.id,
+            name: prompt.title,
+            imageUrl: prompt.url || '',
+            createdAt: prompt.createdAt?.toDate ? prompt.createdAt.toDate() : new Date(),
+            additionalInfo: `By ${creatorName} • ${prompt.likes} likes`,
+          };
+        })
+      );
+      setRecentPrompts(promptsWithCreator);
+
+      // Recent Feedback
+      const sortedFeedback = [...feedback]
+        .sort((a, b) => {
+          const timeA = a.createdAt?.toMillis ? a.createdAt.toMillis() : 0;
+          const timeB = b.createdAt?.toMillis ? b.createdAt.toMillis() : 0;
+          return timeB - timeA;
+        })
+        .slice(0, 5);
+
+      const feedbackWithUser = await Promise.all(
+        sortedFeedback.map(async (fb) => {
+          const userName = await fetchUserName(fb.userId);
+          return {
+            id: fb.id,
+            name: fb.message.substring(0, 50) + (fb.message.length > 50 ? '...' : ''),
+            createdAt: fb.createdAt?.toDate ? fb.createdAt.toDate() : new Date(),
+            additionalInfo: `By ${userName} • ${fb.rating}`,
+            rating: fb.rating,
+          };
+        })
+      );
+      setRecentFeedback(feedbackWithUser);
+
     } catch (err) {
       console.error('Error fetching dashboard data:', err);
       setError('Failed to load dashboard data');
@@ -236,31 +356,38 @@ export default function DashboardPage() {
           <h2 className="text-lg md:text-xl font-bold text-primary font-heading mb-4">
             Quick Actions
           </h2>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-3 md:gap-4">
+            <button
+              onClick={() => router.push('/profile')}
+              className="flex flex-col items-center gap-2 p-3 md:p-4 rounded-lg bg-background hover:bg-accent/10 transition-all border border-primary/10 hover:border-accent cursor-pointer"
+            >
+              <Icons.user size={20} className="md:w-6 md:h-6 text-accent" />
+              <span className="text-xs md:text-sm font-medium text-primary font-body text-center">Profile</span>
+            </button>
             <button
               onClick={() => router.push('/users/add')}
-              className="flex flex-col items-center gap-2 p-3 md:p-4 rounded-lg bg-background hover:bg-accent/10 transition-all border border-primary/10 hover:border-accent"
+              className="flex flex-col items-center gap-2 p-3 md:p-4 rounded-lg bg-background hover:bg-accent/10 transition-all border border-primary/10 hover:border-accent cursor-pointer"
             >
               <Icons.users size={20} className="md:w-6 md:h-6 text-accent" />
               <span className="text-xs md:text-sm font-medium text-primary font-body text-center">Add User</span>
             </button>
             <button
               onClick={() => router.push('/categories/add')}
-              className="flex flex-col items-center gap-2 p-3 md:p-4 rounded-lg bg-background hover:bg-accent/10 transition-all border border-primary/10 hover:border-accent"
+              className="flex flex-col items-center gap-2 p-3 md:p-4 rounded-lg bg-background hover:bg-accent/10 transition-all border border-primary/10 hover:border-accent cursor-pointer"
             >
               <Icons.categories size={20} className="md:w-6 md:h-6 text-accent" />
               <span className="text-xs md:text-sm font-medium text-primary font-body text-center">Add Category</span>
             </button>
             <button
               onClick={() => router.push('/prompts/add')}
-              className="flex flex-col items-center gap-2 p-3 md:p-4 rounded-lg bg-background hover:bg-accent/10 transition-all border border-primary/10 hover:border-accent"
+              className="flex flex-col items-center gap-2 p-3 md:p-4 rounded-lg bg-background hover:bg-accent/10 transition-all border border-primary/10 hover:border-accent cursor-pointer"
             >
               <Icons.images size={20} className="md:w-6 md:h-6 text-accent" />
               <span className="text-xs md:text-sm font-medium text-primary font-body text-center">Add Prompt</span>
             </button>
             <button
               onClick={() => router.push('/countries/add')}
-              className="flex flex-col items-center gap-2 p-3 md:p-4 rounded-lg bg-background hover:bg-accent/10 transition-all border border-primary/10 hover:border-accent"
+              className="flex flex-col items-center gap-2 p-3 md:p-4 rounded-lg bg-background hover:bg-accent/10 transition-all border border-primary/10 hover:border-accent cursor-pointer"
             >
               <Icons.globe size={20} className="md:w-6 md:h-6 text-accent" />
               <span className="text-xs md:text-sm font-medium text-primary font-body text-center">Add Country</span>
@@ -268,174 +395,365 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* Combined Statistics Cards */}
+        {/* Combined Statistics and Recent Items */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
-          {/* Users Card */}
+          {/* Users Card with Recent Users */}
           <div className="bg-white rounded-lg border border-primary/10 p-4 md:p-6">
-            <div className="flex items-center gap-3 mb-4 pb-4 border-b border-primary/10">
-              <div className="w-10 h-10 md:w-12 md:h-12 bg-accent/20 rounded-lg flex items-center justify-center">
-                <Icons.users size={20} className="md:w-6 md:h-6 text-accent" />
+            <div className="flex items-center justify-between mb-4 pb-4 border-b border-primary/10">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 md:w-12 md:h-12 bg-accent/20 rounded-lg flex items-center justify-center">
+                  <Icons.users size={20} className="md:w-6 md:h-6 text-accent" />
+                </div>
+                <div>
+                  <h2 className="text-lg md:text-xl font-bold text-primary font-heading">Recent Users</h2>
+                  <p className="text-xs text-secondary">Total: {stats.users.total} • Active Today: {stats.users.activeToday}</p>
+                </div>
               </div>
-              <h2 className="text-lg md:text-xl font-bold text-primary font-heading">Users</h2>
+              <button
+                onClick={() => router.push('/users')}
+                className="px-3 py-1.5 text-sm text-white bg-secondary hover:bg-secondary/90 rounded-lg font-medium transition-all cursor-pointer"
+              >
+                View All
+              </button>
             </div>
-            <div className="grid grid-cols-2 gap-3 md:gap-4">
-              <div>
-                <p className="text-xs md:text-sm text-secondary font-body">Total Users</p>
-                <p className="text-xl md:text-2xl font-bold text-primary font-body mt-1">{stats.users.total}</p>
-              </div>
-              <div>
-                <p className="text-xs md:text-sm text-secondary font-body">Active Today</p>
-                <p className="text-xl md:text-2xl font-bold text-primary font-body mt-1">{stats.users.activeToday}</p>
-              </div>
-              <div>
-                <p className="text-xs md:text-sm text-secondary font-body">Google Users</p>
-                <p className="text-xl md:text-2xl font-bold text-primary font-body mt-1">{stats.users.google}</p>
-              </div>
-              <div>
-                <p className="text-xs md:text-sm text-secondary font-body">Apple Users</p>
-                <p className="text-xl md:text-2xl font-bold text-primary font-body mt-1">{stats.users.apple}</p>
-              </div>
+            <div className="space-y-0 border border-primary/10 rounded-lg overflow-hidden">
+              {recentUsers.length === 0 ? (
+                <p className="text-secondary text-sm text-center py-4">No users yet</p>
+              ) : (
+                recentUsers.map((item, index) => (
+                  <div
+                    key={item.id}
+                    className={`flex items-center justify-between px-4 py-3 transition-colors ${
+                      index % 2 === 0
+                        ? 'bg-white hover:bg-background/50'
+                        : 'bg-background hover:bg-background/70'
+                    }`}
+                  >
+                    <div className="flex items-center gap-3 flex-1 min-w-0">
+                      <div className="relative w-10 h-10 rounded-full overflow-hidden bg-gray-200 flex-shrink-0">
+                        {item.imageUrl && item.imageUrl.trim() !== '' ? (
+                          <img
+                            src={item.imageUrl}
+                            alt={item.name}
+                            className="w-full h-full object-cover"
+                            onError={(e) => {
+                              const target = e.target as HTMLImageElement;
+                              const parent = target.parentElement;
+                              if (parent) {
+                                parent.innerHTML = `<div class="w-full h-full bg-secondary flex items-center justify-center text-white font-semibold text-sm">${item.name.charAt(0).toUpperCase()}</div>`;
+                              }
+                            }}
+                          />
+                        ) : (
+                          <div className="w-full h-full bg-secondary flex items-center justify-center text-white font-semibold text-sm">
+                            {item.name.charAt(0).toUpperCase()}
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-semibold text-primary truncate font-body">{item.name}</p>
+                        <p className="text-xs text-secondary truncate font-body">{item.email}</p>
+                        <p className="text-xs text-secondary/70 font-body mt-0.5">{new Date(item.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</p>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => router.push(`/users/view/${item.id}`)}
+                      className="ml-2 p-2 bg-accent text-white rounded-lg hover:bg-accent/90 transition-all flex-shrink-0 cursor-pointer"
+                      title="View User"
+                    >
+                      <Icons.eye size={16} />
+                    </button>
+                  </div>
+                ))
+              )}
             </div>
           </div>
 
-          {/* Categories Card */}
+          {/* Categories Card with Recent Categories */}
           <div className="bg-white rounded-lg border border-primary/10 p-4 md:p-6">
-            <div className="flex items-center gap-3 mb-4 pb-4 border-b border-primary/10">
-              <div className="w-10 h-10 md:w-12 md:h-12 bg-secondary/20 rounded-lg flex items-center justify-center">
-                <Icons.categories size={20} className="md:w-6 md:h-6 text-secondary" />
+            <div className="flex items-center justify-between mb-4 pb-4 border-b border-primary/10">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 md:w-12 md:h-12 bg-secondary/20 rounded-lg flex items-center justify-center">
+                  <Icons.categories size={20} className="md:w-6 md:h-6 text-secondary" />
+                </div>
+                <div>
+                  <h2 className="text-lg md:text-xl font-bold text-primary font-heading">Recent Categories</h2>
+                  <p className="text-xs text-secondary">Total: {stats.categories.total} • Subcategories: {stats.categories.subcategories}</p>
+                </div>
               </div>
-              <h2 className="text-lg md:text-xl font-bold text-primary font-heading">Categories</h2>
+              <button
+                onClick={() => router.push('/categories')}
+                className="px-3 py-1.5 text-sm text-white bg-secondary hover:bg-secondary/90 rounded-lg font-medium transition-all cursor-pointer"
+              >
+                View All
+              </button>
             </div>
-            <div className="grid grid-cols-2 gap-3 md:gap-4">
-              <div>
-                <p className="text-xs md:text-sm text-secondary font-body">Total Categories</p>
-                <p className="text-xl md:text-2xl font-bold text-primary font-body mt-1">{stats.categories.total}</p>
-              </div>
-              <div>
-                <p className="text-xs md:text-sm text-secondary font-body">Subcategories</p>
-                <p className="text-xl md:text-2xl font-bold text-primary font-body mt-1">{stats.categories.subcategories}</p>
-              </div>
-              <div className="col-span-2">
-                <p className="text-xs md:text-sm text-secondary font-body">Total Searches</p>
-                <p className="text-xl md:text-2xl font-bold text-primary font-body mt-1">{stats.categories.totalSearches}</p>
-              </div>
+            <div className="space-y-0 border border-primary/10 rounded-lg overflow-hidden">
+              {recentCategories.length === 0 ? (
+                <p className="text-secondary text-sm text-center py-4">No categories yet</p>
+              ) : (
+                recentCategories.map((item, index) => (
+                  <div
+                    key={item.id}
+                    className={`flex items-center justify-between px-4 py-3 transition-colors ${
+                      index % 2 === 0
+                        ? 'bg-white hover:bg-background/50'
+                        : 'bg-background hover:bg-background/70'
+                    }`}
+                  >
+                    <div className="flex items-center gap-3 flex-1 min-w-0">
+                      <div className="relative w-10 h-10 rounded-lg overflow-hidden bg-accent/20 flex items-center justify-center flex-shrink-0">
+                        {item.imageUrl && item.imageUrl.trim() !== '' ? (
+                          <img
+                            src={item.imageUrl}
+                            alt={item.name}
+                            className="w-full h-full object-cover"
+                            onError={(e) => {
+                              const target = e.target as HTMLImageElement;
+                              const parent = target.parentElement;
+                              if (parent) {
+                                parent.innerHTML = '';
+                                parent.className = 'relative w-10 h-10 rounded-lg bg-accent/20 flex items-center justify-center flex-shrink-0';
+                                const icon = document.createElement('div');
+                                icon.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-accent"><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"></path></svg>';
+                                parent.appendChild(icon.firstChild!);
+                              }
+                            }}
+                          />
+                        ) : (
+                          <Icons.categories size={20} className="text-accent" />
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-semibold text-primary truncate font-body">{item.name}</p>
+                        <p className="text-xs text-secondary truncate font-body">{item.additionalInfo}</p>
+                        <p className="text-xs text-secondary/70 font-body mt-0.5">{new Date(item.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</p>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => router.push(`/categories/view/${item.id}`)}
+                      className="ml-2 p-2 bg-accent text-white rounded-lg hover:bg-accent/90 transition-all flex-shrink-0 cursor-pointer"
+                      title="View Category"
+                    >
+                      <Icons.eye size={16} />
+                    </button>
+                  </div>
+                ))
+              )}
             </div>
           </div>
 
-          {/* Prompts Card */}
+          {/* Prompts Card with Recent Prompts */}
           <div className="bg-white rounded-lg border border-primary/10 p-4 md:p-6">
-            <div className="flex items-center gap-3 mb-4 pb-4 border-b border-primary/10">
-              <div className="w-10 h-10 md:w-12 md:h-12 bg-accent/20 rounded-lg flex items-center justify-center">
-                <Icons.images size={20} className="md:w-6 md:h-6 text-accent" />
+            <div className="flex items-center justify-between mb-4 pb-4 border-b border-primary/10">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 md:w-12 md:h-12 bg-accent/20 rounded-lg flex items-center justify-center">
+                  <Icons.images size={20} className="md:w-6 md:h-6 text-accent" />
+                </div>
+                <div>
+                  <h2 className="text-lg md:text-xl font-bold text-primary font-heading">Recent Prompts</h2>
+                  <p className="text-xs text-secondary">Total: {stats.prompts.total} • Trending: {stats.prompts.trending}</p>
+                </div>
               </div>
-              <h2 className="text-lg md:text-xl font-bold text-primary font-heading">Prompts</h2>
+              <button
+                onClick={() => router.push('/prompts')}
+                className="px-3 py-1.5 text-sm text-white bg-secondary hover:bg-secondary/90 rounded-lg font-medium transition-all cursor-pointer"
+              >
+                View All
+              </button>
             </div>
-            <div className="grid grid-cols-2 gap-3 md:gap-4">
-              <div>
-                <p className="text-xs md:text-sm text-secondary font-body">Total Prompts</p>
-                <p className="text-xl md:text-2xl font-bold text-primary font-body mt-1">{stats.prompts.total}</p>
-              </div>
-              <div>
-                <p className="text-xs md:text-sm text-secondary font-body">Trending</p>
-                <p className="text-xl md:text-2xl font-bold text-primary font-body mt-1">{stats.prompts.trending}</p>
-              </div>
-              <div>
-                <p className="text-xs md:text-sm text-secondary font-body">Total Likes</p>
-                <p className="text-xl md:text-2xl font-bold text-primary font-body mt-1">{stats.prompts.totalLikes}</p>
-              </div>
-              <div>
-                <p className="text-xs md:text-sm text-secondary font-body">Total Searches</p>
-                <p className="text-xl md:text-2xl font-bold text-primary font-body mt-1">{stats.prompts.totalSearches}</p>
-              </div>
+            <div className="space-y-0 border border-primary/10 rounded-lg overflow-hidden">
+              {recentPrompts.length === 0 ? (
+                <p className="text-secondary text-sm text-center py-4">No prompts yet</p>
+              ) : (
+                recentPrompts.map((item, index) => (
+                  <div
+                    key={item.id}
+                    className={`flex items-center justify-between px-4 py-3 transition-colors ${
+                      index % 2 === 0
+                        ? 'bg-white hover:bg-background/50'
+                        : 'bg-background hover:bg-background/70'
+                    }`}
+                  >
+                    <div className="flex items-center gap-3 flex-1 min-w-0">
+                      <div className="relative w-10 h-10 rounded-lg overflow-hidden bg-secondary/20 flex items-center justify-center flex-shrink-0">
+                        {item.imageUrl && item.imageUrl.trim() !== '' ? (
+                          <img
+                            src={item.imageUrl}
+                            alt={item.name}
+                            className="w-full h-full object-cover"
+                            onError={(e) => {
+                              const target = e.target as HTMLImageElement;
+                              const parent = target.parentElement;
+                              if (parent) {
+                                parent.innerHTML = '';
+                                parent.className = 'relative w-10 h-10 rounded-lg bg-secondary/20 flex items-center justify-center flex-shrink-0';
+                                const icon = document.createElement('div');
+                                icon.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-secondary"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"></rect><circle cx="9" cy="9" r="2"></circle><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"></path></svg>';
+                                parent.appendChild(icon.firstChild!);
+                              }
+                            }}
+                          />
+                        ) : (
+                          <Icons.images size={20} className="text-secondary" />
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-semibold text-primary truncate font-body">{item.name}</p>
+                        <p className="text-xs text-secondary truncate font-body">{item.additionalInfo}</p>
+                        <p className="text-xs text-secondary/70 font-body mt-0.5">{new Date(item.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</p>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => router.push(`/prompts/view/${item.id}`)}
+                      className="ml-2 p-2 bg-accent text-white rounded-lg hover:bg-accent/90 transition-all flex-shrink-0 cursor-pointer"
+                      title="View Prompt"
+                    >
+                      <Icons.eye size={16} />
+                    </button>
+                  </div>
+                ))
+              )}
             </div>
           </div>
 
-          {/* Subscriptions Card (Plans + User Subscriptions) */}
+          {/* Feedback Card with Recent Feedback */}
           <div className="bg-white rounded-lg border border-primary/10 p-4 md:p-6">
-            <div className="flex items-center gap-3 mb-4 pb-4 border-b border-primary/10">
-              <div className="w-10 h-10 md:w-12 md:h-12 bg-secondary/20 rounded-lg flex items-center justify-center">
-                <Icons.subscriptionPlan size={20} className="md:w-6 md:h-6 text-secondary" />
+            <div className="flex items-center justify-between mb-4 pb-4 border-b border-primary/10">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 md:w-12 md:h-12 bg-secondary/20 rounded-lg flex items-center justify-center">
+                  <Icons.feedback size={20} className="md:w-6 md:h-6 text-secondary" />
+                </div>
+                <div>
+                  <h2 className="text-lg md:text-xl font-bold text-primary font-heading">Recent Feedback</h2>
+                  <p className="text-xs text-secondary flex items-center gap-1">Total: {stats.feedback.total} • Avg: {stats.feedback.averageRating.toFixed(1)} <Icons.star size={12} className="text-yellow-500 fill-yellow-500" /></p>
+                </div>
               </div>
-              <h2 className="text-lg md:text-xl font-bold text-primary font-heading">Subscriptions</h2>
+              <button
+                onClick={() => router.push('/feedback')}
+                className="px-3 py-1.5 text-sm text-white bg-secondary hover:bg-secondary/90 rounded-lg font-medium transition-all cursor-pointer"
+              >
+                View All
+              </button>
             </div>
-            <div className="grid grid-cols-2 gap-3 md:gap-4">
-              <div>
-                <p className="text-xs md:text-sm text-secondary font-body">Total Plans</p>
-                <p className="text-xl md:text-2xl font-bold text-primary font-body mt-1">{stats.subscriptionPlans.total}</p>
-              </div>
-              <div>
-                <p className="text-xs md:text-sm text-secondary font-body">Active Plans</p>
-                <p className="text-xl md:text-2xl font-bold text-primary font-body mt-1">{stats.subscriptionPlans.active}</p>
-              </div>
-              <div>
-                <p className="text-xs md:text-sm text-secondary font-body">User Subscriptions</p>
-                <p className="text-xl md:text-2xl font-bold text-primary font-body mt-1">{stats.userSubscriptions.total}</p>
-              </div>
-              <div>
-                <p className="text-xs md:text-sm text-secondary font-body">Active / Expired</p>
-                <p className="text-lg md:text-2xl font-bold text-primary font-body mt-1">
-                  {stats.userSubscriptions.active} / {stats.userSubscriptions.expired}
-                </p>
-              </div>
+            <div className="space-y-0 border border-primary/10 rounded-lg overflow-hidden">
+              {recentFeedback.length === 0 ? (
+                <p className="text-secondary text-sm text-center py-4">No feedback yet</p>
+              ) : (
+                recentFeedback.map((item, index) => (
+                  <div
+                    key={item.id}
+                    className={`flex items-center justify-between px-4 py-3 transition-colors ${
+                      index % 2 === 0
+                        ? 'bg-white hover:bg-background/50'
+                        : 'bg-background hover:bg-background/70'
+                    }`}
+                  >
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold text-primary truncate font-body">{item.name}</p>
+                      <p className="text-xs text-secondary truncate font-body flex items-center gap-1">
+                        {item.additionalInfo}
+                        {item.rating && (
+                          <span className="inline-flex items-center">
+                            <Icons.star size={12} className="text-yellow-500 fill-yellow-500" />
+                          </span>
+                        )}
+                      </p>
+                      <p className="text-xs text-secondary/70 font-body mt-0.5">{new Date(item.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</p>
+                    </div>
+                    <button
+                      onClick={() => router.push(`/feedback/view/${item.id}`)}
+                      className="ml-2 p-2 bg-accent text-white rounded-lg hover:bg-accent/90 transition-all flex-shrink-0 cursor-pointer"
+                      title="View Feedback"
+                    >
+                      <Icons.eye size={16} />
+                    </button>
+                  </div>
+                ))
+              )}
             </div>
           </div>
 
-          {/* Feedback Card */}
+          {/* Subscriptions Card */}
           <div className="bg-white rounded-lg border border-primary/10 p-4 md:p-6">
-            <div className="flex items-center gap-3 mb-4 pb-4 border-b border-primary/10">
-              <div className="w-10 h-10 md:w-12 md:h-12 bg-accent/20 rounded-lg flex items-center justify-center">
-                <Icons.feedback size={20} className="md:w-6 md:h-6 text-accent" />
+            <div className="flex items-center justify-between mb-4 pb-4 border-b border-primary/10">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 md:w-12 md:h-12 bg-accent/20 rounded-lg flex items-center justify-center">
+                  <Icons.subscriptionPlan size={20} className="md:w-6 md:h-6 text-accent" />
+                </div>
+                <div>
+                  <h2 className="text-lg md:text-xl font-bold text-primary font-heading">Subscriptions</h2>
+                  <p className="text-xs text-secondary">Plans: {stats.subscriptionPlans.total} • Active: {stats.subscriptionPlans.active}</p>
+                </div>
               </div>
-              <h2 className="text-lg md:text-xl font-bold text-primary font-heading">Feedback</h2>
             </div>
-            <div className="grid grid-cols-2 gap-3 md:gap-4">
-              <div>
-                <p className="text-xs md:text-sm text-secondary font-body">Total Feedback</p>
-                <p className="text-xl md:text-2xl font-bold text-primary font-body mt-1">{stats.feedback.total}</p>
+            <div className="space-y-0 border border-primary/10 rounded-lg overflow-hidden">
+              <div className="bg-white hover:bg-background/50 px-4 py-3 transition-colors">
+                <div className="flex items-center justify-between">
+                  <p className="text-xs text-secondary font-body">Total Plans</p>
+                  <p className="text-lg font-bold text-primary font-body">{stats.subscriptionPlans.total}</p>
+                </div>
               </div>
-              <div>
-                <p className="text-xs md:text-sm text-secondary font-body">Average Rating</p>
-                <p className="text-xl md:text-2xl font-bold text-primary font-body mt-1">{stats.feedback.averageRating.toFixed(1)}</p>
+              <div className="bg-background hover:bg-background/70 px-4 py-3 transition-colors">
+                <div className="flex items-center justify-between">
+                  <p className="text-xs text-secondary font-body">Active Plans</p>
+                  <p className="text-lg font-bold text-primary font-body">{stats.subscriptionPlans.active}</p>
+                </div>
               </div>
-              <div>
-                <p className="text-xs md:text-sm text-secondary font-body">5-Star Ratings</p>
-                <p className="text-xl md:text-2xl font-bold text-primary font-body mt-1">{stats.feedback.fiveStars}</p>
+              <div className="bg-white hover:bg-background/50 px-4 py-3 transition-colors">
+                <div className="flex items-center justify-between">
+                  <p className="text-xs text-secondary font-body">User Subscriptions</p>
+                  <p className="text-lg font-bold text-primary font-body">{stats.userSubscriptions.total}</p>
+                </div>
               </div>
-              <div>
-                <p className="text-xs md:text-sm text-secondary font-body">1-Star Ratings</p>
-                <p className="text-xl md:text-2xl font-bold text-primary font-body mt-1">{stats.feedback.oneStar}</p>
+              <div className="bg-background hover:bg-background/70 px-4 py-3 transition-colors">
+                <div className="flex items-center justify-between">
+                  <p className="text-xs text-secondary font-body">Active / Expired</p>
+                  <p className="text-lg font-bold text-primary font-body">
+                    {stats.userSubscriptions.active} / {stats.userSubscriptions.expired}
+                  </p>
+                </div>
               </div>
             </div>
           </div>
 
           {/* Countries & App Info Card */}
           <div className="bg-white rounded-lg border border-primary/10 p-4 md:p-6">
-            <div className="flex items-center gap-3 mb-4 pb-4 border-b border-primary/10">
-              <div className="w-10 h-10 md:w-12 md:h-12 bg-secondary/20 rounded-lg flex items-center justify-center">
-                <Icons.globe size={20} className="md:w-6 md:h-6 text-secondary" />
+            <div className="flex items-center justify-between mb-4 pb-4 border-b border-primary/10">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 md:w-12 md:h-12 bg-secondary/20 rounded-lg flex items-center justify-center">
+                  <Icons.globe size={20} className="md:w-6 md:h-6 text-secondary" />
+                </div>
+                <div>
+                  <h2 className="text-lg md:text-xl font-bold text-primary font-heading">Countries & App Info</h2>
+                  <p className="text-xs text-secondary">Countries: {stats.countries.total} • Languages: {stats.appSettings.languagesCount}</p>
+                </div>
               </div>
-              <h2 className="text-lg md:text-xl font-bold text-primary font-heading">Countries & App Info</h2>
             </div>
-            <div className="grid grid-cols-2 gap-3 md:gap-4">
-              <div>
-                <p className="text-xs md:text-sm text-secondary font-body">Total Countries</p>
-                <p className="text-xl md:text-2xl font-bold text-primary font-body mt-1">{stats.countries.total}</p>
+            <div className="space-y-0 border border-primary/10 rounded-lg overflow-hidden">
+              <div className="bg-white hover:bg-background/50 px-4 py-3 transition-colors">
+                <div className="flex items-center justify-between">
+                  <p className="text-xs text-secondary font-body">Total Countries</p>
+                  <p className="text-lg font-bold text-primary font-body">{stats.countries.total}</p>
+                </div>
               </div>
-              <div>
-                <p className="text-xs md:text-sm text-secondary font-body">With Categories</p>
-                <p className="text-xl md:text-2xl font-bold text-primary font-body mt-1">{stats.countries.withCategories}</p>
+              <div className="bg-background hover:bg-background/70 px-4 py-3 transition-colors">
+                <div className="flex items-center justify-between">
+                  <p className="text-xs text-secondary font-body">With Categories</p>
+                  <p className="text-lg font-bold text-primary font-body">{stats.countries.withCategories}</p>
+                </div>
               </div>
-              <div>
-                <p className="text-xs md:text-sm text-secondary font-body">Minimum Version</p>
-                <p className="text-lg md:text-xl font-bold text-primary font-body mt-1">{stats.appSettings.minimumVersion}</p>
+              <div className="bg-white hover:bg-background/50 px-4 py-3 transition-colors">
+                <div className="flex items-center justify-between">
+                  <p className="text-xs text-secondary font-body">Minimum Version</p>
+                  <p className="text-lg font-bold text-primary font-body">{stats.appSettings.minimumVersion}</p>
+                </div>
               </div>
-              <div>
-                <p className="text-xs md:text-sm text-secondary font-body">Live Version</p>
-                <p className="text-lg md:text-xl font-bold text-primary font-body mt-1">{stats.appSettings.liveVersion}</p>
-              </div>
-              <div>
-                <p className="text-xs md:text-sm text-secondary font-body">Languages</p>
-                <p className="text-xl md:text-2xl font-bold text-primary font-body mt-1">{stats.appSettings.languagesCount}</p>
+              <div className="bg-background hover:bg-background/70 px-4 py-3 transition-colors">
+                <div className="flex items-center justify-between">
+                  <p className="text-xs text-secondary font-body">Live Version</p>
+                  <p className="text-lg font-bold text-primary font-body">{stats.appSettings.liveVersion}</p>
+                </div>
               </div>
             </div>
           </div>

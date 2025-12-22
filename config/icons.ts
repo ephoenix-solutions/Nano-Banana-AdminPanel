@@ -54,6 +54,8 @@ import {
   ArrowDown,
   ChevronDown,
   ChevronUp,
+  CornerDownRight,
+  Star,
 } from 'lucide-react';
 
 // Export all icons
@@ -79,6 +81,7 @@ export const Icons = {
   arrowDown: ArrowDown,
   chevronDown: ChevronDown,
   chevronUp: ChevronUp,
+  cornerDownRight: CornerDownRight,
   
   // Action Icons
   logout: LogOut,
@@ -98,6 +101,7 @@ export const Icons = {
   // Status Icons
   alert: AlertCircle,
   info: Info,
+  star: Star,
   
   // General Icons
   home: Home,
@@ -167,6 +171,8 @@ export {
   ArrowDown,
   ChevronDown,
   ChevronUp,
+  CornerDownRight,
+  Star,
 };
 
 export default Icons;

@@ -15,6 +15,9 @@ interface SearchItem {
 const searchItems: SearchItem[] = [
   // Dashboard
   { id: 'dashboard', label: 'Dashboard', href: '/', icon: Icons.home, category: 'Main Menu' },
+
+  // Profile 
+  { id: 'my-profile', label: 'My Profile', href: '/profile', icon: Icons.user, category: 'Main Menu' },
   
   // Users
   { id: 'users', label: 'Users', href: '/users', icon: Icons.users, category: 'Main Menu' },

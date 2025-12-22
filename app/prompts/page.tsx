@@ -17,7 +17,7 @@ import { getAllCategories } from '@/lib/services/category.service';
 import { getUserById } from '@/lib/services/user.service';
 import { Timestamp } from 'firebase/firestore';
 
-type SortField = 'title' | 'likes' | 'createdAt';
+type SortField = 'title' | 'likes' | 'createdAt' | 'searchCount' | 'category' | 'updatedAt';
 type SortOrder = 'asc' | 'desc';
 type TrendingFilter = 'all' | 'trending' | 'not-trending';
 
@@ -95,7 +95,6 @@ export default function PromptsPage() {
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
   const [subcategoryFilter, setSubcategoryFilter] = useState<string>('all');
   const [trendingFilter, setTrendingFilter] = useState<TrendingFilter>('all');
-  const [showFilters, setShowFilters] = useState(false);
 
   useEffect(() => {
     fetchData();
@@ -213,6 +212,16 @@ export default function PromptsPage() {
     }
   };
 
+  // Handle sorting
+  const handleSort = (field: SortField) => {
+    if (sortField === field) {
+      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortField(field);
+      setSortOrder('asc');
+    }
+  };
+
   // Get subcategories for selected category
   const availableSubcategories = useMemo(() => {
     if (categoryFilter === 'all') return [];
@@ -260,15 +269,34 @@ export default function PromptsPage() {
       let aValue: any;
       let bValue: any;
 
-      if (sortField === 'title') {
-        aValue = a.title.toLowerCase();
-        bValue = b.title.toLowerCase();
-      } else if (sortField === 'likes') {
-        aValue = a.likes;
-        bValue = b.likes;
-      } else if (sortField === 'createdAt') {
-        aValue = a.createdAt.toDate().getTime();
-        bValue = b.createdAt.toDate().getTime();
+      switch (sortField) {
+        case 'title':
+          aValue = (a.title || '').toLowerCase();
+          bValue = (b.title || '').toLowerCase();
+          break;
+        case 'likes':
+          aValue = a.likes || 0;
+          bValue = b.likes || 0;
+          break;
+        case 'searchCount':
+          aValue = a.searchCount || 0;
+          bValue = b.searchCount || 0;
+          break;
+        case 'category':
+          aValue = getCategoryName(a.categoryId).toLowerCase();
+          bValue = getCategoryName(b.categoryId).toLowerCase();
+          break;
+        case 'createdAt':
+          aValue = a.createdAt?.toDate().getTime() || 0;
+          bValue = b.createdAt?.toDate().getTime() || 0;
+          break;
+        case 'updatedAt':
+          aValue = a.updatedAt?.toDate().getTime() || 0;
+          bValue = b.updatedAt?.toDate().getTime() || 0;
+          break;
+        default:
+          aValue = a.createdAt?.toDate().getTime() || 0;
+          bValue = b.createdAt?.toDate().getTime() || 0;
       }
 
       if (sortOrder === 'asc') {
@@ -279,7 +307,7 @@ export default function PromptsPage() {
     });
 
     return filtered;
-  }, [prompts, searchQuery, sortField, sortOrder, categoryFilter, subcategoryFilter, trendingFilter]);
+  }, [prompts, searchQuery, sortField, sortOrder, categoryFilter, subcategoryFilter, trendingFilter, categories]);
 
   // Clear all filters
   const clearFilters = () => {
@@ -295,13 +323,11 @@ export default function PromptsPage() {
   const hasActiveFilters = useMemo(() => {
     return (
       searchQuery.trim() !== '' ||
-      sortField !== 'createdAt' ||
-      sortOrder !== 'desc' ||
       categoryFilter !== 'all' ||
       subcategoryFilter !== 'all' ||
       trendingFilter !== 'all'
     );
-  }, [searchQuery, sortField, sortOrder, categoryFilter, subcategoryFilter, trendingFilter]);
+  }, [searchQuery, categoryFilter, subcategoryFilter, trendingFilter]);
 
   // Reset subcategory filter when category changes
   useEffect(() => {
@@ -309,6 +335,58 @@ export default function PromptsPage() {
       setSubcategoryFilter('all');
     }
   }, [categoryFilter]);
+
+  // Sortable header component
+  const SortableHeader = ({ field, label }: { field: SortField; label: string }) => {
+    const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
+      e.preventDefault();
+      e.currentTarget.blur();
+      if (document.activeElement instanceof HTMLElement) {
+        document.activeElement.blur();
+      }
+      handleSort(field);
+    };
+
+    const handleMouseDown = (e: React.MouseEvent<HTMLButtonElement>) => {
+      e.preventDefault();
+    };
+
+    const handlePointerDown = (e: React.PointerEvent<HTMLButtonElement>) => {
+      e.preventDefault();
+    };
+
+    return (
+      <button
+        type="button"
+        onClick={handleClick}
+        onMouseDown={handleMouseDown}
+        onPointerDown={handlePointerDown}
+        className="flex items-center gap-2 transition-all cursor-pointer group"
+        style={{ outline: 'none', WebkitTapHighlightColor: 'transparent' }}
+        tabIndex={-1}
+      >
+        <span>{label}</span>
+        <div className="flex flex-col">
+          <Icons.chevronUp
+            size={16}
+            className={`-mb-1 transition-all group-hover:scale-110 ${
+              sortField === field && sortOrder === 'asc'
+                ? 'text-accent'
+                : 'text-secondary/30'
+            }`}
+          />
+          <Icons.chevronDown
+            size={16}
+            className={`-mt-1 transition-all group-hover:scale-110 ${
+              sortField === field && sortOrder === 'desc'
+                ? 'text-accent'
+                : 'text-secondary/30'
+            }`}
+          />
+        </div>
+      </button>
+    );
+  };
 
   if (loading) {
     return (
@@ -347,7 +425,7 @@ export default function PromptsPage() {
 
         {/* Search and Filter Bar */}
         <div className="bg-white rounded-lg border border-primary/10 p-4">
-          <div className="flex flex-col lg:flex-row gap-4">
+          <div className="flex flex-col md:flex-row gap-4">
             {/* Search Input */}
             <div className="flex-1">
               <div className="relative">
@@ -364,140 +442,65 @@ export default function PromptsPage() {
               </div>
             </div>
 
-            {/* Filter Toggle Button */}
-            <button
-              onClick={() => setShowFilters(!showFilters)}
-              className={`flex items-center gap-2 px-4 py-2.5 border rounded-lg font-semibold transition-all ${
-                showFilters || hasActiveFilters
-                  ? 'bg-accent/20 border-accent text-primary'
-                  : 'border-primary/20 text-secondary hover:bg-accent/10'
-              }`}
-            >
-              <Icons.filter size={20} />
-              <span>Filters</span>
-              {hasActiveFilters && (
-                <span className="ml-1 px-2 py-0.5 bg-accent text-primary text-xs rounded-full font-bold">
-                  {[
-                    searchQuery.trim() !== '',
-                    categoryFilter !== 'all',
-                    subcategoryFilter !== 'all',
-                    trendingFilter !== 'all',
-                    sortField !== 'createdAt' || sortOrder !== 'desc',
-                  ].filter(Boolean).length}
-                </span>
-              )}
-            </button>
+            {/* Category Filter */}
+            <div className="w-full md:w-48">
+              <select
+                value={categoryFilter}
+                onChange={(e) => setCategoryFilter(e.target.value)}
+                className="w-full px-3 py-2.5 border border-primary/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent font-body text-primary"
+              >
+                <option value="all">All Categories</option>
+                {categories.map((category) => (
+                  <option key={category.id} value={category.id}>
+                    {category.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Subcategory Filter */}
+            <div className="w-full md:w-48">
+              <select
+                value={subcategoryFilter}
+                onChange={(e) => setSubcategoryFilter(e.target.value)}
+                disabled={categoryFilter === 'all'}
+                className="w-full px-3 py-2.5 border border-primary/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent font-body text-primary disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <option value="all">
+                  {categoryFilter === 'all' ? 'Select category first' : 'All Subcategories'}
+                </option>
+                {availableSubcategories.map((subcategory) => (
+                  <option key={subcategory.id} value={subcategory.id}>
+                    {subcategory.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Trending Filter */}
+            <div className="w-full md:w-48">
+              <select
+                value={trendingFilter}
+                onChange={(e) => setTrendingFilter(e.target.value as TrendingFilter)}
+                className="w-full px-3 py-2.5 border border-primary/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent font-body text-primary"
+              >
+                <option value="all">All Status</option>
+                <option value="trending">Trending</option>
+                <option value="not-trending">Not Trending</option>
+              </select>
+            </div>
 
             {/* Clear Filters Button */}
             {hasActiveFilters && (
               <button
                 onClick={clearFilters}
-                className="flex items-center gap-2 px-4 py-2.5 border border-secondary/20 text-secondary rounded-lg font-semibold hover:bg-secondary/10 transition-all"
+                className="flex items-center justify-center gap-2 px-4 py-2.5 border border-secondary/20 text-secondary rounded-lg font-semibold hover:bg-secondary/10 transition-all whitespace-nowrap"
               >
                 <Icons.close size={20} />
                 <span>Clear</span>
               </button>
             )}
           </div>
-
-          {/* Filter Options */}
-          {showFilters && (
-            <div className="mt-4 pt-4 border-t border-primary/10 space-y-4">
-              {/* First Row: Sort By, Order, Trending */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {/* Sort By */}
-                <div>
-                  <label className="block text-sm font-semibold text-primary font-body mb-2">
-                    Sort By
-                  </label>
-                  <select
-                    value={sortField}
-                    onChange={(e) => setSortField(e.target.value as SortField)}
-                    className="w-full px-3 py-2 border border-primary/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent font-body text-primary"
-                  >
-                    <option value="createdAt">Created Date</option>
-                    <option value="title">Title</option>
-                    <option value="likes">Likes</option>
-                  </select>
-                </div>
-
-                {/* Sort Order */}
-                <div>
-                  <label className="block text-sm font-semibold text-primary font-body mb-2">
-                    Order
-                  </label>
-                  <select
-                    value={sortOrder}
-                    onChange={(e) => setSortOrder(e.target.value as SortOrder)}
-                    className="w-full px-3 py-2 border border-primary/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent font-body text-primary"
-                  >
-                    <option value="asc">Ascending</option>
-                    <option value="desc">Descending</option>
-                  </select>
-                </div>
-
-                {/* Trending Filter */}
-                <div>
-                  <label className="block text-sm font-semibold text-primary font-body mb-2">
-                    Trending Status
-                  </label>
-                  <select
-                    value={trendingFilter}
-                    onChange={(e) => setTrendingFilter(e.target.value as TrendingFilter)}
-                    className="w-full px-3 py-2 border border-primary/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent font-body text-primary"
-                  >
-                    <option value="all">All Prompts</option>
-                    <option value="trending">Trending Only</option>
-                    <option value="not-trending">Not Trending</option>
-                  </select>
-                </div>
-              </div>
-
-              {/* Second Row: Category, Subcategory */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {/* Category Filter */}
-                <div>
-                  <label className="block text-sm font-semibold text-primary font-body mb-2">
-                    Category
-                  </label>
-                  <select
-                    value={categoryFilter}
-                    onChange={(e) => setCategoryFilter(e.target.value)}
-                    className="w-full px-3 py-2 border border-primary/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent font-body text-primary"
-                  >
-                    <option value="all">All Categories</option>
-                    {categories.map((category) => (
-                      <option key={category.id} value={category.id}>
-                        {category.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                {/* Subcategory Filter */}
-                <div>
-                  <label className="block text-sm font-semibold text-primary font-body mb-2">
-                    Subcategory
-                  </label>
-                  <select
-                    value={subcategoryFilter}
-                    onChange={(e) => setSubcategoryFilter(e.target.value)}
-                    disabled={categoryFilter === 'all'}
-                    className="w-full px-3 py-2 border border-primary/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent font-body text-primary disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    <option value="all">
-                      {categoryFilter === 'all' ? 'Select category first' : 'All Subcategories'}
-                    </option>
-                    {availableSubcategories.map((subcategory) => (
-                      <option key={subcategory.id} value={subcategory.id}>
-                        {subcategory.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-            </div>
-          )}
 
           {/* Results Count */}
           <div className="mt-4 pt-4 border-t border-primary/10">
@@ -596,36 +599,43 @@ export default function PromptsPage() {
                       Image
                     </th>
                     <th className="px-6 py-4 text-left text-sm font-semibold text-primary font-body">
-                      Title
+                      <SortableHeader field="title" label="Title" />
                     </th>
                     <th className="px-6 py-4 text-left text-sm font-semibold text-primary font-body">
                       Tags
                     </th>
                     <th className="px-6 py-4 text-left text-sm font-semibold text-primary font-body">
-                      Category / Subcategory
+                      <SortableHeader field="category" label="Category" />
                     </th>
                     <th className="px-6 py-4 text-left text-sm font-semibold text-primary font-body">
                       Trending
                     </th>
                     <th className="px-6 py-4 text-left text-sm font-semibold text-primary font-body">
-                      Likes
+                      <SortableHeader field="likes" label="Likes" />
                     </th>
                     <th className="px-6 py-4 text-left text-sm font-semibold text-primary font-body">
-                      Created By
+                      <SortableHeader field="searchCount" label="Searches" />
                     </th>
                     <th className="px-6 py-4 text-left text-sm font-semibold text-primary font-body">
-                      Updated By
+                      <SortableHeader field="createdAt" label="Created At" />
+                    </th>
+                    <th className="px-6 py-4 text-left text-sm font-semibold text-primary font-body">
+                      <SortableHeader field="updatedAt" label="Updated By" />
                     </th>
                     <th className="px-6 py-4 text-right text-sm font-semibold text-primary font-body">
                       Actions
                     </th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-primary/10">
-                  {filteredAndSortedPrompts.map((prompt) => (
+                <tbody>
+                  {filteredAndSortedPrompts.map((prompt, index) => (
                   <tr
                     key={prompt.id}
-                    className="hover:bg-background/50 transition-colors"
+                    className={`transition-colors ${
+                      index % 2 === 0
+                        ? 'bg-white hover:bg-background/50'
+                        : 'bg-background hover:bg-background-200'
+                    }`}
                   >
                     <td className="px-6 py-4">
                       {prompt.url ? (
@@ -678,7 +688,7 @@ export default function PromptsPage() {
                       <div className="flex flex-col gap-1">
                         <span className="font-medium">{getCategoryName(prompt.categoryId)}</span>
                         <span className="text-xs text-secondary flex items-center gap-1">
-                          <Icons.chevronRight size={12} />
+                          <Icons.cornerDownRight size={12} />
                           {getSubcategoryName(prompt.categoryId, prompt.subCategoryId)}
                         </span>
                       </div>
@@ -703,7 +713,14 @@ export default function PromptsPage() {
                       </button>
                     </td>
                     <td className="px-6 py-4 text-sm text-primary">
-                      {prompt.likes}
+                      <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-accent/20 text-primary">
+                        {prompt.likes}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 text-sm text-primary">
+                      <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-secondary/20 text-primary">
+                        {prompt.searchCount || 0}
+                      </span>
                     </td>
                     <td className="px-6 py-4 text-sm text-primary">
                       <div className="flex flex-col gap-1">

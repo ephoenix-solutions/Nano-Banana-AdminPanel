@@ -17,26 +17,16 @@ const firebaseConfig = {
   measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID,
 };
 
-// Initialize Firebase
-let app: FirebaseApp;
-let analytics: Analytics | null = null;
-let auth: Auth;
-let db: Firestore;
-let storage: FirebaseStorage;
-
-// Check if Firebase app is already initialized to avoid multiple instances
-if (!getApps().length) {
-  app = initializeApp(firebaseConfig);
-} else {
-  app = getApps()[0];
-}
+// Initialize Firebase app
+const app = !getApps().length ? initializeApp(firebaseConfig) : getApps()[0];
 
 // Initialize Firebase services
-auth = getAuth(app);
-db = getFirestore(app);
-storage = getStorage(app);
+const auth = getAuth(app);
+const db = getFirestore(app);
+const storage = getStorage(app);
 
 // Initialize Analytics only on client side
+let analytics: Analytics | null = null;
 if (typeof window !== "undefined") {
   analytics = getAnalytics(app);
 }
