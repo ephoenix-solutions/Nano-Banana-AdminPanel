@@ -9,6 +9,7 @@ import {
   query,
   orderBy,
   writeBatch,
+  Timestamp,
 } from 'firebase/firestore';
 import { db } from '@/config/firebase';
 import {
@@ -73,6 +74,8 @@ export async function createCountry(countryData: CreateCountryInput): Promise<st
       name: countryData.name,
       isoCode: countryData.isoCode,
       categories: countryData.categories || [],
+      createdAt: Timestamp.now(),
+      createdBy: countryData.createdBy,
     };
     
     const docRef = await addDoc(countriesRef, newCountry);
@@ -97,6 +100,12 @@ export async function updateCountry(
     if (countryData.name !== undefined) updateData.name = countryData.name;
     if (countryData.isoCode !== undefined) updateData.isoCode = countryData.isoCode;
     if (countryData.categories !== undefined) updateData.categories = countryData.categories;
+    
+    // Add updatedBy and updatedAt fields
+    if (countryData.updatedBy !== undefined) {
+      updateData.updatedBy = countryData.updatedBy;
+      updateData.updatedAt = Timestamp.now();
+    }
     
     await updateDoc(countryRef, updateData);
   } catch (error) {

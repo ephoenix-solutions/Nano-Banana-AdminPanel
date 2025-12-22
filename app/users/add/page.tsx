@@ -16,7 +16,7 @@ export default function AddUserPage() {
     name: '',
     email: '',
     language: 'en',
-    provider: 'google',
+    provider: 'manual',
     photoURL: '',
   });
 
@@ -149,6 +149,7 @@ export default function AddUserPage() {
                   required
                   className="w-full px-4 py-3 border border-primary/10 rounded-lg text-sm font-body text-primary bg-background transition-all duration-200 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
                 >
+                  <option value="manual">Manual</option>
                   <option value="google">Google</option>
                   <option value="apple">Apple</option>
                 </select>

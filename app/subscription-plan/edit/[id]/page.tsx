@@ -10,11 +10,13 @@ import {
   updateSubscriptionPlan,
 } from '@/lib/services/subscription-plan.service';
 import { UpdateSubscriptionPlanInput } from '@/lib/types/subscription-plan.types';
+import { useAuth } from '@/lib/hooks/useAuth';
 
 export default function EditSubscriptionPlanPage() {
   const router = useRouter();
   const params = useParams();
   const planId = params.id as string;
+  const { user } = useAuth();
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -115,7 +117,14 @@ export default function EditSubscriptionPlanPage() {
         throw new Error('Price is required');
       }
 
-      await updateSubscriptionPlan(planId, formData);
+      if (!user?.id) {
+        throw new Error('User not authenticated');
+      }
+
+      await updateSubscriptionPlan(planId, {
+        ...formData,
+        updatedBy: user.id,
+      });
       router.push('/subscription-plan');
     } catch (err: any) {
       console.error('Error updating plan:', err);

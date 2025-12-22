@@ -131,6 +131,7 @@ export async function createPrompt(promptData: CreatePromptInput): Promise<strin
       likes: promptData.likes || 0,
       searchCount: promptData.searchCount || 0,
       createdAt: Timestamp.now(),
+      createdBy: promptData.createdBy,
     };
     
     const docRef = await addDoc(promptsRef, newPrompt);
@@ -161,6 +162,12 @@ export async function updatePrompt(
     if (promptData.isTrending !== undefined) updateData.isTrending = promptData.isTrending;
     if (promptData.likes !== undefined) updateData.likes = promptData.likes;
     if (promptData.searchCount !== undefined) updateData.searchCount = promptData.searchCount;
+    
+    // Add updatedBy and updatedAt fields
+    if (promptData.updatedBy !== undefined) {
+      updateData.updatedBy = promptData.updatedBy;
+      updateData.updatedAt = Timestamp.now();
+    }
     
     await updateDoc(promptRef, updateData);
   } catch (error) {

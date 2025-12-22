@@ -7,12 +7,14 @@ import Breadcrumbs from '@/components/Breadcrumbs';
 import { Icons } from '@/config/icons';
 import { createCategory } from '@/lib/services/category.service';
 import { CreateCategoryInput } from '@/lib/types/category.types';
+import { useAuth } from '@/lib/hooks/useAuth';
 
 export default function AddCategoryPage() {
   const router = useRouter();
+  const { user } = useAuth();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [formData, setFormData] = useState<CreateCategoryInput>({
+  const [formData, setFormData] = useState<Omit<CreateCategoryInput, 'createdBy'>>({
     name: '',
     iconImage: '',
     order: 0,
@@ -39,7 +41,14 @@ export default function AddCategoryPage() {
         throw new Error('Category name is required');
       }
 
-      await createCategory(formData);
+      if (!user?.id) {
+        throw new Error('User not authenticated');
+      }
+
+      await createCategory({
+        ...formData,
+        createdBy: user.id,
+      });
       router.push('/categories');
     } catch (err: any) {
       console.error('Error creating category:', err);

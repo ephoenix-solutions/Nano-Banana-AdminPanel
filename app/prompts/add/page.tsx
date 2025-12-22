@@ -9,15 +9,17 @@ import { createPrompt } from '@/lib/services/prompt.service';
 import { getAllCategories } from '@/lib/services/category.service';
 import { CreatePromptInput } from '@/lib/types/prompt.types';
 import { Category, Subcategory } from '@/lib/types/category.types';
+import { useAuth } from '@/lib/hooks/useAuth';
 
 export default function AddPromptPage() {
   const router = useRouter();
+  const { user } = useAuth();
   const [loading, setLoading] = useState(false);
   const [loadingCategories, setLoadingCategories] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [categories, setCategories] = useState<Category[]>([]);
   const [subcategories, setSubcategories] = useState<Subcategory[]>([]);
-  const [formData, setFormData] = useState<CreatePromptInput>({
+  const [formData, setFormData] = useState<Omit<CreatePromptInput, 'createdBy'>>({
     title: '',
     categoryId: '',
     subCategoryId: '',
@@ -126,7 +128,14 @@ export default function AddPromptPage() {
         throw new Error('Subcategory is required');
       }
 
-      await createPrompt(formData);
+      if (!user?.id) {
+        throw new Error('User not authenticated');
+      }
+
+      await createPrompt({
+        ...formData,
+        createdBy: user.id,
+      });
       router.push('/prompts');
     } catch (err: any) {
       console.error('Error creating prompt:', err);

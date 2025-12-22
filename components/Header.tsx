@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { Icons } from '@/config/icons';
 import { useAuth } from '@/lib/hooks/useAuth';
 import GlobalSearch from './GlobalSearch';
@@ -166,6 +167,14 @@ export default function Header({ onMenuClick }: HeaderProps) {
 
                 {/* Menu Items */}
                 <div className="py-2">
+                  <Link
+                    href="/profile"
+                    onClick={() => setShowDropdown(false)}
+                    className="w-full px-4 py-2.5 text-left text-sm text-primary hover:bg-accent/10 transition-colors flex items-center gap-3 group"
+                  >
+                    <Icons.user size={18} className="text-primary" />
+                    <span className="font-medium">My Profile</span>
+                  </Link>
                   <button
                     onClick={handleLogout}
                     className="w-full px-4 py-2.5 text-left text-sm text-secondary hover:bg-secondary/5 hover:text-secondary transition-colors flex items-center gap-3 group"

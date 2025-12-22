@@ -7,13 +7,15 @@ import Breadcrumbs from '@/components/Breadcrumbs';
 import { Icons } from '@/config/icons';
 import { createSubscriptionPlan } from '@/lib/services/subscription-plan.service';
 import { CreateSubscriptionPlanInput } from '@/lib/types/subscription-plan.types';
+import { useAuth } from '@/lib/hooks/useAuth';
 
 export default function AddSubscriptionPlanPage() {
   const router = useRouter();
+  const { user } = useAuth();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [newFeature, setNewFeature] = useState('');
-  const [formData, setFormData] = useState<CreateSubscriptionPlanInput>({
+  const [formData, setFormData] = useState<Omit<CreateSubscriptionPlanInput, 'createdBy'>>({
     name: '',
     price: '',
     currency: 'INR',
@@ -78,7 +80,14 @@ export default function AddSubscriptionPlanPage() {
         throw new Error('Price is required');
       }
 
-      await createSubscriptionPlan(formData);
+      if (!user?.id) {
+        throw new Error('User not authenticated');
+      }
+
+      await createSubscriptionPlan({
+        ...formData,
+        createdBy: user.id,
+      });
       router.push('/subscription-plan');
     } catch (err: any) {
       console.error('Error creating plan:', err);

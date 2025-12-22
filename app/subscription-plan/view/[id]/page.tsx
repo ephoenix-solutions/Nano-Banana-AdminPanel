@@ -7,6 +7,25 @@ import Breadcrumbs from '@/components/Breadcrumbs';
 import { Icons } from '@/config/icons';
 import { getSubscriptionPlanById } from '@/lib/services/subscription-plan.service';
 import { SubscriptionPlan } from '@/lib/types/subscription-plan.types';
+import { getUserById } from '@/lib/services/user.service';
+import { Timestamp } from 'firebase/firestore';
+
+// Helper function to format timestamp
+const formatTimestamp = (timestamp: any) => {
+  if (!timestamp) return 'N/A';
+  try {
+    const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+    return new Intl.DateTimeFormat('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    }).format(date);
+  } catch (error) {
+    return 'N/A';
+  }
+};
 
 export default function ViewSubscriptionPlanPage() {
   const router = useRouter();
@@ -16,6 +35,10 @@ export default function ViewSubscriptionPlanPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [plan, setPlan] = useState<SubscriptionPlan | null>(null);
+  const [creatorName, setCreatorName] = useState<string>('Loading...');
+  const [creatorPhoto, setCreatorPhoto] = useState<string>('');
+  const [updaterName, setUpdaterName] = useState<string>('Loading...');
+  const [updaterPhoto, setUpdaterPhoto] = useState<string>('');
 
   useEffect(() => {
     fetchPlan();
@@ -27,6 +50,40 @@ export default function ViewSubscriptionPlanPage() {
       const planData = await getSubscriptionPlanById(planId);
       if (planData) {
         setPlan(planData);
+        
+        // Fetch creator information
+        if (planData.createdBy) {
+          try {
+            const creator = await getUserById(planData.createdBy);
+            if (creator) {
+              setCreatorName(creator.name || 'Unknown Admin');
+              setCreatorPhoto(creator.photoURL || '');
+            } else {
+              setCreatorName('Unknown Admin');
+            }
+          } catch (err) {
+            console.error('Error fetching creator:', err);
+            setCreatorName('Unknown Admin');
+          }
+        } else {
+          setCreatorName('Unknown');
+        }
+        
+        // Fetch updater information
+        if (planData.updatedBy) {
+          try {
+            const updater = await getUserById(planData.updatedBy);
+            if (updater) {
+              setUpdaterName(updater.name || 'Unknown Admin');
+              setUpdaterPhoto(updater.photoURL || '');
+            } else {
+              setUpdaterName('Unknown Admin');
+            }
+          } catch (err) {
+            console.error('Error fetching updater:', err);
+            setUpdaterName('Unknown Admin');
+          }
+        }
       } else {
         setError('Subscription plan not found');
       }
@@ -298,6 +355,88 @@ export default function ViewSubscriptionPlanPage() {
                     <p className="text-base font-semibold text-primary font-body">
                       {plan.isActive ? 'Active - Visible to users' : 'Inactive - Hidden from users'}
                     </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Created By */}
+              <div className="bg-background rounded-lg p-4 border border-primary/10">
+                <div className="flex items-start gap-3">
+                  <div className="w-10 h-10 bg-accent/20 rounded-lg flex items-center justify-center flex-shrink-0">
+                    {creatorPhoto ? (
+                        <img
+                          src={creatorPhoto}
+                          alt={creatorName}
+                          className="w-10 h-10 rounded-lg object-cover"
+                          onError={(e) => {
+                            e.currentTarget.style.display = 'none';
+                            const placeholder = e.currentTarget.nextElementSibling as HTMLElement;
+                            if (placeholder) placeholder.style.display = 'flex';
+                          }}
+                        />
+                      ) : null}
+                      <div 
+                        className="w-10 h-10 bg-accent/20 rounded-lg flex items-center justify-center"
+                        style={{ display: creatorPhoto ? 'none' : 'flex' }}
+                      >
+                        <Icons.users size={20} className="text-accent" />
+                      </div>
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-sm text-secondary font-body mb-1">Created By</p>
+                    <p className="text-base font-semibold text-primary font-body">
+                      {creatorName}
+                    </p>
+                    {plan.createdAt && (
+                      <p className="text-xs text-secondary font-body mt-1">
+                        {formatTimestamp(plan.createdAt)}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Updated By */}
+              <div className="bg-background rounded-lg p-4 border border-primary/10">
+                <div className="flex items-start gap-3">
+                  <div className="w-10 h-10 bg-secondary/20 rounded-lg flex items-center justify-center flex-shrink-0">
+                    {plan.updatedBy && updaterPhoto ? (
+                        <img
+                          src={updaterPhoto}
+                          alt={updaterName}
+                          className="w-10 h-10 rounded-lg object-cover"
+                          onError={(e) => {
+                            e.currentTarget.style.display = 'none';
+                            const placeholder = e.currentTarget.nextElementSibling as HTMLElement;
+                            if (placeholder) placeholder.style.display = 'flex';
+                          }}
+                        />
+                      ) : null}
+                      <div 
+                        className="w-10 h-10 bg-secondary/20 rounded-lg flex items-center justify-center"
+                        style={{ display: (plan.updatedBy && updaterPhoto) ? 'none' : 'flex' }}
+                      >
+                        <Icons.users size={20} className="text-secondary" />
+                      </div>
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-sm text-secondary font-body mb-1">Updated By</p>
+                    {plan.updatedBy ? (
+                      <>
+                        <p className="text-base font-semibold text-primary font-body">
+                          {updaterName}
+                        </p>
+                        {plan.updatedAt && (
+                          <p className="text-xs text-secondary font-body mt-1">
+                            {formatTimestamp(plan.updatedAt)}
+                          </p>
+                        )}
+                      </>
+                    ) : (
+                      <p className="text-base text-secondary font-body italic">
+                        Not updated yet
+                      </p>
+                    )}
                   </div>
                 </div>
               </div>

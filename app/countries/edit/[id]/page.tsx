@@ -12,11 +12,13 @@ import {
 import { getAllCategories } from '@/lib/services/category.service';
 import { UpdateCountryInput } from '@/lib/types/country.types';
 import { Category } from '@/lib/types/category.types';
+import { useAuth } from '@/lib/hooks/useAuth';
 
 export default function EditCountryPage() {
   const router = useRouter();
   const params = useParams();
   const countryId = params.id as string;
+  const { user } = useAuth();
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -99,7 +101,14 @@ export default function EditCountryPage() {
         throw new Error('ISO code must be exactly 2 characters');
       }
 
-      await updateCountry(countryId, formData);
+      if (!user?.id) {
+        throw new Error('User not authenticated');
+      }
+
+      await updateCountry(countryId, {
+        ...formData,
+        updatedBy: user.id,
+      });
       router.push('/countries');
     } catch (err: any) {
       console.error('Error updating country:', err);

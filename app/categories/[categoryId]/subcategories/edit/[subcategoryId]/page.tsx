@@ -11,10 +11,12 @@ import {
   updateSubcategory,
 } from '@/lib/services/category.service';
 import { UpdateSubcategoryInput } from '@/lib/types/category.types';
+import { useAuth } from '@/lib/hooks/useAuth';
 
 export default function EditSubcategoryPage() {
   const router = useRouter();
   const params = useParams();
+  const { user } = useAuth();
   const categoryId = params.categoryId as string;
   const subcategoryId = params.subcategoryId as string;
 
@@ -81,7 +83,14 @@ export default function EditSubcategoryPage() {
         throw new Error('Subcategory name is required');
       }
 
-      await updateSubcategory(categoryId, subcategoryId, formData);
+      if (!user?.id) {
+        throw new Error('User not authenticated');
+      }
+
+      await updateSubcategory(categoryId, subcategoryId, {
+        ...formData,
+        updatedBy: user.id,
+      });
       router.push('/categories');
     } catch (err: any) {
       console.error('Error updating subcategory:', err);
