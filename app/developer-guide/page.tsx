@@ -176,7 +176,7 @@ const collections: Collection[] = [
     id: 'app-settings',
     name: 'App Settings',
     icon: Icons.appSettings,
-    description: 'Global application configuration',
+    description: 'Global application configuration Default ID : app_config',
     firebaseCollection: 'app_settings',
     fields: [
       { name: 'id', type: 'string', required: true, description: 'Settings document ID', example: 'settings_main' },
