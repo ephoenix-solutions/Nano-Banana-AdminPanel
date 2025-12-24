@@ -17,6 +17,7 @@ import {
   CreatePromptInput,
   UpdatePromptInput,
 } from '@/lib/types/prompt.types';
+import { removePromptFromAllSaves } from './save.service';
 
 const COLLECTION_NAME = 'prompt'; // Firestore collection name
 
@@ -178,9 +179,14 @@ export async function updatePrompt(
 
 /**
  * Delete a prompt
+ * Also removes it from all users' saves
  */
 export async function deletePrompt(promptId: string): Promise<void> {
   try {
+    // First, remove from all users' saves
+    await removePromptFromAllSaves(promptId);
+    
+    // Then delete the prompt
     const promptRef = doc(db, COLLECTION_NAME, promptId);
     await deleteDoc(promptRef);
   } catch (error) {

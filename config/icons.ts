@@ -56,6 +56,7 @@ import {
   ChevronUp,
   CornerDownRight,
   Star,
+  Bookmark,
 } from 'lucide-react';
 
 // Export all icons
@@ -102,6 +103,7 @@ export const Icons = {
   alert: AlertCircle,
   info: Info,
   star: Star,
+  bookmark: Bookmark,
   
   // General Icons
   home: Home,
@@ -173,6 +175,7 @@ export {
   ChevronUp,
   CornerDownRight,
   Star,
+  Bookmark,
 };
 
 export default Icons;
