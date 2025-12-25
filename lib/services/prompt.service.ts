@@ -127,6 +127,7 @@ export async function createPrompt(promptData: CreatePromptInput): Promise<strin
       subCategoryId: promptData.subCategoryId,
       prompt: promptData.prompt,
       url: promptData.url || '',
+      imageRequirement: promptData.imageRequirement ?? 0, // Default to 0 (optional)
       tags: promptData.tags || [],
       isTrending: promptData.isTrending || false,
       likes: promptData.likes || 0,
@@ -159,6 +160,7 @@ export async function updatePrompt(
     if (promptData.subCategoryId !== undefined) updateData.subCategoryId = promptData.subCategoryId;
     if (promptData.prompt !== undefined) updateData.prompt = promptData.prompt;
     if (promptData.url !== undefined) updateData.url = promptData.url;
+    if (promptData.imageRequirement !== undefined) updateData.imageRequirement = promptData.imageRequirement;
     if (promptData.tags !== undefined) updateData.tags = promptData.tags;
     if (promptData.isTrending !== undefined) updateData.isTrending = promptData.isTrending;
     if (promptData.likes !== undefined) updateData.likes = promptData.likes;

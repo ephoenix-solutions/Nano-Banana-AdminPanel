@@ -392,6 +392,35 @@ export default function ViewPromptPage() {
                 </div>
               </div>
 
+              {/* Image Requirement */}
+              <div className="bg-background rounded-lg p-4 border border-primary/10">
+                <div className="flex items-start gap-3">
+                  <div className="w-10 h-10 bg-secondary/20 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <Icons.images size={20} className="text-secondary" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-sm text-secondary font-body mb-1">Image Requirement</p>
+                    <div className="flex items-center gap-2">
+                      <span
+                        className={`inline-flex items-center px-3 py-1 rounded-md text-sm font-medium ${
+                          (prompt.imageRequirement ?? 0) === -1
+                            ? 'bg-secondary/20 text-secondary'
+                            : (prompt.imageRequirement ?? 0) === 0
+                            ? 'bg-accent/20 text-primary'
+                            : 'bg-accent/30 text-primary'
+                        }`}
+                      >
+                        {(prompt.imageRequirement ?? 0) === -1
+                          ? 'No Images Required'
+                          : (prompt.imageRequirement ?? 0) === 0
+                          ? 'Optional'
+                          : `${prompt.imageRequirement} Image${prompt.imageRequirement > 1 ? 's' : ''} Required`}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
               {/* Created By */}
               <div className="bg-background rounded-lg p-4 border border-primary/10">
                 <div className="flex items-start gap-3">

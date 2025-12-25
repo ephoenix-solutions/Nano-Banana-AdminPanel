@@ -7,6 +7,7 @@ export interface Prompt {
   subCategoryId: string;
   prompt: string;
   url: string;
+  imageRequirement: number; // -1: none, 0: optional, 1-4: required count
   tags: string[];
   isTrending: boolean;
   likes: number;
@@ -23,6 +24,7 @@ export interface CreatePromptInput {
   subCategoryId: string;
   prompt: string;
   url?: string;
+  imageRequirement?: number; // -1: none, 0: optional, 1-4: required count
   tags?: string[];
   isTrending?: boolean;
   likes?: number;
@@ -36,6 +38,7 @@ export interface UpdatePromptInput {
   subCategoryId?: string;
   prompt?: string;
   url?: string;
+  imageRequirement?: number; // -1: none, 0: optional, 1-4: required count
   tags?: string[];
   isTrending?: boolean;
   likes?: number;
