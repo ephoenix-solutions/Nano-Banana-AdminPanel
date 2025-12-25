@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import "./index.css";
 import { ReduxProvider } from "@/lib/store/ReduxProvider";
 import AuthInitializer from "@/components/auth/AuthInitializer";
 import NextTopLoader from 'nextjs-toploader';

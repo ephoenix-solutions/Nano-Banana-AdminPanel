@@ -654,8 +654,11 @@ export default function PromptsPage() {
                       <SortableHeader field="title" label="Title" />
                     </th>
                     <th className="px-6 py-4 text-left text-sm font-semibold text-primary font-body">
-                      Tags
+                      Required
                     </th>
+                    {/* <th className="px-6 py-4 text-left text-sm font-semibold text-primary font-body">
+                      Tags
+                    </th> */}
                     <th className="px-6 py-4 text-left text-sm font-semibold text-primary font-body">
                       <SortableHeader field="category" label="Category" />
                     </th>
@@ -717,6 +720,23 @@ export default function PromptsPage() {
                       </div>
                     </td>
                     <td className="px-6 py-4">
+                      <span
+                        className={`inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium ${
+                          (prompt.imageRequirement ?? 0) === -1
+                            ? 'bg-secondary/20 text-secondary'
+                            : (prompt.imageRequirement ?? 0) === 0
+                            ? 'bg-accent/20 text-primary'
+                            : 'bg-accent/30 text-primary'
+                        }`}
+                      >
+                        {(prompt.imageRequirement ?? 0) === -1
+                          ? 'None'
+                          : (prompt.imageRequirement ?? 0) === 0
+                          ? 'Optional'
+                          : `${prompt.imageRequirement} Req.`}
+                      </span>
+                    </td>
+                    {/* <td className="px-6 py-4">
                       <div className="max-w-xs">
                         {prompt.tags && prompt.tags.length > 0 ? (
                           <div className="flex flex-wrap gap-1">
@@ -738,7 +758,7 @@ export default function PromptsPage() {
                           <span className="text-sm text-secondary/50">No tags</span>
                         )}
                       </div>
-                    </td>
+                    </td> */}
                     <td className="px-6 py-4 text-sm text-primary">
                       <div className="flex flex-col gap-1">
                         <span className="font-medium">{getCategoryName(prompt.categoryId)}</span>

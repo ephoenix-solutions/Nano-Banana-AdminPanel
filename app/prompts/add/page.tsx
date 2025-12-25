@@ -25,6 +25,7 @@ export default function AddPromptPage() {
     subCategoryId: '',
     prompt: '',
     url: '',
+    imageRequirement: 0, // Default to optional
     tags: [],
     isTrending: false,
     likes: 0,
@@ -75,6 +76,11 @@ export default function AddPromptPage() {
       setFormData((prev) => ({
         ...prev,
         [name]: parseInt(value) || 0,
+      }));
+    } else if (name === 'imageRequirement') {
+      setFormData((prev) => ({
+        ...prev,
+        [name]: parseInt(value),
       }));
     } else {
       setFormData((prev) => ({
@@ -300,6 +306,109 @@ export default function AddPromptPage() {
                 className="w-full px-4 py-3 border border-primary/10 rounded-lg text-sm font-body text-primary bg-background transition-all duration-200 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
                 placeholder="https://example.com/image.jpg"
               />
+            </div>
+
+            {/* Image Requirement Radio Buttons */}
+            <div>
+              <label htmlFor='imageRequirement' className="block text-sm font-semibold text-primary mb-2 font-body">Image Requirement</label>
+              <ul className="items-center w-full text-sm font-medium text-primary bg-background border border-primary/10 rounded-lg sm:flex">
+                <li className="w-full border-b border-primary/10 sm:border-b-0 sm:border-r">
+                  <div className="flex items-center ps-3">
+                    <input
+                      id="image-req-none"
+                      type="radio"
+                      value="-1"
+                      name="imageRequirement"
+                      checked={formData.imageRequirement === -1}
+                      onChange={handleChange}
+                      className="w-4 h-4 border-2 border-primary/30 bg-white rounded-full appearance-none cursor-pointer checked:bg-accent checked:border-accent focus:ring-2 focus:ring-accent/20 focus:outline-none transition-all"
+                    />
+                    <label htmlFor="image-req-none" className="w-full py-3 select-none ms-2 text-sm font-medium text-primary cursor-pointer font-body">
+                      No Images
+                    </label>
+                  </div>
+                </li>
+                <li className="w-full border-b border-primary/10 sm:border-b-0 sm:border-r">
+                  <div className="flex items-center ps-3">
+                    <input
+                      id="image-req-optional"
+                      type="radio"
+                      value="0"
+                      name="imageRequirement"
+                      checked={formData.imageRequirement === 0}
+                      onChange={handleChange}
+                      className="w-4 h-4 border-2 border-primary/30 bg-white rounded-full appearance-none cursor-pointer checked:bg-accent checked:border-accent focus:ring-2 focus:ring-accent/20 focus:outline-none transition-all"
+                    />
+                    <label htmlFor="image-req-optional" className="w-full py-3 select-none ms-2 text-sm font-medium text-primary cursor-pointer font-body">
+                      Optional
+                    </label>
+                  </div>
+                </li>
+                <li className="w-full border-b border-primary/10 sm:border-b-0 sm:border-r">
+                  <div className="flex items-center ps-3">
+                    <input
+                      id="image-req-1"
+                      type="radio"
+                      value="1"
+                      name="imageRequirement"
+                      checked={formData.imageRequirement === 1}
+                      onChange={handleChange}
+                      className="w-4 h-4 border-2 border-primary/30 bg-white rounded-full appearance-none cursor-pointer checked:bg-accent checked:border-accent focus:ring-2 focus:ring-accent/20 focus:outline-none transition-all"
+                    />
+                    <label htmlFor="image-req-1" className="w-full py-3 select-none ms-2 text-sm font-medium text-primary cursor-pointer font-body">
+                      1 Image
+                    </label>
+                  </div>
+                </li>
+                <li className="w-full border-b border-primary/10 sm:border-b-0 sm:border-r">
+                  <div className="flex items-center ps-3">
+                    <input
+                      id="image-req-2"
+                      type="radio"
+                      value="2"
+                      name="imageRequirement"
+                      checked={formData.imageRequirement === 2}
+                      onChange={handleChange}
+                      className="w-4 h-4 border-2 border-primary/30 bg-white rounded-full appearance-none cursor-pointer checked:bg-accent checked:border-accent focus:ring-2 focus:ring-accent/20 focus:outline-none transition-all"
+                    />
+                    <label htmlFor="image-req-2" className="w-full py-3 select-none ms-2 text-sm font-medium text-primary cursor-pointer font-body">
+                      2 Images
+                    </label>
+                  </div>
+                </li>
+                <li className="w-full border-b border-primary/10 sm:border-b-0 sm:border-r">
+                  <div className="flex items-center ps-3">
+                    <input
+                      id="image-req-3"
+                      type="radio"
+                      value="3"
+                      name="imageRequirement"
+                      checked={formData.imageRequirement === 3}
+                      onChange={handleChange}
+                      className="w-4 h-4 border-2 border-primary/30 bg-white rounded-full appearance-none cursor-pointer checked:bg-accent checked:border-accent focus:ring-2 focus:ring-accent/20 focus:outline-none transition-all"
+                    />
+                    <label htmlFor="image-req-3" className="w-full py-3 select-none ms-2 text-sm font-medium text-primary cursor-pointer font-body">
+                      3 Images
+                    </label>
+                  </div>
+                </li>
+                <li className="w-full">
+                  <div className="flex items-center ps-3">
+                    <input
+                      id="image-req-4"
+                      type="radio"
+                      value="4"
+                      name="imageRequirement"
+                      checked={formData.imageRequirement === 4}
+                      onChange={handleChange}
+                      className="w-4 h-4 border-2 border-primary/30 bg-white rounded-full appearance-none cursor-pointer checked:bg-accent checked:border-accent focus:ring-2 focus:ring-accent/20 focus:outline-none transition-all"
+                    />
+                    <label htmlFor="image-req-4" className="w-full py-3 select-none ms-2 text-sm font-medium text-primary cursor-pointer font-body">
+                      4 Images
+                    </label>
+                  </div>
+                </li>
+              </ul>
             </div>
 
             {/* Tags Field - Full Width */}
