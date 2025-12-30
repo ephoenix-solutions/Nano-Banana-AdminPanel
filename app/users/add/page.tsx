@@ -1,65 +1,37 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
 import AdminLayout from '@/components/AdminLayout';
 import Breadcrumbs from '@/components/Breadcrumbs';
 import { Icons } from '@/config/icons';
-import { createUser } from '@/lib/services/user.service';
-import { CreateUserInput } from '@/lib/types/user.types';
+import { useAddUserForm } from '@/lib/hooks/useAddUserForm';
+import FormInput from '@/components/users/utils/FormInput';
+import FormSelect from '@/components/users/utils/FormSelect';
+import ErrorMessage from '@/components/users/utils/ErrorMessage';
+import FormActions from '@/components/users/utils/FormActions';
 
 export default function AddUserPage() {
-  const router = useRouter();
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [formData, setFormData] = useState<CreateUserInput>({
-    name: '',
-    email: '',
-    language: 'en',
-    provider: 'manual',
-    photoURL: '',
-  });
+  const {
+    loading,
+    error,
+    formData,
+    handleChange,
+    handleSubmit,
+    handleCancel,
+  } = useAddUserForm();
 
-  const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
-  ) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
-  };
+  const providerOptions = [
+    { value: 'manual', label: 'Manual' },
+    { value: 'google', label: 'Google' },
+    { value: 'apple', label: 'Apple' },
+  ];
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    setError(null);
-
-    try {
-      // Validate form
-      if (!formData.name.trim()) {
-        throw new Error('Name is required');
-      }
-      if (!formData.email.trim()) {
-        throw new Error('Email is required');
-      }
-      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-        throw new Error('Invalid email format');
-      }
-
-      await createUser(formData);
-      router.push('/users');
-    } catch (err: any) {
-      console.error('Error creating user:', err);
-      setError(err.message || 'Failed to create user');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleCancel = () => {
-    router.push('/users');
-  };
+  const languageOptions = [
+    { value: 'en', label: 'English' },
+    { value: 'es', label: 'Spanish' },
+    { value: 'fr', label: 'French' },
+    { value: 'de', label: 'German' },
+    { value: 'hi', label: 'Hindi' },
+  ];
 
   return (
     <AdminLayout>
@@ -94,149 +66,74 @@ export default function AddUserPage() {
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* Name Field */}
-              <div>
-                <label
-                  htmlFor="name"
-                  className="block text-sm font-semibold text-primary mb-2 font-body"
-                >
-                  Full Name <span className="text-secondary">*</span>
-                </label>
-                <input
-                  type="text"
-                  id="name"
-                  name="name"
-                  value={formData.name}
-                  onChange={handleChange}
-                  required
-                  className="w-full px-4 py-3 border border-primary/10 rounded-lg text-sm font-body text-primary bg-background transition-all duration-200 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
-                  placeholder="Enter full name"
-                />
-              </div>
+              <FormInput
+                id="name"
+                name="name"
+                label="Full Name"
+                value={formData.name}
+                onChange={handleChange}
+                required
+                placeholder="Enter full name"
+              />
 
               {/* Email Field */}
-              <div>
-                <label
-                  htmlFor="email"
-                  className="block text-sm font-semibold text-primary mb-2 font-body"
-                >
-                  Email Address <span className="text-secondary">*</span>
-                </label>
-                <input
-                  type="email"
-                  id="email"
-                  name="email"
-                  value={formData.email}
-                  onChange={handleChange}
-                  required
-                  className="w-full px-4 py-3 border border-primary/10 rounded-lg text-sm font-body text-primary bg-background transition-all duration-200 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
-                  placeholder="user@example.com"
-                />
-              </div>
+              <FormInput
+                id="email"
+                name="email"
+                label="Email Address"
+                value={formData.email}
+                onChange={handleChange}
+                type="email"
+                required
+                placeholder="user@example.com"
+              />
 
               {/* Provider Field */}
-              <div>
-                <label
-                  htmlFor="provider"
-                  className="block text-sm font-semibold text-primary mb-2 font-body"
-                >
-                  Provider <span className="text-secondary">*</span>
-                </label>
-                <select
-                  id="provider"
-                  name="provider"
-                  value={formData.provider}
-                  onChange={handleChange}
-                  required
-                  className="w-full px-4 py-3 border border-primary/10 rounded-lg text-sm font-body text-primary bg-background transition-all duration-200 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
-                >
-                  <option value="manual">Manual</option>
-                  <option value="google">Google</option>
-                  <option value="apple">Apple</option>
-                </select>
-              </div>
+              <FormSelect
+                id="provider"
+                name="provider"
+                label="Provider"
+                value={formData.provider}
+                onChange={handleChange}
+                options={providerOptions}
+                required
+              />
 
               {/* Language Field */}
-              <div>
-                <label
-                  htmlFor="language"
-                  className="block text-sm font-semibold text-primary mb-2 font-body"
-                >
-                  Language <span className="text-secondary">*</span>
-                </label>
-                <select
-                  id="language"
-                  name="language"
-                  value={formData.language}
-                  onChange={handleChange}
-                  required
-                  className="w-full px-4 py-3 border border-primary/10 rounded-lg text-sm font-body text-primary bg-background transition-all duration-200 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
-                >
-                  <option value="en">English</option>
-                  <option value="es">Spanish</option>
-                  <option value="fr">French</option>
-                  <option value="de">German</option>
-                  <option value="hi">Hindi</option>
-                </select>
-              </div>
-            </div>
-
-            {/* Photo URL Field - Full Width */}
-            <div>
-              <label
-                htmlFor="photoURL"
-                className="block text-sm font-semibold text-primary mb-2 font-body"
-              >
-                Photo URL <span className="text-secondary/50">(Optional)</span>
-              </label>
-              <input
-                type="url"
-                id="photoURL"
-                name="photoURL"
-                value={formData.photoURL}
+              <FormSelect
+                id="language"
+                name="language"
+                label="Language"
+                value={formData.language}
                 onChange={handleChange}
-                className="w-full px-4 py-3 border border-primary/10 rounded-lg text-sm font-body text-primary bg-background transition-all duration-200 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
-                placeholder="https://example.com/photo.jpg"
+                options={languageOptions}
+                required
               />
             </div>
 
+            {/* Photo URL Field - Full Width */}
+            <FormInput
+              id="photoURL"
+              name="photoURL"
+              label="Photo URL"
+              value={formData.photoURL}
+              onChange={handleChange}
+              type="url"
+              optional
+              placeholder="https://example.com/photo.jpg"
+            />
+
             {/* Error Message */}
-            {error && (
-              <div className="bg-secondary/10 border border-secondary rounded-lg p-4">
-                <div className="flex items-center gap-2">
-                  <Icons.alert size={20} className="text-secondary" />
-                  <p className="text-secondary font-body text-sm">{error}</p>
-                </div>
-              </div>
-            )}
+            <ErrorMessage message={error} />
 
             {/* Form Actions */}
-            <div className="flex items-center justify-end gap-3 pt-4 border-t border-primary/10">
-              <button
-                type="button"
-                onClick={handleCancel}
-                disabled={loading}
-                className="px-6 py-3 text-sm font-medium text-primary bg-background hover:bg-primary/5 rounded-lg transition-all border border-primary/10 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                disabled={loading}
-                className="flex items-center gap-2 px-6 py-3 bg-accent text-primary rounded-lg font-semibold hover:bg-accent/90 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {loading ? (
-                  <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
-                    <span>Creating...</span>
-                  </>
-                ) : (
-                  <>
-                    <Icons.check size={20} />
-                    <span>Create User</span>
-                  </>
-                )}
-              </button>
-            </div>
+            <FormActions
+              loading={loading}
+              onCancel={handleCancel}
+              submitText="Create User"
+              loadingText="Creating..."
+              submitIcon="check"
+            />
           </form>
         </div>
       </div>

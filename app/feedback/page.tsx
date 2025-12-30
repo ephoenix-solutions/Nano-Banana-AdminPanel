@@ -1,273 +1,56 @@
 'use client';
 
-import { useEffect, useState, useMemo } from 'react';
-import { useRouter } from 'next/navigation';
 import AdminLayout from '@/components/AdminLayout';
 import Breadcrumbs from '@/components/Breadcrumbs';
 import ConfirmModal from '@/components/ConfirmModal';
-import { Icons } from '@/config/icons';
-import { Feedback } from '@/lib/types/feedback.types';
-import { getAllFeedback, deleteFeedback } from '@/lib/services/feedback.service';
-import { getUserById } from '@/lib/services/user.service';
-import { User } from '@/lib/types/user.types';
-import { Timestamp } from 'firebase/firestore';
+import { useFeedbackList } from '@/lib/hooks/useFeedbackList';
 
-type SortField = 'user' | 'rating' | 'createdAt';
-type SortOrder = 'asc' | 'desc';
-type RatingFilter = 'all' | '1' | '2' | '3' | '4' | '5';
+// Import list components
+import PageHeader from '@/components/feedback/list/PageHeader';
+import SearchFilterBar from '@/components/feedback/list/SearchFilterBar';
+import StatsCards from '@/components/feedback/list/StatsCards';
+import FeedbackTable from '@/components/feedback/list/FeedbackTable';
+import EmptyState from '@/components/feedback/list/EmptyState';
+import ErrorMessage from '@/components/feedback/list/ErrorMessage';
 
 export default function FeedbackPage() {
-  const router = useRouter();
-  const [feedback, setFeedback] = useState<Feedback[]>([]);
-  const [users, setUsers] = useState<Record<string, User>>({});
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [deleteModal, setDeleteModal] = useState<{
-    isOpen: boolean;
-    feedback: Feedback | null;
-  }>({
-    isOpen: false,
-    feedback: null,
-  });
-
-  // Search and Filter States
-  const [searchQuery, setSearchQuery] = useState('');
-  const [sortField, setSortField] = useState<SortField>('createdAt');
-  const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
-  const [ratingFilter, setRatingFilter] = useState<RatingFilter>('all');
-
-  useEffect(() => {
-    fetchFeedback();
-  }, []);
-
-  const fetchFeedback = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      const data = await getAllFeedback();
-      setFeedback(data);
-      
-      // Fetch user data for each unique userId
-      const uniqueUserIds = [...new Set(data.map(f => f.userId))];
-      const userDataMap: Record<string, User> = {};
-      
-      await Promise.all(
-        uniqueUserIds.map(async (userId) => {
-          try {
-            const user = await getUserById(userId);
-            if (user) {
-              userDataMap[userId] = user;
-            }
-          } catch (err) {
-            console.error(`Error fetching user ${userId}:`, err);
-          }
-        })
-      );
-      
-      setUsers(userDataMap);
-    } catch (err) {
-      console.error('Error fetching feedback:', err);
-      setError('Failed to load feedback');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleDeleteClick = (item: Feedback) => {
-    setDeleteModal({
-      isOpen: true,
-      feedback: item,
-    });
-  };
-
-  const handleDeleteConfirm = async () => {
-    if (!deleteModal.feedback) return;
-
-    try {
-      await deleteFeedback(deleteModal.feedback.id);
-      await fetchFeedback();
-    } catch (err) {
-      console.error('Error deleting feedback:', err);
-      setError('Failed to delete feedback');
-    }
-  };
-
-  const formatTimestamp = (timestamp: Timestamp) => {
-    if (!timestamp) return '-';
-    const date = timestamp.toDate();
-    return new Intl.DateTimeFormat('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    }).format(date);
-  };
-
-  const renderStars = (rating: number) => {
-    const emojis = ["😡", "😕", "😐", "🙂", "🥰"];
-    const emoji = emojis[rating - 1] || "😐";
+  const {
+    // Data
+    feedback,
+    filteredAndSortedFeedback,
+    userCache,
     
-    return (
-      <div className="flex items-center gap-2">
-        <span className="text-2xl">{emoji}</span>
-        <span className="text-sm font-semibold text-primary">
-          {rating}/5
-        </span>
-      </div>
-    );
-  };
-
-  const getAverageRating = () => {
-    if (feedback.length === 0) return 0;
-    const total = feedback.reduce((sum, f) => sum + f.rating, 0);
-    return (total / feedback.length).toFixed(1);
-  };
-
-  const getRatingCount = (rating: number) => {
-    return feedback.filter((f) => f.rating === rating).length;
-  };
-
-  const getUserName = (userId: string) => {
-    return users[userId]?.name || 'Unknown User';
-  };
-
-  // Handle sorting
-  const handleSort = (field: SortField) => {
-    if (sortField === field) {
-      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
-    } else {
-      setSortField(field);
-      setSortOrder('asc');
-    }
-  };
-
-  // Filter and Sort Feedback
-  const filteredAndSortedFeedback = useMemo(() => {
-    let filtered = [...feedback];
-
-    // Search filter (user name, email, or message)
-    if (searchQuery.trim()) {
-      const query = searchQuery.toLowerCase();
-      filtered = filtered.filter((item) => {
-        // Check message
-        if (item.message.toLowerCase().includes(query)) return true;
-        // Check user name and email
-        const user = users[item.userId];
-        if (user) {
-          if (user.name.toLowerCase().includes(query)) return true;
-          if (user.email.toLowerCase().includes(query)) return true;
-        }
-        return false;
-      });
-    }
-
-    // Rating filter
-    if (ratingFilter !== 'all') {
-      const targetRating = parseInt(ratingFilter);
-      filtered = filtered.filter((item) => item.rating === targetRating);
-    }
-
-    // Sort
-    filtered.sort((a, b) => {
-      let aValue: any;
-      let bValue: any;
-
-      switch (sortField) {
-        case 'user':
-          aValue = getUserName(a.userId).toLowerCase();
-          bValue = getUserName(b.userId).toLowerCase();
-          break;
-        case 'rating':
-          aValue = a.rating;
-          bValue = b.rating;
-          break;
-        case 'createdAt':
-          aValue = a.createdAt.toDate().getTime();
-          bValue = b.createdAt.toDate().getTime();
-          break;
-        default:
-          aValue = a.createdAt.toDate().getTime();
-          bValue = b.createdAt.toDate().getTime();
-      }
-
-      if (sortOrder === 'asc') {
-        return aValue > bValue ? 1 : -1;
-      } else {
-        return aValue < bValue ? 1 : -1;
-      }
-    });
-
-    return filtered;
-  }, [feedback, searchQuery, sortField, sortOrder, ratingFilter, users]);
-
-  // Clear all filters
-  const clearFilters = () => {
-    setSearchQuery('');
-    setSortField('createdAt');
-    setSortOrder('desc');
-    setRatingFilter('all');
-  };
-
-  // Check if any filters are active
-  const hasActiveFilters = useMemo(() => {
-    return (
-      searchQuery.trim() !== '' ||
-      ratingFilter !== 'all'
-    );
-  }, [searchQuery, ratingFilter]);
-
-  // Sortable header component
-  const SortableHeader = ({ field, label }: { field: SortField; label: string }) => {
-    const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
-      e.preventDefault();
-      e.currentTarget.blur();
-      if (document.activeElement instanceof HTMLElement) {
-        document.activeElement.blur();
-      }
-      handleSort(field);
-    };
-
-    const handleMouseDown = (e: React.MouseEvent<HTMLButtonElement>) => {
-      e.preventDefault();
-    };
-
-    const handlePointerDown = (e: React.PointerEvent<HTMLButtonElement>) => {
-      e.preventDefault();
-    };
-
-    return (
-      <button
-        type="button"
-        onClick={handleClick}
-        onMouseDown={handleMouseDown}
-        onPointerDown={handlePointerDown}
-        className="flex items-center gap-2 transition-all cursor-pointer group"
-        style={{ outline: 'none', WebkitTapHighlightColor: 'transparent' }}
-        tabIndex={-1}
-      >
-        <span>{label}</span>
-        <div className="flex flex-col">
-          <Icons.chevronUp
-            size={16}
-            className={`-mb-1 transition-all group-hover:scale-110 ${
-              sortField === field && sortOrder === 'asc'
-                ? 'text-accent'
-                : 'text-secondary/30'
-            }`}
-          />
-          <Icons.chevronDown
-            size={16}
-            className={`-mt-1 transition-all group-hover:scale-110 ${
-              sortField === field && sortOrder === 'desc'
-                ? 'text-accent'
-                : 'text-secondary/30'
-            }`}
-          />
-        </div>
-      </button>
-    );
-  };
+    // Loading states
+    loading,
+    error,
+    
+    // Filter states
+    searchQuery,
+    sortField,
+    sortOrder,
+    ratingFilter,
+    hasActiveFilters,
+    
+    // Actions
+    setSearchQuery,
+    setRatingFilter,
+    handleSort,
+    clearFilters,
+    
+    // CRUD operations
+    handleView,
+    handleDeleteClick,
+    handleDeleteConfirm,
+    
+    // Delete modal
+    deleteModal,
+    setDeleteModal,
+    
+    // Utilities
+    formatTimestamp,
+    getAverageRating,
+    getRatingCount,
+  } = useFeedbackList();
 
   if (loading) {
     return (
@@ -286,295 +69,52 @@ export default function FeedbackPage() {
         <Breadcrumbs items={[{ label: 'Feedback' }]} />
 
         {/* Page Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-4xl font-bold text-primary font-heading">
-              Feedback
-            </h1>
-            <p className="text-secondary mt-2 font-body">
-              User feedback and ratings
-            </p>
-          </div>
-        </div>
+        <PageHeader />
 
         {/* Search and Filter Bar */}
-        <div className="bg-white rounded-lg border border-primary/10 p-4">
-          <div className="flex flex-col md:flex-row gap-4">
-            {/* Search Input */}
-            <div className="flex-1">
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Icons.search size={20} className="text-secondary" />
-                </div>
-                <input
-                  type="text"
-                  placeholder="Search by user name, email, or message..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2.5 border border-primary/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent font-body text-primary placeholder-secondary/50"
-                />
-              </div>
-            </div>
-
-            {/* Rating Filter */}
-            <div className="w-full md:w-48">
-              <select
-                value={ratingFilter}
-                onChange={(e) => setRatingFilter(e.target.value as RatingFilter)}
-                className="w-full px-3 py-2.5 border border-primary/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent font-body text-primary"
-              >
-                <option value="all">All Ratings</option>
-                <option value="5">5 Stars (🥰)</option>
-                <option value="4">4 Stars (🙂)</option>
-                <option value="3">3 Stars (😐)</option>
-                <option value="2">2 Stars (😕)</option>
-                <option value="1">1 Star (😡)</option>
-              </select>
-            </div>
-
-            {/* Clear Filters Button */}
-            {hasActiveFilters && (
-              <button
-                onClick={clearFilters}
-                className="flex items-center justify-center gap-2 px-4 py-2.5 border border-secondary/20 text-secondary rounded-lg font-semibold hover:bg-secondary/10 transition-all whitespace-nowrap"
-              >
-                <Icons.close size={20} />
-                <span>Clear</span>
-              </button>
-            )}
-          </div>
-
-          {/* Results Count */}
-          <div className="mt-4 pt-4 border-t border-primary/10">
-            <p className="text-sm text-secondary font-body">
-              Showing <span className="font-semibold text-primary">{filteredAndSortedFeedback.length}</span> of{' '}
-              <span className="font-semibold text-primary">{feedback.length}</span> feedback
-            </p>
-          </div>
-        </div>
+        <SearchFilterBar
+          searchQuery={searchQuery}
+          ratingFilter={ratingFilter}
+          hasActiveFilters={hasActiveFilters}
+          totalFeedback={feedback.length}
+          filteredCount={filteredAndSortedFeedback.length}
+          onSearchChange={setSearchQuery}
+          onRatingChange={setRatingFilter}
+          onClearFilters={clearFilters}
+        />
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-          <div className="bg-white rounded-lg border border-primary/10 p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-secondary font-body">
-                  Total Feedback
-                </p>
-                <p className="text-3xl font-bold text-primary font-heading mt-1">
-                  {feedback.length}
-                </p>
-              </div>
-              <div className="w-12 h-12 bg-accent/20 rounded-lg flex items-center justify-center">
-                <Icons.feedback size={24} className="text-accent" />
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-lg border border-primary/10 p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-secondary font-body">
-                  Average Rating
-                </p>
-                <p className="text-3xl font-bold text-primary font-heading mt-1">
-                  {getAverageRating()}
-                </p>
-              </div>
-              <div className="w-12 h-12 bg-secondary/20 rounded-lg flex items-center justify-center">
-                <Icons.check size={24} className="text-secondary" />
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-lg border border-primary/10 p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-secondary font-body">5 Star</p>
-                <p className="text-3xl font-bold text-primary font-heading mt-1">
-                  {getRatingCount(5)}
-                </p>
-              </div>
-              <div className="w-12 h-12 bg-accent/20 rounded-lg flex items-center justify-center">
-                <Icons.check size={24} className="text-accent fill-accent" />
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-lg border border-primary/10 p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-secondary font-body">1-2 Star</p>
-                <p className="text-3xl font-bold text-primary font-heading mt-1">
-                  {getRatingCount(1) + getRatingCount(2)}
-                </p>
-              </div>
-              <div className="w-12 h-12 bg-secondary/20 rounded-lg flex items-center justify-center">
-                <Icons.alert size={24} className="text-secondary" />
-              </div>
-            </div>
-          </div>
-        </div>
+        <StatsCards
+          feedback={feedback}
+          getAverageRating={getAverageRating}
+          getRatingCount={getRatingCount}
+        />
 
         {/* Error Message */}
-        {error && (
-          <div className="bg-secondary/10 border border-secondary rounded-lg p-4">
-            <div className="flex items-center gap-2">
-              <Icons.alert size={20} className="text-secondary" />
-              <p className="text-secondary font-body">{error}</p>
-            </div>
-          </div>
-        )}
+        <ErrorMessage message={error} />
 
-        {/* Feedback Table - Only show if there are results OR if loading */}
-        {(loading || filteredAndSortedFeedback.length > 0) && (
-          <div className="bg-white rounded-lg border border-primary/10 overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className="bg-background border-b border-primary/10">
-                  <tr>
-                    <th className="px-6 py-4 text-left text-sm font-semibold text-primary font-body">
-                      <SortableHeader field="user" label="User" />
-                    </th>
-                    <th className="px-6 py-4 text-left text-sm font-semibold text-primary font-body">
-                      Message
-                    </th>
-                    <th className="px-6 py-4 text-left text-sm font-semibold text-primary font-body">
-                      <SortableHeader field="rating" label="Rating" />
-                    </th>
-                    <th className="px-6 py-4 text-left text-sm font-semibold text-primary font-body">
-                      OS & Version
-                    </th>
-                    <th className="px-6 py-4 text-left text-sm font-semibold text-primary font-body">
-                      Model
-                    </th>
-                    <th className="px-6 py-4 text-left text-sm font-semibold text-primary font-body">
-                      <SortableHeader field="createdAt" label="Date" />
-                    </th>
-                    <th className="px-6 py-4 text-right text-sm font-semibold text-primary font-body">
-                      Actions
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredAndSortedFeedback.map((item, index) => (
-                  <tr
-                    key={item.id}
-                    className={`transition-colors ${
-                      index % 2 === 0
-                        ? 'bg-white hover:bg-background/50'
-                        : 'bg-background hover:bg-background-200'
-                    }`}
-                  >
-                    <td className="px-6 py-4">
-                      <div className="flex flex-col gap-1">
-                        {users[item.userId] ? (
-                          <>
-                            <span className="text-sm font-medium text-primary">
-                              {users[item.userId].name}
-                            </span>
-                            <span className="text-xs text-secondary">
-                              {users[item.userId].email}
-                            </span>
-                          </>
-                        ) : (
-                          <span className="text-sm text-secondary font-mono">
-                            {item.userId.substring(0, 8)}
-                          </span>
-                        )}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="max-w-md">
-                        <p className="text-sm text-primary line-clamp-2">
-                          {item.message}
-                        </p>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">{renderStars(item.rating)}</td>
-                    <td className="px-6 py-4">
-                      <div className="flex flex-wrap gap-2">
-                        {item.deviceInfo?.os ? (
-                          <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-accent/20 text-primary">
-                            {item.deviceInfo.os}
-                          </span>
-                        ) : null}
-                        {item.deviceInfo?.appVersion ? (
-                          <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-accent/20 text-primary">
-                            {item.deviceInfo.appVersion}
-                          </span>
-                        ) : null}
-                        {!item.deviceInfo?.os && !item.deviceInfo?.appVersion && (
-                          <span className="text-sm text-secondary">None</span>
-                        )}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="flex flex-wrap gap-2">
-                        {item.deviceInfo?.model ? (
-                          <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-accent/20 text-primary">
-                            {item.deviceInfo.model}
-                          </span>
-                        ) : (
-                          <span className="text-sm text-secondary">None</span>
-                        )}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 text-sm text-primary">
-                      {formatTimestamp(item.createdAt)}
-                    </td>
-                    <td className="px-6 py-4 text-right">
-                      <div className="flex items-center justify-end gap-2">
-                        <button
-                          onClick={() => router.push(`/feedback/view/${item.id}`)}
-                          className="p-2 text-white bg-accent hover:bg-accent/90 rounded-md transition-all cursor-pointer"
-                          title="View"
-                        >
-                          <Icons.eye size={18} />
-                        </button>
-                        <button
-                          onClick={() => handleDeleteClick(item)}
-                          className="p-2 text-white bg-secondary hover:bg-secondary/90 rounded-md transition-all cursor-pointer"
-                          title="Delete"
-                        >
-                          <Icons.trash size={18} />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
+        {/* Feedback Table - Only show if there are results */}
+        {filteredAndSortedFeedback.length > 0 && (
+          <FeedbackTable
+            feedback={filteredAndSortedFeedback}
+            userCache={userCache}
+            sortField={sortField}
+            sortOrder={sortOrder}
+            formatTimestamp={formatTimestamp}
+            onSort={handleSort}
+            onView={handleView}
+            onDelete={handleDeleteClick}
+          />
         )}
 
         {/* No Results Message - Show when filters are active but no matches */}
-        {!loading && filteredAndSortedFeedback.length === 0 && feedback.length > 0 && (
-          <div className="bg-white rounded-lg border border-primary/10 p-12 text-center">
-            <Icons.search size={48} className="text-secondary/30 mx-auto mb-4" />
-            <h3 className="text-xl font-semibold text-primary mb-2">No feedback found</h3>
-            <p className="text-secondary mb-4">
-              No feedback matches your current filters. Try adjusting your search or filters.
-            </p>
-            <button
-              onClick={clearFilters}
-              className="px-4 py-2 bg-accent text-primary rounded-lg font-semibold hover:bg-accent/90 transition-all"
-            >
-              Clear Filters
-            </button>
-          </div>
+        {filteredAndSortedFeedback.length === 0 && feedback.length > 0 && (
+          <EmptyState type="no-results" onClearFilters={clearFilters} />
         )}
 
         {/* No Data Message - Show when database is truly empty */}
-        {!loading && feedback.length === 0 && (
-          <div className="bg-white rounded-lg border border-primary/10 p-12 text-center">
-            <Icons.feedback size={48} className="text-secondary/30 mx-auto mb-4" />
-            <h3 className="text-xl font-semibold text-primary mb-2">No feedback yet</h3>
-            <p className="text-secondary mb-4">
-              There is no user feedback in the system yet.
-            </p>
-          </div>
+        {feedback.length === 0 && (
+          <EmptyState type="no-data" />
         )}
 
         {/* Delete Confirmation Modal */}

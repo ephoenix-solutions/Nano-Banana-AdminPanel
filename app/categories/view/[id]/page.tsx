@@ -1,169 +1,33 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useRouter, useParams } from 'next/navigation';
+import { useParams } from 'next/navigation';
 import AdminLayout from '@/components/AdminLayout';
 import Breadcrumbs from '@/components/Breadcrumbs';
 import { Icons } from '@/config/icons';
-import { getCategoryById } from '@/lib/services/category.service';
-import { Category } from '@/lib/types/category.types';
-import { getUserById } from '@/lib/services/user.service';
-import { Timestamp } from 'firebase/firestore';
-
-// Helper function to format timestamp
-const formatTimestamp = (timestamp: any) => {
-  if (!timestamp) return 'N/A';
-  try {
-    const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
-    return new Intl.DateTimeFormat('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    }).format(date);
-  } catch (error) {
-    return 'N/A';
-  }
-};
-
-// Helper component to display subcategory creator with timestamp
-function SubcategoryCreatorCell({ userId, timestamp }: { userId: string; timestamp?: any }) {
-  const [name, setName] = useState<string>('Loading...');
-  const [photoURL, setPhotoURL] = useState<string>('');
-
-  useEffect(() => {
-    if (userId) {
-      getUserById(userId).then(user => {
-        if (user) {
-          setName(user.name || 'Unknown Admin');
-          setPhotoURL(user.photoURL || '');
-        } else {
-          setName('Unknown Admin');
-        }
-      }).catch(() => {
-        setName('Unknown Admin');
-      });
-    } else {
-      setName('Unknown');
-    }
-  }, [userId]);
-
-  return (
-    <div className="flex flex-col gap-1">
-      <div className="flex items-center gap-2">
-        {photoURL ? (
-          <img
-            src={photoURL}
-            alt={name}
-            className="w-6 h-6 rounded-full object-cover border border-accent/20"
-            onError={(e) => {
-              e.currentTarget.style.display = 'none';
-              const placeholder = e.currentTarget.nextElementSibling as HTMLElement;
-              if (placeholder) placeholder.style.display = 'flex';
-            }}
-          />
-        ) : null}
-        <div 
-          className="w-6 h-6 rounded-full bg-accent/20 flex items-center justify-center"
-          style={{ display: photoURL ? 'none' : 'flex' }}
-        >
-          <Icons.users size={12} className="text-accent" />
-        </div>
-        <span className="text-sm">{name}</span>
-      </div>
-      {timestamp && (
-        <span className="text-xs text-secondary ml-8">
-          {formatTimestamp(timestamp)}
-        </span>
-      )}
-    </div>
-  );
-}
+import { useCategoryDetails } from '@/lib/hooks/useCategoryDetails';
+import CategoryHeader from '@/components/categories/view/CategoryHeader';
+import CategoryInfoGrid from '@/components/categories/view/CategoryInfoGrid';
+import CategoryIconSection from '@/components/categories/view/CategoryIconSection';
+import SubcategoriesTable from '@/components/categories/view/SubcategoriesTable';
 
 export default function ViewCategoryPage() {
-  const router = useRouter();
   const params = useParams();
   const categoryId = params.id as string;
 
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [category, setCategory] = useState<Category | null>(null);
-  const [creatorName, setCreatorName] = useState<string>('Loading...');
-  const [creatorPhoto, setCreatorPhoto] = useState<string>('');
-  const [updaterName, setUpdaterName] = useState<string>('Loading...');
-  const [updaterPhoto, setUpdaterPhoto] = useState<string>('');
-
-  useEffect(() => {
-    fetchCategory();
-  }, [categoryId]);
-
-  const fetchCategory = async () => {
-    try {
-      setLoading(true);
-      const categoryData = await getCategoryById(categoryId);
-      if (categoryData) {
-        setCategory(categoryData);
-        
-        // Fetch creator information
-        if (categoryData.createdBy) {
-          try {
-            const creator = await getUserById(categoryData.createdBy);
-            if (creator) {
-              setCreatorName(creator.name || 'Unknown Admin');
-              setCreatorPhoto(creator.photoURL || '');
-            } else {
-              setCreatorName('Unknown Admin');
-            }
-          } catch (err) {
-            console.error('Error fetching creator:', err);
-            setCreatorName('Unknown Admin');
-          }
-        } else {
-          setCreatorName('Unknown');
-        }
-        
-        // Fetch updater information
-        if (categoryData.updatedBy) {
-          try {
-            const updater = await getUserById(categoryData.updatedBy);
-            if (updater) {
-              setUpdaterName(updater.name || 'Unknown Admin');
-              setUpdaterPhoto(updater.photoURL || '');
-            } else {
-              setUpdaterName('Unknown Admin');
-            }
-          } catch (err) {
-            console.error('Error fetching updater:', err);
-            setUpdaterName('Unknown Admin');
-          }
-        }
-      } else {
-        setError('Category not found');
-      }
-    } catch (err) {
-      console.error('Error fetching category:', err);
-      setError('Failed to load category');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleBack = () => {
-    router.push('/categories');
-  };
-
-  const handleEdit = () => {
-    router.push(`/categories/edit/${categoryId}`);
-  };
-
-  const handleAddSubcategory = () => {
-    router.push(`/categories/${categoryId}/subcategories/add`);
-  };
-
-  const handleEditSubcategory = (subcategoryId: string) => {
-    router.push(`/categories/${categoryId}/subcategories/edit/${subcategoryId}`);
-  };
+  const {
+    loading,
+    error,
+    category,
+    creatorName,
+    creatorPhoto,
+    updaterName,
+    updaterPhoto,
+    handleBack,
+    handleEdit,
+    handleAddSubcategory,
+    handleEditSubcategory,
+    formatTimestamp,
+  } = useCategoryDetails(categoryId);
 
   if (loading) {
     return (
@@ -252,62 +116,7 @@ export default function ViewCategoryPage() {
         {/* Category Details Card */}
         <div className="bg-white rounded-lg border border-primary/10 overflow-hidden">
           {/* Category Header Section */}
-          <div className="bg-gradient-to-r from-accent/10 to-secondary/10 p-8 border-b border-primary/10">
-            <div className="flex items-center gap-6">
-              {/* Category Icon */}
-              <div className="relative">
-                {category.iconImage ? (
-                  <div className="relative group">
-                    <img
-                      src={category.iconImage}
-                      alt={category.name}
-                      className="w-32 h-32 rounded-lg object-cover border-4 border-white shadow-lg"
-                      onError={(e) => {
-                        e.currentTarget.style.display = 'none';
-                        const placeholder = e.currentTarget.nextElementSibling as HTMLElement;
-                        if (placeholder) placeholder.style.display = 'flex';
-                      }}
-                    />
-                    <div 
-                      className="w-32 h-32 rounded-lg bg-accent/20 border-4 border-white shadow-lg flex items-center justify-center"
-                      style={{ display: 'none' }}
-                    >
-                      <Icons.categories size={48} className="text-accent" />
-                    </div>
-                    {/* Hover overlay to view full image */}
-                    <div className="absolute inset-0 bg-black/50 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center cursor-pointer">
-                      <Icons.images size={32} className="text-white" />
-                    </div>
-                  </div>
-                ) : (
-                  <div className="w-32 h-32 rounded-lg bg-accent/20 border-4 border-white shadow-lg flex items-center justify-center">
-                    <Icons.categories size={48} className="text-accent" />
-                  </div>
-                )}
-              </div>
-
-              {/* Category Basic Info */}
-              <div className="flex-1">
-                <h2 className="text-3xl font-bold text-primary font-heading mb-2">
-                  {category.name}
-                </h2>
-                <div className="flex items-center gap-3 mt-4">
-                  <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-accent/20 text-primary">
-                    <Icons.file size={16} className="mr-2" />
-                    Order: {category.order}
-                  </span>
-                  <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-secondary/20 text-primary">
-                    <Icons.search size={16} className="mr-2" />
-                    {category.searchCount} searches
-                  </span>
-                  <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-accent/20 text-primary">
-                    <Icons.categories size={16} className="mr-2" />
-                    {category.subcategories?.length || 0} subcategories
-                  </span>
-                </div>
-              </div>
-            </div>
-          </div>
+          <CategoryHeader category={category} />
 
           {/* Detailed Information Section */}
           <div className="p-8">
@@ -315,297 +124,26 @@ export default function ViewCategoryPage() {
               Category Information
             </h3>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Category ID */}
-              <div className="bg-background rounded-lg p-4 border border-primary/10">
-                <div className="flex items-start gap-3">
-                  <div className="w-10 h-10 bg-accent/20 rounded-lg flex items-center justify-center flex-shrink-0">
-                    <Icons.categories size={20} className="text-accent" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm text-secondary font-body mb-1">Category ID</p>
-                    <p className="text-base font-semibold text-primary font-body break-all">
-                      {category.id}
-                    </p>
-                  </div>
-                </div>
-              </div>
+            <CategoryInfoGrid
+              category={category}
+              creatorName={creatorName}
+              creatorPhoto={creatorPhoto}
+              updaterName={updaterName}
+              updaterPhoto={updaterPhoto}
+              formatTimestamp={formatTimestamp}
+            />
 
-              {/* Category Name */}
-              <div className="bg-background rounded-lg p-4 border border-primary/10">
-                <div className="flex items-start gap-3">
-                  <div className="w-10 h-10 bg-secondary/20 rounded-lg flex items-center justify-center flex-shrink-0">
-                    <Icons.file size={20} className="text-secondary" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm text-secondary font-body mb-1">Category Name</p>
-                    <p className="text-base font-semibold text-primary font-body">
-                      {category.name}
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Display Order */}
-              <div className="bg-background rounded-lg p-4 border border-primary/10">
-                <div className="flex items-start gap-3">
-                  <div className="w-10 h-10 bg-accent/20 rounded-lg flex items-center justify-center flex-shrink-0">
-                    <Icons.file size={20} className="text-accent" />
-                  </div>
-                  <div className="flex-1">
-                    <p className="text-sm text-secondary font-body mb-1">Display Order</p>
-                    <p className="text-base font-semibold text-primary font-body">
-                      {category.order}
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Search Count */}
-              <div className="bg-background rounded-lg p-4 border border-primary/10">
-                <div className="flex items-start gap-3">
-                  <div className="w-10 h-10 bg-secondary/20 rounded-lg flex items-center justify-center flex-shrink-0">
-                    <Icons.search size={20} className="text-secondary" />
-                  </div>
-                  <div className="flex-1">
-                    <p className="text-sm text-secondary font-body mb-1">Total Searches</p>
-                    <p className="text-base font-semibold text-primary font-body">
-                      {category.searchCount}
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Created By */}
-              <div className="bg-background rounded-lg p-4 border border-primary/10">
-                <div className="flex items-start gap-3">
-                  <div className="w-10 h-10 bg-accent/20 rounded-lg flex items-center justify-center flex-shrink-0">
-                    {creatorPhoto ? (
-                        <img
-                          src={creatorPhoto}
-                          alt={creatorName}
-                          className="w-10 h-10 rounded-lg object-cover"
-                          onError={(e) => {
-                            e.currentTarget.style.display = 'none';
-                            const placeholder = e.currentTarget.nextElementSibling as HTMLElement;
-                            if (placeholder) placeholder.style.display = 'flex';
-                          }}
-                        />
-                      ) : null}
-                      <div 
-                        className="w-10 h-10 bg-accent/20 rounded-lg flex items-center justify-center"
-                        style={{ display: creatorPhoto ? 'none' : 'flex' }}
-                      >
-                        <Icons.users size={20} className="text-accent" />
-                      </div>
-                  </div>
-                  <div className="flex-1">
-                    <p className="text-sm text-secondary font-body mb-1">Created By</p>
-                    <p className="text-base font-semibold text-primary font-body">
-                      {creatorName}
-                    </p>
-                    {category.createdAt && (
-                      <p className="text-xs text-secondary font-body mt-1">
-                        {formatTimestamp(category.createdAt)}
-                      </p>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              {/* Updated By */}
-              <div className="bg-background rounded-lg p-4 border border-primary/10">
-                <div className="flex items-start gap-3">
-                  <div className="w-10 h-10 bg-secondary/20 rounded-lg flex items-center justify-center flex-shrink-0">
-                    {category.updatedBy && updaterPhoto ? (
-                        <img
-                          src={updaterPhoto}
-                          alt={updaterName}
-                          className="w-10 h-10 rounded-lg object-cover"
-                          onError={(e) => {
-                            e.currentTarget.style.display = 'none';
-                            const placeholder = e.currentTarget.nextElementSibling as HTMLElement;
-                            if (placeholder) placeholder.style.display = 'flex';
-                          }}
-                        />
-                      ) : null}
-                      <div 
-                        className="w-10 h-10 bg-secondary/20 rounded-lg flex items-center justify-center"
-                        style={{ display: (category.updatedBy && updaterPhoto) ? 'none' : 'flex' }}
-                      >
-                        <Icons.users size={20} className="text-secondary" />
-                      </div>
-                  </div>
-                  <div className="flex-1">
-                    <p className="text-sm text-secondary font-body mb-1">Updated By</p>
-                    {category.updatedBy ? (
-                      <>
-                        <p className="text-base font-semibold text-primary font-body">
-                          {updaterName}
-                        </p>
-                        {category.updatedAt && (
-                          <p className="text-xs text-secondary font-body mt-1">
-                            {formatTimestamp(category.updatedAt)}
-                          </p>
-                        )}
-                      </>
-                    ) : (
-                      <p className="text-base text-secondary font-body italic">
-                        Not updated yet
-                      </p>
-                    )}
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Icon Image URL Section */}
-            {category.iconImage && (
-              <div className="mt-6">
-                <h3 className="text-xl font-bold text-primary font-heading mb-4">
-                  Category Icon
-                </h3>
-                <div className="bg-background rounded-lg p-4 border border-primary/10">
-                  <div className="flex items-start gap-3">
-                    <div className="w-10 h-10 bg-accent/20 rounded-lg flex items-center justify-center flex-shrink-0">
-                      <Icons.images size={20} className="text-accent" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm text-secondary font-body mb-2">Icon Image URL</p>
-                      <p className="text-sm text-primary font-body break-all mb-3">
-                        {category.iconImage}
-                      </p>
-                      <a
-                        href={category.iconImage}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center gap-2 text-sm text-accent hover:text-accent/80 font-medium transition-colors"
-                      >
-                        <Icons.globe size={16} />
-                        Open in new tab
-                      </a>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
+            <CategoryIconSection iconImage={category.iconImage} />
           </div>
         </div>
 
         {/* Subcategories Section */}
-        {category.subcategories && category.subcategories.length > 0 && (
-          <div className="mt-6 bg-white rounded-lg border border-primary/10 overflow-hidden">
-            <div className="p-6 border-b border-primary/10 flex items-center justify-between">
-              <div>
-                <h3 className="text-xl font-bold text-primary font-heading">
-                  Subcategories ({category.subcategories.length})
-                </h3>
-                <p className="text-sm text-secondary font-body mt-1">
-                  All subcategories under this category
-                </p>
-              </div>
-              <button
-                onClick={handleAddSubcategory}
-                className="flex items-center gap-2 px-4 py-2 bg-accent text-primary rounded-lg font-semibold hover:bg-accent/90 transition-all text-sm"
-              >
-                <Icons.plus size={18} />
-                <span>Add Subcategory</span>
-              </button>
-            </div>
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className="bg-background border-b border-primary/10">
-                  <tr>
-                    <th className="px-6 py-4 text-left text-sm font-semibold text-primary font-body">
-                      Name
-                    </th>
-                    <th className="px-6 py-4 text-left text-sm font-semibold text-primary font-body">
-                      Order
-                    </th>
-                    <th className="px-6 py-4 text-left text-sm font-semibold text-primary font-body">
-                      Search Count
-                    </th>
-                    <th className="px-6 py-4 text-left text-sm font-semibold text-primary font-body">
-                      Created By
-                    </th>
-                    <th className="px-6 py-4 text-left text-sm font-semibold text-primary font-body">
-                      Updated By
-                    </th>
-                    <th className="px-6 py-4 text-right text-sm font-semibold text-primary font-body">
-                      Actions
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-primary/10">
-                  {category.subcategories.map((subcategory) => (
-                    <tr
-                      key={subcategory.id}
-                      className="hover:bg-background/50 transition-colors"
-                    >
-                      <td className="px-6 py-4">
-                        <div className="flex items-center gap-2">
-                          <Icons.chevronRight size={16} className="text-secondary" />
-                          <span className="font-medium text-primary font-body">
-                            {subcategory.name}
-                          </span>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 text-sm text-primary font-body">
-                        {subcategory.order}
-                      </td>
-                      <td className="px-6 py-4 text-sm text-primary font-body">
-                        {subcategory.searchCount}
-                      </td>
-                      <td className="px-6 py-4 text-sm text-primary font-body">
-                        <SubcategoryCreatorCell userId={subcategory.createdBy} timestamp={subcategory.createdAt} />
-                      </td>
-                      <td className="px-6 py-4 text-sm text-primary font-body">
-                        {subcategory.updatedBy ? (
-                          <SubcategoryCreatorCell userId={subcategory.updatedBy} timestamp={subcategory.updatedAt} />
-                        ) : (
-                          <span className="text-secondary text-xs italic">Not updated</span>
-                        )}
-                      </td>
-                      <td className="px-6 py-4 text-right">
-                        <button
-                          onClick={() => handleEditSubcategory(subcategory.id)}
-                          className="p-2 text-primary bg-background hover:bg-accent hover:text-primary rounded-md transition-all border border-primary/10 cursor-pointer"
-                          title="Edit"
-                        >
-                          <Icons.edit size={18} />
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        )}
-
-        {/* No Subcategories Message */}
-        {(!category.subcategories || category.subcategories.length === 0) && (
-          <div className="mt-6 bg-white rounded-lg border border-primary/10 p-8">
-            <div className="text-center">
-              <div className="w-16 h-16 bg-accent/20 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Icons.categories size={32} className="text-accent" />
-              </div>
-              <h3 className="text-lg font-bold text-primary font-heading mb-2">
-                No Subcategories Yet
-              </h3>
-              <p className="text-secondary font-body mb-4">
-                This category doesn't have any subcategories yet.
-              </p>
-              <button
-                onClick={handleAddSubcategory}
-                className="inline-flex items-center gap-2 px-6 py-3 bg-accent text-primary rounded-lg font-semibold hover:bg-accent/90 transition-all"
-              >
-                <Icons.plus size={20} />
-                <span>Add First Subcategory</span>
-              </button>
-            </div>
-          </div>
-        )}
+        <SubcategoriesTable
+          category={category}
+          onAddSubcategory={handleAddSubcategory}
+          onEditSubcategory={handleEditSubcategory}
+          formatTimestamp={formatTimestamp}
+        />
 
       </div>
     </AdminLayout>
