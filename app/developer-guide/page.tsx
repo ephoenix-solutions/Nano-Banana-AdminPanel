@@ -82,7 +82,7 @@ const collections: Collection[] = [
     id: 'prompts',
     name: 'Prompts',
     icon: Icons.images,
-    description: 'AI image generation prompts with metadata',
+    description: 'AI image generation prompts with metadata and engagement tracking',
     firebaseCollection: 'prompt',
     fields: [
       { name: 'id', type: 'string', required: true, description: 'Unique prompt ID', example: 'prompt_xyz789' },
@@ -91,14 +91,36 @@ const collections: Collection[] = [
       { name: 'categoryId', type: 'string', required: true, description: 'Parent category ID', example: 'cat_001' },
       { name: 'subCategoryId', type: 'string', required: true, description: 'Subcategory ID', example: 'subcat_001' },
       { name: 'url', type: 'string', required: true, description: 'Generated image URL', example: 'https://example.com/image.jpg' },
+      { name: 'imageRequirement', type: 'number', required: true, description: 'Image requirement (-1: none, 0: optional, 1-4: required count)', example: '0' },
       { name: 'tags', type: 'string[]', required: true, description: 'Array of tags', example: '["nature", "sunset"]' },
       { name: 'isTrending', type: 'boolean', required: true, description: 'Trending status', example: 'true' },
-      { name: 'likes', type: 'number', required: true, description: 'Total likes count', example: '245' },
+      { name: 'likesCount', type: 'number', required: true, description: 'Total likes count (auto-maintained)', example: '245' },
+      { name: 'savesCount', type: 'number', required: true, description: 'Total saves count (auto-maintained)', example: '89' },
       { name: 'searchCount', type: 'number', required: true, description: 'Search count', example: '1200' },
       { name: 'createdAt', type: 'Timestamp', required: true, description: 'Creation timestamp', example: 'Timestamp.now()' },
       { name: 'createdBy', type: 'string', required: true, description: 'User ID who created', example: 'user_abc123' },
       { name: 'updatedBy', type: 'string', required: false, description: 'User ID who last updated', example: 'user_abc123' },
       { name: 'updatedAt', type: 'Timestamp', required: false, description: 'Last update timestamp', example: 'Timestamp.now()' },
+    ],
+  },
+  {
+    id: 'prompt-likes',
+    name: 'Prompt Likes',
+    icon: Icons.check,
+    description: 'User likes for prompts (subcollection under each prompt)',
+    firebaseCollection: 'prompt/{promptId}/likes/{userId}',
+    fields: [
+      { name: 'createdAt', type: 'Timestamp', required: true, description: 'Like timestamp', example: 'Timestamp.now()' },
+    ],
+  },
+  {
+    id: 'prompt-saves',
+    name: 'Prompt Saves',
+    icon: Icons.bookmark,
+    description: 'User saves for prompts (subcollection under each prompt)',
+    firebaseCollection: 'prompt/{promptId}/saves/{userId}',
+    fields: [
+      { name: 'createdAt', type: 'Timestamp', required: true, description: 'Save timestamp', example: 'Timestamp.now()' },
     ],
   },
   {
@@ -484,6 +506,12 @@ export default function DeveloperGuidePage() {
                           <Icons.check size={16} className="flex-shrink-0 mt-0.5" />
                           <span>
                             <strong>Array fields</strong> can be empty [] or contain multiple values
+                          </span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <Icons.check size={16} className="flex-shrink-0 mt-0.5" />
+                          <span>
+                            <strong>Subcollections</strong> (Prompt Likes/Saves) are nested under prompt documents. likesCount and savesCount are auto-maintained counters
                           </span>
                         </li>
                         <li className="flex items-start gap-2">

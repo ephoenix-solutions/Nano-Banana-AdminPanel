@@ -34,7 +34,8 @@ export default function EditPromptPage() {
     imageRequirement: 0, // Default to optional
     tags: [],
     isTrending: false,
-    likes: 0,
+    likesCount: 0,
+    savesCount: 0,
     searchCount: 0,
   });
   const [tagInput, setTagInput] = useState('');
@@ -72,7 +73,8 @@ export default function EditPromptPage() {
           imageRequirement: prompt.imageRequirement ?? 0,
           tags: prompt.tags || [],
           isTrending: prompt.isTrending,
-          likes: prompt.likes,
+          likesCount: prompt.likesCount,
+          savesCount: prompt.savesCount,
           searchCount: prompt.searchCount,
         });
       } else {
@@ -97,7 +99,7 @@ export default function EditPromptPage() {
         ...prev,
         [name]: checked,
       }));
-    } else if (name === 'likes' || name === 'searchCount') {
+    } else if (name === 'likesCount' || name === 'searchCount') {
       setFormData((prev) => ({
         ...prev,
         [name]: parseInt(value) || 0,

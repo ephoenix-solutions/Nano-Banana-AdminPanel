@@ -15,9 +15,6 @@ import {
 } from '@/lib/services/prompt.service';
 import { getAllCategories } from '@/lib/services/category.service';
 import { getUserById } from '@/lib/services/user.service';
-import { collection, getDocs } from 'firebase/firestore';
-import { db } from '@/config/firebase';
-import { Timestamp } from 'firebase/firestore';
 
 type SortField = 'title' | 'likes' | 'createdAt' | 'searchCount' | 'saveCount' | 'category' | 'updatedAt';
 type SortOrder = 'asc' | 'desc';
@@ -82,7 +79,6 @@ export default function PromptsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [userNames, setUserNames] = useState<Record<string, string>>({});
-  const [promptSaveCounts, setPromptSaveCounts] = useState<Record<string, number>>({});
   const [deleteModal, setDeleteModal] = useState<{
     isOpen: boolean;
     prompt: Prompt | null;
@@ -113,40 +109,11 @@ export default function PromptsPage() {
       ]);
       setPrompts(promptsData);
       setCategories(categoriesData);
-      
-      // Fetch save counts from saves collection
-      await fetchSaveCounts();
     } catch (err) {
       console.error('Error fetching data:', err);
       setError('Failed to load prompts');
     } finally {
       setLoading(false);
-    }
-  };
-
-  const fetchSaveCounts = async () => {
-    try {
-      // Get all saves documents
-      const savesRef = collection(db, 'saves');
-      const savesSnapshot = await getDocs(savesRef);
-      
-      // Count saves per prompt
-      const saveCountMap: Record<string, number> = {};
-      
-      savesSnapshot.docs.forEach((saveDoc) => {
-        const saveData = saveDoc.data();
-        const promptIds = saveData.promptIds || [];
-        
-        promptIds.forEach((promptId: string) => {
-          saveCountMap[promptId] = (saveCountMap[promptId] || 0) + 1;
-        });
-      });
-      
-      console.log('Calculated save counts:', saveCountMap);
-      setPromptSaveCounts(saveCountMap);
-    } catch (err) {
-      console.error('Error fetching save counts:', err);
-      setPromptSaveCounts({});
     }
   };
 
@@ -307,16 +274,16 @@ export default function PromptsPage() {
           bValue = (b.title || '').toLowerCase();
           break;
         case 'likes':
-          aValue = a.likes || 0;
-          bValue = b.likes || 0;
+          aValue = a.likesCount || 0;
+          bValue = b.likesCount || 0;
           break;
         case 'searchCount':
           aValue = a.searchCount || 0;
           bValue = b.searchCount || 0;
           break;
         case 'saveCount':
-          aValue = promptSaveCounts[a.id] || 0;
-          bValue = promptSaveCounts[b.id] || 0;
+          aValue = a.savesCount || 0;
+          bValue = b.savesCount || 0;
           break;
         case 'category':
           aValue = getCategoryName(a.categoryId).toLowerCase();
@@ -343,7 +310,7 @@ export default function PromptsPage() {
     });
 
     return filtered;
-  }, [prompts, searchQuery, sortField, sortOrder, categoryFilter, subcategoryFilter, trendingFilter, categories, promptSaveCounts]);
+  }, [prompts, searchQuery, sortField, sortOrder, categoryFilter, subcategoryFilter, trendingFilter, categories]);
 
   // Clear all filters
   const clearFilters = () => {
@@ -588,7 +555,7 @@ export default function PromptsPage() {
                   Total Likes
                 </p>
                 <p className="text-3xl font-bold text-primary font-heading mt-1">
-                  {prompts.reduce((sum, p) => sum + p.likes, 0)}
+                  {prompts.reduce((sum, p) => sum + (p.likesCount || 0), 0)}
                 </p>
               </div>
               <div className="w-12 h-12 bg-accent/20 rounded-lg flex items-center justify-center">
@@ -620,7 +587,7 @@ export default function PromptsPage() {
                   Total Saves
                 </p>
                 <p className="text-3xl font-bold text-primary font-heading mt-1">
-                  {Object.values(promptSaveCounts).reduce((sum, count) => sum + count, 0)}
+                  {prompts.reduce((sum, p) => sum + (p.savesCount || 0), 0)}
                 </p>
               </div>
               <div className="w-12 h-12 bg-accent/20 rounded-lg flex items-center justify-center">
@@ -789,7 +756,7 @@ export default function PromptsPage() {
                     </td>
                     <td className="px-6 py-4 text-sm text-primary">
                       <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-accent/20 text-primary">
-                        {prompt.likes}
+                        {prompt.likesCount || 0}
                       </span>
                     </td>
                     <td className="px-6 py-4 text-sm text-primary">
@@ -800,7 +767,7 @@ export default function PromptsPage() {
                     <td className="px-6 py-4 text-sm text-primary">
                       <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium bg-accent/20 text-primary">
                         <Icons.bookmark size={12} />
-                        {promptSaveCounts[prompt.id] || 0}
+                        {prompt.savesCount || 0}
                       </span>
                     </td>
                     <td className="px-6 py-4 text-sm text-primary">

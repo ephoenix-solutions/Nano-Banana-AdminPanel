@@ -10,7 +10,8 @@ export interface Prompt {
   imageRequirement: number; // -1: none, 0: optional, 1-4: required count
   tags: string[];
   isTrending: boolean;
-  likes: number;
+  likesCount: number;
+  savesCount: number;
   searchCount: number;
   createdAt: Timestamp;
   createdBy: string;
@@ -27,7 +28,8 @@ export interface CreatePromptInput {
   imageRequirement?: number; // -1: none, 0: optional, 1-4: required count
   tags?: string[];
   isTrending?: boolean;
-  likes?: number;
+  likesCount?: number;
+  savesCount?: number;
   searchCount?: number;
   createdBy: string;
 }
@@ -41,7 +43,8 @@ export interface UpdatePromptInput {
   imageRequirement?: number; // -1: none, 0: optional, 1-4: required count
   tags?: string[];
   isTrending?: boolean;
-  likes?: number;
+  likesCount?: number;
+  savesCount?: number;
   searchCount?: number;
   updatedBy?: string;
 }
