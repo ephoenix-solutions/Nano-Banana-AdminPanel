@@ -1,142 +1,40 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useRouter, useParams } from 'next/navigation';
+import { useParams } from 'next/navigation';
 import AdminLayout from '@/components/AdminLayout';
 import Breadcrumbs from '@/components/Breadcrumbs';
-import { Icons } from '@/config/icons';
-import {
-  getSubscriptionPlanById,
-  updateSubscriptionPlan,
-} from '@/lib/services/subscription-plan.service';
-import { UpdateSubscriptionPlanInput } from '@/lib/types/subscription-plan.types';
-import { useAuth } from '@/lib/hooks/useAuth';
+import { useEditSubscriptionPlanForm } from '@/lib/hooks/useEditSubscriptionPlanForm';
+import PageHeader from '@/components/subscription-plan/utils/PageHeader';
+import FormInput from '@/components/subscription-plan/utils/FormInput';
+import FormSelect from '@/components/subscription-plan/utils/FormSelect';
+import FeaturesInput from '@/components/subscription-plan/utils/FeaturesInput';
+import ErrorMessage from '@/components/subscription-plan/utils/ErrorMessage';
+import FormActions from '@/components/subscription-plan/utils/FormActions';
 
 export default function EditSubscriptionPlanPage() {
-  const router = useRouter();
   const params = useParams();
   const planId = params.id as string;
-  const { user } = useAuth();
 
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [newFeature, setNewFeature] = useState('');
-  const [formData, setFormData] = useState<UpdateSubscriptionPlanInput>({
-    name: '',
-    price: '',
-    currency: 'INR',
-    durationDays: 30,
-    generationLimit: 0,
-    features: [],
-    isActive: true,
-    order: 0,
-  });
+  const {
+    loading,
+    saving,
+    error,
+    formData,
+    newFeature,
+    setNewFeature,
+    handleChange,
+    handleAddFeature,
+    handleRemoveFeature,
+    handleSubmit,
+    handleCancel,
+  } = useEditSubscriptionPlanForm(planId);
 
-  useEffect(() => {
-    fetchPlan();
-  }, [planId]);
-
-  const fetchPlan = async () => {
-    try {
-      setLoading(true);
-      const plan = await getSubscriptionPlanById(planId);
-      if (plan) {
-        setFormData({
-          name: plan.name,
-          price: String(plan.price), // Convert to string
-          currency: plan.currency,
-          durationDays: plan.durationDays,
-          generationLimit: plan.generationLimit,
-          features: plan.features,
-          isActive: plan.isActive,
-          order: plan.order,
-        });
-      } else {
-        setError('Subscription plan not found');
-      }
-    } catch (err) {
-      console.error('Error fetching plan:', err);
-      setError('Failed to load subscription plan');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
-  ) => {
-    const { name, value, type } = e.target;
-    
-    if (type === 'checkbox') {
-      const checked = (e.target as HTMLInputElement).checked;
-      setFormData((prev) => ({
-        ...prev,
-        [name]: checked,
-      }));
-    } else if (name === 'durationDays' || name === 'generationLimit' || name === 'order') {
-      setFormData((prev) => ({
-        ...prev,
-        [name]: parseInt(value) || 0,
-      }));
-    } else {
-      setFormData((prev) => ({
-        ...prev,
-        [name]: value,
-      }));
-    }
-  };
-
-  const handleAddFeature = () => {
-    if (newFeature.trim() && formData.features) {
-      setFormData((prev) => ({
-        ...prev,
-        features: [...(prev.features || []), newFeature.trim()],
-      }));
-      setNewFeature('');
-    }
-  };
-
-  const handleRemoveFeature = (index: number) => {
-    setFormData((prev) => ({
-      ...prev,
-      features: (prev.features || []).filter((_, i) => i !== index),
-    }));
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setSaving(true);
-    setError(null);
-
-    try {
-      if (!formData.name || !formData.name.trim()) {
-        throw new Error('Plan name is required');
-      }
-      if (!formData.price || !String(formData.price).trim()) {
-        throw new Error('Price is required');
-      }
-
-      if (!user?.id) {
-        throw new Error('User not authenticated');
-      }
-
-      await updateSubscriptionPlan(planId, {
-        ...formData,
-        updatedBy: user.id,
-      });
-      router.push('/subscription-plan');
-    } catch (err: any) {
-      console.error('Error updating plan:', err);
-      setError(err.message || 'Failed to update subscription plan');
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const handleCancel = () => {
-    router.push('/subscription-plan');
-  };
+  const currencyOptions = [
+    { value: 'INR', label: 'INR' },
+    { value: 'USD', label: 'USD' },
+    { value: 'EUR', label: 'EUR' },
+    { value: 'GBP', label: 'GBP' },
+  ];
 
   if (loading) {
     return (
@@ -160,207 +58,97 @@ export default function EditSubscriptionPlanPage() {
         />
 
         {/* Page Header */}
-        <div className="mb-6">
-          <button
-            onClick={handleCancel}
-            className="flex items-center gap-2 text-secondary hover:text-primary mb-4 transition-colors"
-          >
-            <Icons.arrowLeft size={20} />
-            <span className="font-body text-sm">Back to Subscription Plans</span>
-          </button>
-          <h1 className="text-4xl font-bold text-primary font-heading">
-            Edit Subscription Plan
-          </h1>
-          <p className="text-secondary mt-2 font-body">
-            Update subscription plan information
-          </p>
-        </div>
+        <PageHeader
+          title="Edit Subscription Plan"
+          description="Update subscription plan information"
+          onBack={handleCancel}
+        />
 
         {/* Form Card */}
         <div className="bg-white rounded-lg border border-primary/10 p-8">
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* Name Field */}
-              <div>
-                <label
-                  htmlFor="name"
-                  className="block text-sm font-semibold text-primary mb-2 font-body"
-                >
-                  Plan Name <span className="text-secondary">*</span>
-                </label>
-                <input
-                  type="text"
-                  id="name"
-                  name="name"
-                  value={formData.name}
-                  onChange={handleChange}
-                  required
-                  className="w-full px-4 py-3 border border-primary/10 rounded-lg text-sm font-body text-primary bg-background transition-all duration-200 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
-                  placeholder="e.g., Basic, Pro, Premium"
-                />
-              </div>
+              <FormInput
+                id="name"
+                name="name"
+                label="Plan Name"
+                value={formData.name}
+                onChange={handleChange}
+                required
+                placeholder="e.g., Basic, Pro, Premium"
+              />
 
               {/* Order Field */}
-              <div>
-                <label
-                  htmlFor="order"
-                  className="block text-sm font-semibold text-primary mb-2 font-body"
-                >
-                  Display Order <span className="text-secondary">*</span>
-                </label>
-                <input
-                  type="number"
-                  id="order"
-                  name="order"
-                  value={formData.order}
-                  onChange={handleChange}
-                  required
-                  min="0"
-                  className="w-full px-4 py-3 border border-primary/10 rounded-lg text-sm font-body text-primary bg-background transition-all duration-200 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
-                  placeholder="0"
-                />
-              </div>
+              <FormInput
+                id="order"
+                name="order"
+                label="Display Order"
+                value={formData.order}
+                onChange={handleChange}
+                type="number"
+                required
+                min={0}
+                placeholder="0"
+              />
 
               {/* Price Field */}
-              <div>
-                <label
-                  htmlFor="price"
-                  className="block text-sm font-semibold text-primary mb-2 font-body"
-                >
-                  Price <span className="text-secondary">*</span>
-                </label>
-                <input
-                  type="text"
-                  id="price"
-                  name="price"
-                  value={formData.price}
-                  onChange={handleChange}
-                  required
-                  className="w-full px-4 py-3 border border-primary/10 rounded-lg text-sm font-body text-primary bg-background transition-all duration-200 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
-                  placeholder="199"
-                />
-              </div>
+              <FormInput
+                id="price"
+                name="price"
+                label="Price"
+                value={formData.price}
+                onChange={handleChange}
+                required
+                placeholder="199"
+              />
 
               {/* Currency Field */}
-              <div>
-                <label
-                  htmlFor="currency"
-                  className="block text-sm font-semibold text-primary mb-2 font-body"
-                >
-                  Currency <span className="text-secondary">*</span>
-                </label>
-                <select
-                  id="currency"
-                  name="currency"
-                  value={formData.currency}
-                  onChange={handleChange}
-                  required
-                  className="w-full px-4 py-3 border border-primary/10 rounded-lg text-sm font-body text-primary bg-background transition-all duration-200 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
-                >
-                  <option value="INR">INR</option>
-                  <option value="USD">USD</option>
-                  <option value="EUR">EUR</option>
-                  <option value="GBP">GBP</option>
-                </select>
-              </div>
+              <FormSelect
+                id="currency"
+                name="currency"
+                label="Currency"
+                value={formData.currency}
+                onChange={handleChange}
+                options={currencyOptions}
+                required
+              />
 
               {/* Duration Days Field */}
-              <div>
-                <label
-                  htmlFor="durationDays"
-                  className="block text-sm font-semibold text-primary mb-2 font-body"
-                >
-                  Duration (Days) <span className="text-secondary">*</span>
-                </label>
-                <input
-                  type="number"
-                  id="durationDays"
-                  name="durationDays"
-                  value={formData.durationDays}
-                  onChange={handleChange}
-                  required
-                  min="1"
-                  className="w-full px-4 py-3 border border-primary/10 rounded-lg text-sm font-body text-primary bg-background transition-all duration-200 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
-                  placeholder="30"
-                />
-              </div>
+              <FormInput
+                id="durationDays"
+                name="durationDays"
+                label="Duration (Days)"
+                value={formData.durationDays}
+                onChange={handleChange}
+                type="number"
+                required
+                min={1}
+                placeholder="30"
+              />
 
               {/* Generation Limit Field */}
-              <div>
-                <label
-                  htmlFor="generationLimit"
-                  className="block text-sm font-semibold text-primary mb-2 font-body"
-                >
-                  Generation Limit <span className="text-secondary">*</span>
-                </label>
-                <input
-                  type="number"
-                  id="generationLimit"
-                  name="generationLimit"
-                  value={formData.generationLimit}
-                  onChange={handleChange}
-                  required
-                  min="0"
-                  className="w-full px-4 py-3 border border-primary/10 rounded-lg text-sm font-body text-primary bg-background transition-all duration-200 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
-                  placeholder="20"
-                />
-              </div>
+              <FormInput
+                id="generationLimit"
+                name="generationLimit"
+                label="Generation Limit"
+                value={formData.generationLimit}
+                onChange={handleChange}
+                type="number"
+                required
+                min={0}
+                placeholder="20"
+              />
             </div>
 
             {/* Features Section */}
-            <div>
-              <label className="block text-sm font-semibold text-primary mb-2 font-body">
-                Features
-              </label>
-              <div className="space-y-3">
-                {/* Add Feature Input */}
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    value={newFeature}
-                    onChange={(e) => setNewFeature(e.target.value)}
-                    onKeyPress={(e) => {
-                      if (e.key === 'Enter') {
-                        e.preventDefault();
-                        handleAddFeature();
-                      }
-                    }}
-                    className="flex-1 px-4 py-3 border border-primary/10 rounded-lg text-sm font-body text-primary bg-background transition-all duration-200 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
-                    placeholder="Enter a feature and press Add"
-                  />
-                  <button
-                    type="button"
-                    onClick={handleAddFeature}
-                    className="px-4 py-3 bg-accent text-primary rounded-lg font-semibold hover:bg-accent/90 transition-all"
-                  >
-                    <Icons.plus size={20} />
-                  </button>
-                </div>
-
-                {/* Features List */}
-                {formData.features && formData.features.length > 0 && (
-                  <div className="space-y-2">
-                    {formData.features.map((feature, index) => (
-                      <div
-                        key={index}
-                        className="flex items-center justify-between px-4 py-2 bg-background rounded-lg border border-primary/10"
-                      >
-                        <span className="text-sm text-primary font-body">
-                          {feature}
-                        </span>
-                        <button
-                          type="button"
-                          onClick={() => handleRemoveFeature(index)}
-                          className="text-secondary hover:text-primary transition-colors"
-                        >
-                          <Icons.close size={18} />
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
+            <FeaturesInput
+              features={formData.features}
+              newFeature={newFeature}
+              onNewFeatureChange={setNewFeature}
+              onAddFeature={handleAddFeature}
+              onRemoveFeature={handleRemoveFeature}
+            />
 
             {/* Active Checkbox */}
             <div className="flex items-center gap-3">
@@ -381,43 +169,16 @@ export default function EditSubscriptionPlanPage() {
             </div>
 
             {/* Error Message */}
-            {error && (
-              <div className="bg-secondary/10 border border-secondary rounded-lg p-4">
-                <div className="flex items-center gap-2">
-                  <Icons.alert size={20} className="text-secondary" />
-                  <p className="text-secondary font-body text-sm">{error}</p>
-                </div>
-              </div>
-            )}
+            <ErrorMessage message={error} />
 
             {/* Form Actions */}
-            <div className="flex items-center justify-end gap-3 pt-4 border-t border-primary/10">
-              <button
-                type="button"
-                onClick={handleCancel}
-                disabled={saving}
-                className="px-6 py-3 text-sm font-medium text-primary bg-background hover:bg-primary/5 rounded-lg transition-all border border-primary/10 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                disabled={saving}
-                className="flex items-center gap-2 px-6 py-3 bg-accent text-primary rounded-lg font-semibold hover:bg-accent/90 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {saving ? (
-                  <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
-                    <span>Saving...</span>
-                  </>
-                ) : (
-                  <>
-                    <Icons.save size={20} />
-                    <span>Save Changes</span>
-                  </>
-                )}
-              </button>
-            </div>
+            <FormActions
+              loading={saving}
+              onCancel={handleCancel}
+              submitText="Save Changes"
+              loadingText="Saving..."
+              submitIcon="save"
+            />
           </form>
         </div>
       </div>

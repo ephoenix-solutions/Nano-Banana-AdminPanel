@@ -238,3 +238,46 @@ export async function getUsersByProvider(provider: string): Promise<User[]> {
     throw error;
   }
 }
+
+/**
+ * Get multiple users by their IDs
+ */
+export async function getUsersByIds(userIds: string[]): Promise<User[]> {
+  try {
+    const users = await Promise.all(
+      userIds.map(async (userId) => {
+        try {
+          const user = await getUserById(userId);
+          return user;
+        } catch (err) {
+          console.error(`Error fetching user ${userId}:`, err);
+          return null;
+        }
+      })
+    );
+    
+    return users.filter((user): user is User => user !== null);
+  } catch (error) {
+    console.error('Error getting users by IDs:', error);
+    throw error;
+  }
+}
+
+/**
+ * Get user info (name and photo) by ID
+ */
+export async function getUserInfo(userId: string): Promise<{ name: string; photoURL: string } | null> {
+  try {
+    const user = await getUserById(userId);
+    if (user) {
+      return {
+        name: user.name || 'Unknown',
+        photoURL: user.photoURL || '',
+      };
+    }
+    return null;
+  } catch (error) {
+    console.error('Error getting user info:', error);
+    return null;
+  }
+}

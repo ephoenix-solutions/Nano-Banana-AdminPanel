@@ -1,62 +1,31 @@
 'use client';
 
-import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import AdminLayout from '@/components/AdminLayout';
 import Breadcrumbs from '@/components/Breadcrumbs';
 import { Icons } from '@/config/icons';
-import { getFeedbackById } from '@/lib/services/feedback.service';
-import { getUserById } from '@/lib/services/user.service';
-import { Feedback } from '@/lib/types/feedback.types';
-import { User } from '@/lib/types/user.types';
+import { useFeedbackDetails } from '@/lib/hooks/useFeedbackDetails';
 import { Timestamp } from 'firebase/firestore';
+
+// Import view components
+import FeedbackHeader from '@/components/feedback/view/FeedbackHeader';
+import UserInfoSection from '@/components/feedback/view/UserInfoSection';
+import MessageSection from '@/components/feedback/view/MessageSection';
+import RatingDetailsSection from '@/components/feedback/view/RatingDetailsSection';
+import DeviceInfoSection from '@/components/feedback/view/DeviceInfoSection';
 
 export default function ViewFeedbackPage() {
   const router = useRouter();
   const params = useParams();
   const feedbackId = params.id as string;
 
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [feedback, setFeedback] = useState<Feedback | null>(null);
-  const [user, setUser] = useState<User | null>(null);
-
-  useEffect(() => {
-    fetchFeedback();
-  }, [feedbackId]);
-
-  const fetchFeedback = async () => {
-    try {
-      setLoading(true);
-      const feedbackData = await getFeedbackById(feedbackId);
-      if (feedbackData) {
-        setFeedback(feedbackData);
-        
-        // Fetch user data
-        try {
-          const userData = await getUserById(feedbackData.userId);
-          if (userData) {
-            setUser(userData);
-          }
-        } catch (err) {
-          console.error('Error fetching user:', err);
-        }
-      } else {
-        setError('Feedback not found');
-      }
-    } catch (err) {
-      console.error('Error fetching feedback:', err);
-      setError('Failed to load feedback');
-    } finally {
-      setLoading(false);
-    }
-  };
+  const { loading, error, feedback, user } = useFeedbackDetails(feedbackId);
 
   const handleBack = () => {
     router.push('/feedback');
   };
 
-  const formatTimestamp = (timestamp: Timestamp) => {
+  const formatTimestamp = (timestamp: Timestamp): string => {
     if (!timestamp) return '-';
     const date = timestamp.toDate();
     return new Intl.DateTimeFormat('en-US', {
@@ -69,7 +38,7 @@ export default function ViewFeedbackPage() {
     }).format(date);
   };
 
-  const renderRatingEmoji = (rating: number) => {
+  const renderRatingEmoji = (rating: number): string => {
     const emojis = ["😡", "😕", "😐", "🙂", "🥰"];
     return emojis[rating - 1] || "😐";
   };
@@ -144,184 +113,30 @@ export default function ViewFeedbackPage() {
 
         {/* Feedback Details Card */}
         <div className="bg-white rounded-lg border border-primary/10 overflow-hidden">
-          {/* Rating Header Section */}
-          <div className="bg-gradient-to-r from-accent/10 to-secondary/10 p-8 border-b border-primary/10">
-            <div className="flex items-center gap-6">
-              {/* Rating Display */}
-              <div className="w-32 h-32 rounded-full bg-white border-4 border-white shadow-lg flex items-center justify-center">
-                <span className="text-6xl">
-                  {renderRatingEmoji(feedback.rating)}
-                </span>
-              </div>
-
-              {/* Feedback Basic Info */}
-              <div className="flex-1">
-                <h2 className="text-3xl font-bold text-primary font-heading mb-2">
-                  Rating: {feedback.rating}/5
-                </h2>
-                <p className="text-lg text-secondary font-body mb-3">
-                  Submitted on {formatTimestamp(feedback.createdAt)}
-                </p>
-                <div className="flex items-center gap-3">
-                  <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-accent/20 text-primary">
-                    <Icons.feedback size={16} className="mr-2" />
-                    Feedback ID: {feedback.id}
-                  </span>
-                </div>
-              </div>
-            </div>
-          </div>
+          {/* Feedback Header Section */}
+          <FeedbackHeader
+            feedback={feedback}
+            renderRatingEmoji={renderRatingEmoji}
+            formatTimestamp={formatTimestamp}
+          />
 
           {/* Detailed Information Section */}
           <div className="p-8">
             {/* User Information */}
-            {user && (
-              <div className="mb-8">
-                <h3 className="text-xl font-bold text-primary font-heading mb-6">
-                  User Information
-                </h3>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {/* User Name */}
-                  <div className="bg-background rounded-lg p-4 border border-primary/10">
-                    <div className="flex items-start gap-3">
-                      <div className="w-10 h-10 bg-accent/20 rounded-lg flex items-center justify-center flex-shrink-0">
-                        <Icons.users size={20} className="text-accent" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm text-secondary font-body mb-1">User Name</p>
-                        <p className="text-base font-semibold text-primary font-body">
-                          {user.name}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* User Email */}
-                  <div className="bg-background rounded-lg p-4 border border-primary/10">
-                    <div className="flex items-start gap-3">
-                      <div className="w-10 h-10 bg-secondary/20 rounded-lg flex items-center justify-center flex-shrink-0">
-                        <Icons.feedback size={20} className="text-secondary" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm text-secondary font-body mb-1">Email Address</p>
-                        <p className="text-base font-semibold text-primary font-body break-all">
-                          {user.email}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
+            <UserInfoSection user={user} />
 
             {/* Feedback Message */}
-            <div className="mb-8">
-              <h3 className="text-xl font-bold text-primary font-heading mb-4">
-                Feedback Message
-              </h3>
-              <div className="bg-background rounded-lg p-6 border border-primary/10">
-                <p className="text-base text-primary font-body leading-relaxed whitespace-pre-wrap wrap-break-word">
-                  {feedback.message}
-                </p>
-              </div>
-            </div>
+            <MessageSection feedback={feedback} />
 
             {/* Rating Details */}
-            <div className="mb-8">
-              <h3 className="text-xl font-bold text-primary font-heading mb-6">
-                Rating Details
-              </h3>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* Rating Score */}
-                <div className="bg-background rounded-lg p-4 border border-primary/10">
-                  <div className="flex items-start gap-3">
-                    <div className="w-10 h-10 bg-accent/20 rounded-lg flex items-center justify-center flex-shrink-0">
-                      <Icons.check size={20} className="text-accent" />
-                    </div>
-                    <div className="flex-1">
-                      <p className="text-sm text-secondary font-body mb-1">Rating Score</p>
-                      <div className="flex items-center gap-2">
-                        <span className="text-3xl">{renderRatingEmoji(feedback.rating)}</span>
-                        <span className="text-2xl font-bold text-primary font-body">
-                          {feedback.rating}/5
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Submitted Date */}
-                <div className="bg-background rounded-lg p-4 border border-primary/10">
-                  <div className="flex items-start gap-3">
-                    <div className="w-10 h-10 bg-secondary/20 rounded-lg flex items-center justify-center flex-shrink-0">
-                      <Icons.clock size={20} className="text-secondary" />
-                    </div>
-                    <div className="flex-1">
-                      <p className="text-sm text-secondary font-body mb-1">Submitted On</p>
-                      <p className="text-base font-semibold text-primary font-body">
-                        {formatTimestamp(feedback.createdAt)}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
+            <RatingDetailsSection
+              feedback={feedback}
+              renderRatingEmoji={renderRatingEmoji}
+              formatTimestamp={formatTimestamp}
+            />
 
             {/* Device Information */}
-            <div>
-              <h3 className="text-xl font-bold text-primary font-heading mb-6">
-                Device Information
-              </h3>
-              
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {/* Operating System */}
-                <div className="bg-background rounded-lg p-4 border border-primary/10">
-                  <div className="flex items-start gap-3">
-                    <div className="w-10 h-10 bg-accent/20 rounded-lg flex items-center justify-center flex-shrink-0">
-                      <Icons.globe size={20} className="text-accent" />
-                    </div>
-                    <div className="flex-1">
-                      <p className="text-sm text-secondary font-body mb-1">Operating System</p>
-                      <p className="text-base font-semibold text-primary font-body capitalize">
-                        {feedback.deviceInfo?.os || 'N/A'}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Device Model */}
-                <div className="bg-background rounded-lg p-4 border border-primary/10">
-                  <div className="flex items-start gap-3">
-                    <div className="w-10 h-10 bg-secondary/20 rounded-lg flex items-center justify-center flex-shrink-0">
-                      <Icons.globe size={20} className="text-secondary" />
-                    </div>
-                    <div className="flex-1">
-                      <p className="text-sm text-secondary font-body mb-1">Device Model</p>
-                      <p className="text-base font-semibold text-primary font-body">
-                        {feedback.deviceInfo?.model || 'N/A'}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* App Version */}
-                <div className="bg-background rounded-lg p-4 border border-primary/10">
-                  <div className="flex items-start gap-3">
-                    <div className="w-10 h-10 bg-accent/20 rounded-lg flex items-center justify-center flex-shrink-0">
-                      <Icons.check size={20} className="text-accent" />
-                    </div>
-                    <div className="flex-1">
-                      <p className="text-sm text-secondary font-body mb-1">App Version</p>
-                      <p className="text-base font-semibold text-primary font-body">
-                        {feedback.deviceInfo?.appVersion || 'N/A'}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
+            <DeviceInfoSection feedback={feedback} />
           </div>
         </div>
 

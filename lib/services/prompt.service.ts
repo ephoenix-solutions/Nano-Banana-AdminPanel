@@ -207,3 +207,83 @@ export async function toggleTrending(promptId: string, isTrending: boolean): Pro
     throw error;
   }
 }
+
+/**
+ * Get users who liked a prompt
+ */
+export async function getPromptLikedByUsers(promptId: string): Promise<Array<{ userId: string; likedAt: Timestamp }>> {
+  try {
+    const likesRef = collection(db, COLLECTION_NAME, promptId, 'likes');
+    const likesSnapshot = await getDocs(likesRef);
+    
+    const likes = likesSnapshot.docs.map((likeDoc) => ({
+      userId: likeDoc.id,
+      likedAt: likeDoc.data().createdAt as Timestamp,
+    }));
+    
+    return likes;
+  } catch (error) {
+    console.error('Error fetching likes:', error);
+    throw error;
+  }
+}
+
+/**
+ * Get users who saved a prompt
+ */
+export async function getPromptSavedByUsers(promptId: string): Promise<Array<{ userId: string; savedAt: Timestamp }>> {
+  try {
+    const savesRef = collection(db, COLLECTION_NAME, promptId, 'saves');
+    const savesSnapshot = await getDocs(savesRef);
+    
+    const saves = savesSnapshot.docs.map((saveDoc) => ({
+      userId: saveDoc.id,
+      savedAt: saveDoc.data().createdAt as Timestamp,
+    }));
+    
+    return saves;
+  } catch (error) {
+    console.error('Error fetching saves:', error);
+    throw error;
+  }
+}
+
+/**
+ * Get users who liked a prompt with full user details
+ */
+export async function getPromptLikedByUsersWithDetails(promptId: string): Promise<Array<{ userId: string; likedAt: Timestamp }>> {
+  try {
+    const likesRef = collection(db, COLLECTION_NAME, promptId, 'likes');
+    const likesSnapshot = await getDocs(likesRef);
+    
+    const likes = likesSnapshot.docs.map((likeDoc) => ({
+      userId: likeDoc.id,
+      likedAt: likeDoc.data().createdAt as Timestamp,
+    }));
+    
+    return likes;
+  } catch (error) {
+    console.error('Error fetching likes with details:', error);
+    throw error;
+  }
+}
+
+/**
+ * Get users who saved a prompt with full user details
+ */
+export async function getPromptSavedByUsersWithDetails(promptId: string): Promise<Array<{ userId: string; savedAt: Timestamp }>> {
+  try {
+    const savesRef = collection(db, COLLECTION_NAME, promptId, 'saves');
+    const savesSnapshot = await getDocs(savesRef);
+    
+    const saves = savesSnapshot.docs.map((saveDoc) => ({
+      userId: saveDoc.id,
+      savedAt: saveDoc.data().createdAt as Timestamp,
+    }));
+    
+    return saves;
+  } catch (error) {
+    console.error('Error fetching saves with details:', error);
+    throw error;
+  }
+}
