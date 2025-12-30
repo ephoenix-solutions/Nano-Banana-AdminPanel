@@ -254,7 +254,7 @@ export default function ViewPromptPage() {
                   )}
                   <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-secondary/20 text-primary">
                     <Icons.check size={16} className="mr-2" />
-                    {prompt.likes} likes
+                    {prompt.likesCount || 0} likes
                   </span>
                   <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-accent/20 text-primary">
                     <Icons.search size={16} className="mr-2" />
@@ -371,7 +371,7 @@ export default function ViewPromptPage() {
                   <div className="flex-1">
                     <p className="text-sm text-secondary font-body mb-1">Total Likes</p>
                     <p className="text-base font-semibold text-primary font-body">
-                      {prompt.likes}
+                      {prompt.likesCount || 0}
                     </p>
                   </div>
                 </div>

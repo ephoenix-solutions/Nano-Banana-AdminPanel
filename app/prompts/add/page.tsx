@@ -28,7 +28,8 @@ export default function AddPromptPage() {
     imageRequirement: 0, // Default to optional
     tags: [],
     isTrending: false,
-    likes: 0,
+    likesCount: 0,
+    savesCount: 0,
     searchCount: 0,
   });
   const [tagInput, setTagInput] = useState('');
@@ -72,7 +73,7 @@ export default function AddPromptPage() {
         ...prev,
         [name]: checked,
       }));
-    } else if (name === 'likes' || name === 'searchCount') {
+    } else if (name === 'likesCount' || name === 'searchCount') {
       setFormData((prev) => ({
         ...prev,
         [name]: parseInt(value) || 0,

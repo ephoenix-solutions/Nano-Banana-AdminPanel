@@ -17,7 +17,6 @@ import {
   CreatePromptInput,
   UpdatePromptInput,
 } from '@/lib/types/prompt.types';
-import { removePromptFromAllSaves } from './save.service';
 
 const COLLECTION_NAME = 'prompt'; // Firestore collection name
 
@@ -130,7 +129,8 @@ export async function createPrompt(promptData: CreatePromptInput): Promise<strin
       imageRequirement: promptData.imageRequirement ?? 0, // Default to 0 (optional)
       tags: promptData.tags || [],
       isTrending: promptData.isTrending || false,
-      likes: promptData.likes || 0,
+      likesCount: promptData.likesCount || 0,
+      savesCount: promptData.savesCount || 0,
       searchCount: promptData.searchCount || 0,
       createdAt: Timestamp.now(),
       createdBy: promptData.createdBy,
@@ -163,7 +163,8 @@ export async function updatePrompt(
     if (promptData.imageRequirement !== undefined) updateData.imageRequirement = promptData.imageRequirement;
     if (promptData.tags !== undefined) updateData.tags = promptData.tags;
     if (promptData.isTrending !== undefined) updateData.isTrending = promptData.isTrending;
-    if (promptData.likes !== undefined) updateData.likes = promptData.likes;
+    if (promptData.likesCount !== undefined) updateData.likesCount = promptData.likesCount;
+    if (promptData.savesCount !== undefined) updateData.savesCount = promptData.savesCount;
     if (promptData.searchCount !== undefined) updateData.searchCount = promptData.searchCount;
     
     // Add updatedBy and updatedAt fields
@@ -181,16 +182,13 @@ export async function updatePrompt(
 
 /**
  * Delete a prompt
- * Also removes it from all users' saves
+ * Note: Subcollections (likes, saves) are automatically deleted by Firestore when parent is deleted
  */
 export async function deletePrompt(promptId: string): Promise<void> {
   try {
-    // First, remove from all users' saves
-    await removePromptFromAllSaves(promptId);
-    
-    // Then delete the prompt
     const promptRef = doc(db, COLLECTION_NAME, promptId);
     await deleteDoc(promptRef);
+    // Note: Firestore automatically deletes subcollections (likes, saves) when parent document is deleted
   } catch (error) {
     console.error('Error deleting prompt:', error);
     throw error;

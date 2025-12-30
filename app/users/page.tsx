@@ -8,10 +8,9 @@ import ConfirmModal from '@/components/ConfirmModal';
 import { Icons } from '@/config/icons';
 import { User } from '@/lib/types/user.types';
 import { getAllUsers, deleteUser } from '@/lib/services/user.service';
-import { getUserSaves } from '@/lib/services/save.service';
 import { Timestamp } from 'firebase/firestore';
 
-type SortField = 'name' | 'email' | 'role' | 'provider' | 'createdAt' | 'lastLogin' | 'savedPrompts';
+type SortField = 'name' | 'email' | 'role' | 'provider' | 'createdAt' | 'lastLogin';
 type SortOrder = 'asc' | 'desc';
 type RoleFilter = 'all' | 'admin' | 'user';
 type ProviderFilter = 'all' | 'google' | 'apple' | 'manual';
@@ -21,7 +20,6 @@ export default function UsersPage() {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [userSaveCounts, setUserSaveCounts] = useState<Record<string, number>>({});
   const [deleteModal, setDeleteModal] = useState<{
     isOpen: boolean;
     user: User | null;
@@ -47,21 +45,6 @@ export default function UsersPage() {
       setError(null);
       const data = await getAllUsers();
       setUsers(data);
-      
-      // Fetch save counts for all users
-      const saveCounts: Record<string, number> = {};
-      await Promise.all(
-        data.map(async (user) => {
-          try {
-            const saves = await getUserSaves(user.id);
-            saveCounts[user.id] = saves?.promptIds?.length || 0;
-          } catch (err) {
-            console.error(`Error fetching saves for user ${user.id}:`, err);
-            saveCounts[user.id] = 0;
-          }
-        })
-      );
-      setUserSaveCounts(saveCounts);
     } catch (err) {
       console.error('Error fetching users:', err);
       setError('Failed to load users');
@@ -184,10 +167,6 @@ export default function UsersPage() {
           aValue = a.lastLogin?.toMillis() || 0;
           bValue = b.lastLogin?.toMillis() || 0;
           break;
-        case 'savedPrompts':
-          aValue = userSaveCounts[a.id] || 0;
-          bValue = userSaveCounts[b.id] || 0;
-          break;
         default:
           aValue = (a.name || '').toLowerCase();
           bValue = (b.name || '').toLowerCase();
@@ -201,7 +180,7 @@ export default function UsersPage() {
     });
 
     return filtered;
-  }, [users, searchQuery, sortField, sortOrder, roleFilter, providerFilter, userSaveCounts]);
+  }, [users, searchQuery, sortField, sortOrder, roleFilter, providerFilter]);
 
   // Clear all filters
   const clearFilters = () => {
@@ -478,9 +457,6 @@ export default function UsersPage() {
                       Language
                     </th>
                     <th className="px-6 py-4 text-left text-sm font-semibold text-primary font-body">
-                      <SortableHeader field="savedPrompts" label="Saved Prompts" />
-                    </th>
-                    <th className="px-6 py-4 text-left text-sm font-semibold text-primary font-body">
                       <SortableHeader field="createdAt" label="Created At" />
                     </th>
                     <th className="px-6 py-4 text-left text-sm font-semibold text-primary font-body">
@@ -559,14 +535,6 @@ export default function UsersPage() {
                         {/* Language Column */}
                         <td className="px-6 py-4 text-sm text-primary font-body">
                           <span className="uppercase text-sm font-medium">{user.language}</span>
-                        </td>
-
-                        {/* Saved Prompts Column */}
-                        <td className="px-6 py-4 text-sm text-primary font-body">
-                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium bg-accent/20 text-primary">
-                            <Icons.bookmark size={12} />
-                            {userSaveCounts[user.id] || 0}
-                          </span>
                         </td>
 
                         {/* Created At Column */}
