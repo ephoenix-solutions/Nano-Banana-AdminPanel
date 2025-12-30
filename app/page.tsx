@@ -162,7 +162,7 @@ export default function DashboardPage() {
       const promptsStats = {
         total: prompts.length,
         trending: prompts.filter((p) => p.isTrending).length,
-        totalLikes: prompts.reduce((sum, p) => sum + p.likes, 0),
+        totalLikes: prompts.reduce((sum, p) => sum + (p.likesCount || 0), 0),
         totalSearches: prompts.reduce((sum, p) => sum + p.searchCount, 0),
       };
 
@@ -278,7 +278,7 @@ export default function DashboardPage() {
             name: prompt.title,
             imageUrl: prompt.url || '',
             createdAt: prompt.createdAt?.toDate ? prompt.createdAt.toDate() : new Date(),
-            additionalInfo: `By ${creatorName} • ${prompt.likes} likes`,
+            additionalInfo: `By ${creatorName} • ${prompt.likesCount || 0} likes`,
           };
         })
       );
