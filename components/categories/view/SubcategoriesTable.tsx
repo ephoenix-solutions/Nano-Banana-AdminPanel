@@ -91,7 +91,7 @@ export default function SubcategoriesTable({
               >
                 <td className="px-6 py-4">
                   <div className="flex items-center gap-2">
-                    <Icons.chevronRight size={16} className="text-secondary" />
+                    <Icons.cornerDownRight size={16} className="text-secondary" />
                     <span className="font-medium text-primary font-body">
                       {subcategory.name}
                     </span>
