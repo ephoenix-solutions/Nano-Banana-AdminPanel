@@ -3,6 +3,7 @@
 import AdminLayout from '@/components/AdminLayout';
 import Breadcrumbs from '@/components/Breadcrumbs';
 import ConfirmModal from '@/components/ConfirmModal';
+import CategoryDeleteModal from '@/components/categories/utils/CategoryDeleteModal';
 import { useCategoriesList } from '@/lib/hooks/useCategoriesList';
 
 // Import list components
@@ -124,31 +125,54 @@ export default function CategoriesPage() {
           <EmptyState type="no-data" onAddCategory={handleAddCategory} />
         )}
 
-        {/* Delete Confirmation Modal */}
-        <ConfirmModal
-          isOpen={deleteModal.isOpen}
-          onClose={() =>
-            setDeleteModal({
-              isOpen: false,
-              type: 'category',
-              categoryId: null,
-              subcategoryId: null,
-              name: '',
-            })
-          }
-          onConfirm={handleDeleteConfirm}
-          title={`Delete ${
-            deleteModal.type === 'category' ? 'Category' : 'Subcategory'
-          }`}
-          message={`Are you sure you want to delete "${deleteModal.name}"? ${
-            deleteModal.type === 'category'
-              ? 'This will also delete all subcategories.'
-              : 'This action cannot be undone.'
-          }`}
-          confirmText="Delete"
-          cancelText="Cancel"
-          type="danger"
-        />
+        {/* Category Delete Confirmation Modal with Usage Info */}
+        {deleteModal.type === 'category' && (
+          <CategoryDeleteModal
+            isOpen={deleteModal.isOpen}
+            onClose={() =>
+              setDeleteModal({
+                isOpen: false,
+                type: 'category',
+                categoryId: null,
+                subcategoryId: null,
+                name: '',
+                promptsCount: 0,
+                countries: [],
+                loadingUsage: false,
+              })
+            }
+            onConfirm={handleDeleteConfirm}
+            categoryName={deleteModal.name}
+            promptsCount={deleteModal.promptsCount}
+            countries={deleteModal.countries}
+            loadingUsage={deleteModal.loadingUsage}
+          />
+        )}
+
+        {/* Subcategory Delete Confirmation Modal (Simple) */}
+        {deleteModal.type === 'subcategory' && (
+          <ConfirmModal
+            isOpen={deleteModal.isOpen}
+            onClose={() =>
+              setDeleteModal({
+                isOpen: false,
+                type: 'category',
+                categoryId: null,
+                subcategoryId: null,
+                name: '',
+                promptsCount: 0,
+                countries: [],
+                loadingUsage: false,
+              })
+            }
+            onConfirm={handleDeleteConfirm}
+            title="Delete Subcategory"
+            message={`Are you sure you want to delete "${deleteModal.name}"? This action cannot be undone.`}
+            confirmText="Delete"
+            cancelText="Cancel"
+            type="danger"
+          />
+        )}
       </div>
     </AdminLayout>
   );

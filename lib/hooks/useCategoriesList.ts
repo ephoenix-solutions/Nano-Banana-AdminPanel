@@ -2,16 +2,30 @@ import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { Category, Subcategory } from '@/lib/types/category.types';
 import { User } from '@/lib/types/user.types';
+import { Country } from '@/lib/types/country.types';
 import {
   getAllCategories,
   deleteCategory,
   deleteSubcategory,
 } from '@/lib/services/category.service';
 import { getUsersByIds } from '@/lib/services/user.service';
+import { countPromptsByCategory } from '@/lib/services/prompt.service';
+import { getCountriesByCategory } from '@/lib/services/country.service';
 
 export type SortField = 'name' | 'order' | 'searchCount' | 'subcategories' | 'createdAt' | 'updatedAt';
 export type SortOrder = 'asc' | 'desc';
 export type SubcategoryFilter = 'all' | 'with' | 'without';
+
+interface DeleteModalState {
+  isOpen: boolean;
+  type: 'category' | 'subcategory';
+  categoryId: string | null;
+  subcategoryId: string | null;
+  name: string;
+  promptsCount: number;
+  countries: Country[];
+  loadingUsage: boolean;
+}
 
 interface UseCategoriesListReturn {
   // Data
@@ -44,27 +58,15 @@ interface UseCategoriesListReturn {
   handleAddCategory: () => void;
   handleViewCategory: (categoryId: string) => void;
   handleEditCategory: (categoryId: string) => void;
-  handleDeleteCategoryClick: (category: Category) => void;
+  handleDeleteCategoryClick: (category: Category) => Promise<void>;
   handleAddSubcategory: (categoryId: string) => void;
   handleEditSubcategory: (categoryId: string, subcategoryId: string) => void;
   handleDeleteSubcategoryClick: (categoryId: string, subcategory: Subcategory) => void;
   handleDeleteConfirm: () => Promise<void>;
   
   // Delete modal
-  deleteModal: {
-    isOpen: boolean;
-    type: 'category' | 'subcategory';
-    categoryId: string | null;
-    subcategoryId: string | null;
-    name: string;
-  };
-  setDeleteModal: (modal: {
-    isOpen: boolean;
-    type: 'category' | 'subcategory';
-    categoryId: string | null;
-    subcategoryId: string | null;
-    name: string;
-  }) => void;
+  deleteModal: DeleteModalState;
+  setDeleteModal: (modal: Partial<DeleteModalState> & Pick<DeleteModalState, 'isOpen' | 'type' | 'categoryId' | 'subcategoryId' | 'name'>) => void;
   
   // Utilities
   formatTimestamp: (timestamp: any) => string | null;
@@ -87,19 +89,26 @@ export function useCategoriesList(): UseCategoriesListReturn {
   const [subcategoryFilter, setSubcategoryFilter] = useState<SubcategoryFilter>('all');
   
   // Delete modal state
-  const [deleteModal, setDeleteModal] = useState<{
-    isOpen: boolean;
-    type: 'category' | 'subcategory';
-    categoryId: string | null;
-    subcategoryId: string | null;
-    name: string;
-  }>({
+  const [deleteModalState, setDeleteModalState] = useState<DeleteModalState>({
     isOpen: false,
     type: 'category',
     categoryId: null,
     subcategoryId: null,
     name: '',
+    promptsCount: 0,
+    countries: [],
+    loadingUsage: false,
   });
+
+  // Custom setter that handles partial updates with defaults
+  const setDeleteModal = (modal: Partial<DeleteModalState> & Pick<DeleteModalState, 'isOpen' | 'type' | 'categoryId' | 'subcategoryId' | 'name'>) => {
+    setDeleteModalState({
+      promptsCount: 0,
+      countries: [],
+      loadingUsage: false,
+      ...modal,
+    });
+  };
 
   // Fetch initial data
   useEffect(() => {
@@ -194,14 +203,39 @@ export function useCategoriesList(): UseCategoriesListReturn {
     router.push(`/categories/edit/${categoryId}`);
   };
 
-  const handleDeleteCategoryClick = (category: Category) => {
-    setDeleteModal({
+  const handleDeleteCategoryClick = async (category: Category) => {
+    // Open modal with loading state
+    setDeleteModalState({
       isOpen: true,
       type: 'category',
       categoryId: category.id,
       subcategoryId: null,
       name: category.name,
+      promptsCount: 0,
+      countries: [],
+      loadingUsage: true,
     });
+
+    // Fetch usage data
+    try {
+      const [promptsCount, countries] = await Promise.all([
+        countPromptsByCategory(category.id),
+        getCountriesByCategory(category.id),
+      ]);
+
+      setDeleteModalState(prev => ({
+        ...prev,
+        promptsCount,
+        countries,
+        loadingUsage: false,
+      }));
+    } catch (err) {
+      console.error('Error fetching category usage:', err);
+      setDeleteModalState(prev => ({
+        ...prev,
+        loadingUsage: false,
+      }));
+    }
   };
 
   const handleAddSubcategory = (categoryId: string) => {
@@ -213,37 +247,43 @@ export function useCategoriesList(): UseCategoriesListReturn {
   };
 
   const handleDeleteSubcategoryClick = (categoryId: string, subcategory: Subcategory) => {
-    setDeleteModal({
+    setDeleteModalState({
       isOpen: true,
       type: 'subcategory',
       categoryId,
       subcategoryId: subcategory.id,
       name: subcategory.name,
+      promptsCount: 0,
+      countries: [],
+      loadingUsage: false,
     });
   };
 
   const handleDeleteConfirm = async () => {
     try {
-      if (deleteModal.type === 'category' && deleteModal.categoryId) {
-        await deleteCategory(deleteModal.categoryId);
+      if (deleteModalState.type === 'category' && deleteModalState.categoryId) {
+        await deleteCategory(deleteModalState.categoryId);
       } else if (
-        deleteModal.type === 'subcategory' &&
-        deleteModal.categoryId &&
-        deleteModal.subcategoryId
+        deleteModalState.type === 'subcategory' &&
+        deleteModalState.categoryId &&
+        deleteModalState.subcategoryId
       ) {
-        await deleteSubcategory(deleteModal.categoryId, deleteModal.subcategoryId);
+        await deleteSubcategory(deleteModalState.categoryId, deleteModalState.subcategoryId);
       }
-      setDeleteModal({
+      setDeleteModalState({
         isOpen: false,
         type: 'category',
         categoryId: null,
         subcategoryId: null,
         name: '',
+        promptsCount: 0,
+        countries: [],
+        loadingUsage: false,
       });
       await fetchCategories();
     } catch (err) {
       console.error('Error deleting:', err);
-      setError(`Failed to delete ${deleteModal.type}`);
+      setError(`Failed to delete ${deleteModalState.type}`);
     }
   };
 
@@ -387,7 +427,7 @@ export function useCategoriesList(): UseCategoriesListReturn {
     handleDeleteConfirm,
     
     // Delete modal
-    deleteModal,
+    deleteModal: deleteModalState,
     setDeleteModal,
     
     // Utilities

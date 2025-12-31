@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { collection, query, where, getDocs } from 'firebase/firestore';
+import { collection, query, where, getDocs, doc, updateDoc, Timestamp } from 'firebase/firestore';
 import { db } from '@/config/firebase';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
@@ -58,6 +58,13 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Update lastLogin timestamp
+    const userRef = doc(db, 'users', user.id);
+    const now = Timestamp.now();
+    await updateDoc(userRef, {
+      lastLogin: now,
+    });
+
     // Generate JWT token
     const payload = {
       userId: user.id,
@@ -76,7 +83,7 @@ export async function POST(request: NextRequest) {
       provider: user.provider,
       language: user.language,
       createdAt: user.createdAt,
-      lastLogin: user.lastLogin,
+      lastLogin: now, // Use the updated timestamp
     };
 
     // Create response with cookie

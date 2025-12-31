@@ -132,7 +132,7 @@ export default function EditPromptPage() {
               value={formData.url}
               onChange={handleChange}
               type="url"
-              optional
+              required
               placeholder="https://example.com/image.jpg"
             />
 

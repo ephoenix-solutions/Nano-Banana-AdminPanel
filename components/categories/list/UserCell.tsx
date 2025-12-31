@@ -8,17 +8,16 @@ interface UserCellProps {
 }
 
 export default function UserCell({ user, timestamp, formatTimestamp }: UserCellProps) {
-  if (!user) {
-    return <span className="text-secondary text-xs">Unknown</span>;
-  }
+  const userName = user?.name || 'Unknown';
+  const userPhoto = user?.photoURL || '';
 
   return (
     <div className="flex flex-col gap-1">
       <div className="flex items-center gap-2">
-        {user.photoURL ? (
+        {userPhoto ? (
           <img
-            src={user.photoURL}
-            alt={user.name}
+            src={userPhoto}
+            alt={userName}
             className="w-6 h-6 rounded-full object-cover border border-accent/20"
             onError={(e) => {
               e.currentTarget.style.display = 'none';
@@ -29,11 +28,11 @@ export default function UserCell({ user, timestamp, formatTimestamp }: UserCellP
         ) : null}
         <div 
           className="w-6 h-6 rounded-full bg-accent/20 flex items-center justify-center"
-          style={{ display: user.photoURL ? 'none' : 'flex' }}
+          style={{ display: userPhoto ? 'none' : 'flex' }}
         >
           <Icons.users size={12} className="text-accent" />
         </div>
-        <span className="text-sm">{user.name || 'Unknown'}</span>
+        <span className="text-sm">{userName}</span>
       </div>
       {timestamp && (
         <span className="text-xs text-secondary">

@@ -30,6 +30,7 @@ export interface CreateCategoryInput {
   order: number;
   searchCount?: string | number;
   createdBy: string;
+  subcategories?: CreateSubcategoryInput[]; // Add subcategories array
 }
 
 export interface UpdateCategoryInput {

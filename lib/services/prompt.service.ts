@@ -89,6 +89,22 @@ export async function getPromptsByCategory(categoryId: string): Promise<Prompt[]
 }
 
 /**
+ * Count prompts by category
+ */
+export async function countPromptsByCategory(categoryId: string): Promise<number> {
+  try {
+    const promptsRef = collection(db, COLLECTION_NAME);
+    const q = query(promptsRef, where('categoryId', '==', categoryId));
+    const querySnapshot = await getDocs(q);
+    
+    return querySnapshot.size;
+  } catch (error) {
+    console.error('Error counting prompts by category:', error);
+    return 0;
+  }
+}
+
+/**
  * Get trending prompts
  */
 export async function getTrendingPrompts(): Promise<Prompt[]> {
