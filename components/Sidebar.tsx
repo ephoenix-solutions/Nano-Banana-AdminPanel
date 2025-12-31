@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Icons } from '@/config/icons';
@@ -84,7 +84,8 @@ export default function Sidebar({ onWidthChange, isMobileOpen = false, onMobileC
     }
     return false;
   });
-  const [openDropdowns, setOpenDropdowns] = useState<string[]>([]);
+  // State for manual user toggles only
+  const [manualToggles, setManualToggles] = useState<Record<string, boolean>>({});
 
   // Save collapse state to localStorage whenever it changes
   useEffect(() => {
@@ -92,54 +93,51 @@ export default function Sidebar({ onWidthChange, isMobileOpen = false, onMobileC
       localStorage.setItem('sidebarCollapsed', String(isCollapsed));
     }
     onWidthChange?.(isCollapsed ? 80 : 280);
-    // Close all dropdowns when collapsing sidebar
+    // Clear manual toggles when collapsing sidebar
     if (isCollapsed) {
-      setOpenDropdowns([]);
+      setManualToggles({});
     }
   }, [isCollapsed, onWidthChange]);
 
-  // Initialize and maintain open dropdowns based on current path
-  useEffect(() => {
-    // Don't auto-open dropdowns when sidebar is collapsed
-    if (isCollapsed) return;
+  // Calculate which dropdowns should be auto-opened based on current path (synchronous, during render)
+  const autoOpenDropdowns = useMemo(() => {
+    if (isCollapsed) return new Set<string>();
     
-    const shouldBeOpen: string[] = [];
+    const shouldBeOpen = new Set<string>();
     
     menuItems.forEach((item) => {
       if (item.subItems && item.subItems.length > 0) {
-        // Check if current path matches main item or any sub-item
         const isMainPath = pathname === item.href;
+        const isUnderMainPath = pathname.startsWith(item.href + '/');
         const hasActiveSubItem = item.subItems.some(
-          (subItem) => pathname === subItem.href
+          (subItem) => pathname === subItem.href || pathname.startsWith(subItem.href + '/')
         );
         
-        if (isMainPath || hasActiveSubItem) {
-          shouldBeOpen.push(item.id);
+        if (isMainPath || isUnderMainPath || hasActiveSubItem) {
+          shouldBeOpen.add(item.id);
         }
       }
     });
-
-    // Set dropdowns without merging - just use what should be open
-    setOpenDropdowns(shouldBeOpen);
+    
+    return shouldBeOpen;
   }, [pathname, isCollapsed]);
 
   const toggleDropdown = (itemId: string) => {
-    // Don't toggle dropdowns when sidebar is collapsed
     if (isCollapsed) return;
     
-    setOpenDropdowns((prev) => {
-      if (prev.includes(itemId)) {
-        // Remove from array
-        return prev.filter(id => id !== itemId);
-      } else {
-        // Add to array
-        return [...prev, itemId];
-      }
-    });
+    setManualToggles((prev) => ({
+      ...prev,
+      [itemId]: !prev[itemId],
+    }));
   };
 
   const isDropdownOpen = (itemId: string) => {
-    return openDropdowns.includes(itemId);
+    // If manually toggled, use that state
+    if (manualToggles[itemId] !== undefined) {
+      return manualToggles[itemId];
+    }
+    // Otherwise, use auto-open logic
+    return autoOpenDropdowns.has(itemId);
   };
 
   return (
@@ -185,7 +183,18 @@ export default function Sidebar({ onWidthChange, isMobileOpen = false, onMobileC
         <ul className="flex flex-col gap-2 px-3">
           {menuItems.map((item) => {
             const IconComponent = item.icon;
-            const isActive = pathname === item.href;
+            
+            // Check if any sub-item matches the current path
+            const hasMatchingSubItem = item.subItems?.some(
+              (subItem) => pathname === subItem.href || pathname.startsWith(subItem.href + '/')
+            );
+            
+            // Only highlight root if:
+            // 1. Exact match OR
+            // 2. Path starts with item.href AND no sub-item matches
+            const isActive = pathname === item.href || 
+              (item.href !== '/' && pathname.startsWith(item.href + '/') && !hasMatchingSubItem);
+            
             const hasSubItems = item.subItems && item.subItems.length > 0;
             const dropdownOpen = isDropdownOpen(item.id);
             
@@ -256,7 +265,8 @@ export default function Sidebar({ onWidthChange, isMobileOpen = false, onMobileC
                 {hasSubItems && !isCollapsed && dropdownOpen && (
                   <ul className="mt-1 ml-4 pl-4 border-l-2 border-accent/30 space-y-1">
                     {item.subItems!.map((subItem) => {
-                      const isSubActive = pathname === subItem.href;
+                      // Check if current path matches or starts with the sub-item's path
+                      const isSubActive = pathname === subItem.href || pathname.startsWith(subItem.href + '/');
                       return (
                         <li key={subItem.id}>
                           <Link
@@ -271,7 +281,7 @@ export default function Sidebar({ onWidthChange, isMobileOpen = false, onMobileC
                               }
                             `}
                           >
-                            <Icons.chevronRight size={14} strokeWidth={2} className="flex-shrink-0" />
+                            <Icons.cornerDownRight size={14} strokeWidth={2} className="flex-shrink-0" />
                             <span className="whitespace-nowrap">{subItem.label}</span>
                           </Link>
                         </li>
