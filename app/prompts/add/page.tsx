@@ -129,7 +129,7 @@ export default function AddPromptPage() {
               value={formData.url}
               onChange={handleChange}
               type="url"
-              optional
+              required
               placeholder="https://example.com/image.jpg"
             />
 

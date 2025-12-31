@@ -7,6 +7,7 @@ import PageHeader from '@/components/categories/utils/PageHeader';
 import FormInput from '@/components/categories/utils/FormInput';
 import ErrorMessage from '@/components/categories/utils/ErrorMessage';
 import FormActions from '@/components/categories/utils/FormActions';
+import SubcategoriesSection from '@/components/categories/utils/SubcategoriesSection';
 
 export default function AddCategoryPage() {
   const {
@@ -14,6 +15,9 @@ export default function AddCategoryPage() {
     error,
     formData,
     handleChange,
+    handleSubcategoryChange,
+    addSubcategory,
+    removeSubcategory,
     handleSubmit,
     handleCancel,
   } = useAddCategoryForm();
@@ -73,8 +77,16 @@ export default function AddCategoryPage() {
               value={formData.iconImage}
               onChange={handleChange}
               type="url"
-              optional
+              required
               placeholder="https://example.com/icon.png"
+            />
+
+            {/* Subcategories Section */}
+            <SubcategoriesSection
+              subcategories={formData.subcategories}
+              onSubcategoryChange={handleSubcategoryChange}
+              onAddSubcategory={addSubcategory}
+              onRemoveSubcategory={removeSubcategory}
             />
 
             {/* Error Message */}

@@ -19,6 +19,11 @@ export default function AddUserPage() {
     handleCancel,
   } = useAddUserForm();
 
+  const roleOptions = [
+    { value: 'user', label: 'User' },
+    { value: 'admin', label: 'Admin' },
+  ];
+
   const providerOptions = [
     { value: 'manual', label: 'Manual' },
     { value: 'google', label: 'Google' },
@@ -88,6 +93,17 @@ export default function AddUserPage() {
                 placeholder="user@example.com"
               />
 
+              {/* Role Field */}
+              <FormSelect
+                id="role"
+                name="role"
+                label="Role"
+                value={formData.role || 'user'}
+                onChange={handleChange}
+                options={roleOptions}
+                required
+              />
+
               {/* Provider Field */}
               <FormSelect
                 id="provider"
@@ -122,6 +138,50 @@ export default function AddUserPage() {
               optional
               placeholder="https://example.com/photo.jpg"
             />
+
+            {/* Password Fields - Show only when role is admin */}
+            {formData.role === 'admin' && (
+              <>
+                <div className="border-t border-primary/10 pt-6">
+                  <h3 className="text-lg font-semibold text-primary mb-4 font-heading">
+                    Admin Password
+                  </h3>
+                  <p className="text-sm text-secondary mb-4 font-body">
+                    Password is required for admin users to access the admin panel.
+                  </p>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <FormInput
+                      id="password"
+                      name="password"
+                      label="Password"
+                      value={formData.password || ''}
+                      onChange={handleChange}
+                      type="password"
+                      required
+                      placeholder="Enter password (min 8 characters)"
+                    />
+
+                    <FormInput
+                      id="confirmPassword"
+                      name="confirmPassword"
+                      label="Confirm Password"
+                      value={formData.confirmPassword || ''}
+                      onChange={handleChange}
+                      type="password"
+                      required
+                      placeholder="Confirm password"
+                    />
+                  </div>
+                  {formData.password && (
+                    <div className="mt-2 text-sm">
+                      <span className={formData.password.length >= 8 ? 'text-green-600' : 'text-orange-600'}>
+                        {formData.password.length >= 8 ? 'Password strength: Good' : 'Password too short (minimum 8 characters)'}
+                      </span>
+                    </div>
+                  )}
+                </div>
+              </>
+            )}
 
             {/* Error Message */}
             <ErrorMessage message={error} />

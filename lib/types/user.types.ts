@@ -20,7 +20,8 @@ export interface CreateUserInput {
   photoURL?: string;
   provider: string;
   role?: string; // Optional, defaults to 'user'
-  password?: string; // Hashed password (optional)
+  password?: string; // Plain password (will be hashed before saving)
+  confirmPassword?: string; // For validation only (not saved)
 }
 
 export interface UpdateUserInput {
@@ -30,5 +31,6 @@ export interface UpdateUserInput {
   photoURL?: string;
   provider?: string;
   role?: string;
-  password?: string; // Hashed password (optional)
+  password?: string; // Plain password (will be hashed before saving)
+  confirmPassword?: string; // For validation only (not saved)
 }

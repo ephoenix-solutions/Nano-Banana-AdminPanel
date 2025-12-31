@@ -159,6 +159,9 @@ export function useAddPromptForm(): UseAddPromptFormReturn {
       if (!formData.subCategoryId) {
         throw new Error('Subcategory is required');
       }
+      if (!formData.url.trim()) {
+        throw new Error('Image URL is required');
+      }
 
       if (!user?.id) {
         throw new Error('User not authenticated');
@@ -166,13 +169,13 @@ export function useAddPromptForm(): UseAddPromptFormReturn {
 
       const userId = user.id; // Type narrowing
 
-      // Prepare data for API - convert empty strings to undefined for optional fields
+      // Prepare data for API
       const promptData: CreatePromptInput = {
         title: formData.title,
         categoryId: formData.categoryId,
         subCategoryId: formData.subCategoryId,
         prompt: formData.prompt,
-        url: formData.url || undefined,
+        url: formData.url,
         imageRequirement: formData.imageRequirement,
         tags: formData.tags.length > 0 ? formData.tags : undefined,
         isTrending: formData.isTrending,

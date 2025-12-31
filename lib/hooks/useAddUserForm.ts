@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import bcrypt from 'bcryptjs';
 import { createUser } from '@/lib/services/user.service';
 import { CreateUserInput } from '@/lib/types/user.types';
 
@@ -22,6 +23,9 @@ export function useAddUserForm(): UseAddUserFormReturn {
     language: 'en',
     provider: 'manual',
     photoURL: '',
+    role: 'user',
+    password: '',
+    confirmPassword: '',
   });
 
   const handleChange = (
@@ -51,7 +55,39 @@ export function useAddUserForm(): UseAddUserFormReturn {
         throw new Error('Invalid email format');
       }
 
-      await createUser(formData);
+      // Validate password if role is admin
+      if (formData.role === 'admin') {
+        if (!formData.password) {
+          throw new Error('Password is required for admin users');
+        }
+        if (formData.password.length < 8) {
+          throw new Error('Password must be at least 8 characters long');
+        }
+        if (formData.password !== formData.confirmPassword) {
+          throw new Error('Passwords do not match');
+        }
+      }
+
+      // Prepare user data
+      const userData: CreateUserInput = {
+        name: formData.name,
+        email: formData.email,
+        language: formData.language,
+        provider: formData.provider,
+        photoURL: formData.photoURL,
+        role: formData.role,
+      };
+
+      // Hash password if role is admin
+      if (formData.role === 'admin' && formData.password) {
+        const hashedPassword = await bcrypt.hash(formData.password, 10);
+        userData.password = hashedPassword;
+      }
+
+      // Remove confirmPassword before saving (not needed in database)
+      delete userData.confirmPassword;
+
+      await createUser(userData);
       router.push('/users');
     } catch (err: any) {
       console.error('Error creating user:', err);

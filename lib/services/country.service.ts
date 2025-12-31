@@ -8,6 +8,7 @@ import {
   deleteDoc,
   query,
   orderBy,
+  where,
   writeBatch,
   Timestamp,
 } from 'firebase/firestore';
@@ -60,6 +61,43 @@ export async function getCountryById(countryId: string): Promise<Country | null>
   } catch (error) {
     console.error('Error getting country:', error);
     throw error;
+  }
+}
+
+/**
+ * Get countries that use a specific category
+ */
+export async function getCountriesByCategory(categoryId: string): Promise<Country[]> {
+  try {
+    const countriesRef = collection(db, COLLECTION_NAME);
+    const q = query(countriesRef, where('categories', 'array-contains', categoryId));
+    const querySnapshot = await getDocs(q);
+    
+    const countries: Country[] = querySnapshot.docs.map((doc) => ({
+      id: doc.id,
+      ...doc.data(),
+    } as Country));
+    
+    return countries;
+  } catch (error) {
+    console.error('Error getting countries by category:', error);
+    return [];
+  }
+}
+
+/**
+ * Count countries that use a specific category
+ */
+export async function countCountriesByCategory(categoryId: string): Promise<number> {
+  try {
+    const countriesRef = collection(db, COLLECTION_NAME);
+    const q = query(countriesRef, where('categories', 'array-contains', categoryId));
+    const querySnapshot = await getDocs(q);
+    
+    return querySnapshot.size;
+  } catch (error) {
+    console.error('Error counting countries by category:', error);
+    return 0;
   }
 }
 

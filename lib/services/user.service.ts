@@ -142,6 +142,7 @@ export async function updateUser(
     if (userData.photoURL !== undefined) updateData.photoURL = userData.photoURL;
     if (userData.provider !== undefined) updateData.provider = userData.provider;
     if (userData.role !== undefined) updateData.role = userData.role;
+    if (userData.password !== undefined) updateData.password = userData.password; // Add password field
     
     await updateDoc(userRef, updateData);
   } catch (error) {

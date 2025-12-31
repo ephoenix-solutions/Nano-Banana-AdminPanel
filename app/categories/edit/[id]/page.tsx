@@ -8,6 +8,7 @@ import PageHeader from '@/components/categories/utils/PageHeader';
 import FormInput from '@/components/categories/utils/FormInput';
 import ErrorMessage from '@/components/categories/utils/ErrorMessage';
 import FormActions from '@/components/categories/utils/FormActions';
+import SubcategoriesSection from '@/components/categories/utils/SubcategoriesSection';
 
 export default function EditCategoryPage() {
   const params = useParams();
@@ -19,6 +20,9 @@ export default function EditCategoryPage() {
     error,
     formData,
     handleChange,
+    handleSubcategoryChange,
+    addSubcategory,
+    removeSubcategory,
     handleSubmit,
     handleCancel,
   } = useEditCategoryForm(categoryId);
@@ -88,8 +92,16 @@ export default function EditCategoryPage() {
               value={formData.iconImage}
               onChange={handleChange}
               type="url"
-              optional
+              required
               placeholder="https://example.com/icon.png"
+            />
+
+            {/* Subcategories Section */}
+            <SubcategoriesSection
+              subcategories={formData.subcategories.filter(sub => !sub.isDeleted)}
+              onSubcategoryChange={handleSubcategoryChange}
+              onAddSubcategory={addSubcategory}
+              onRemoveSubcategory={removeSubcategory}
             />
 
             {/* Error Message */}
