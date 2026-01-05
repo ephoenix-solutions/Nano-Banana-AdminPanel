@@ -1,7 +1,4 @@
-import Cookies from 'js-cookie';
 import { LoginCredentials, AuthResponse, AuthUser } from '@/lib/types/auth.types';
-
-const COOKIE_NAME = 'admin_token_client'; // Client-readable cookie
 
 /**
  * Login user with email and password
@@ -17,16 +14,10 @@ export async function login(credentials: LoginCredentials): Promise<AuthResponse
     });
 
     const data = await response.json();
-
-    if (data.success && data.token) {
-      // Store token in cookie (client-side backup)
-      Cookies.set(COOKIE_NAME, data.token, { 
-        expires: 7,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'strict',
-      });
-    }
-
+    
+    // Note: Token is stored in HTTP-only cookie by server
+    // No need to store token in client-side cookie for security
+    
     return data;
   } catch (error) {
     console.error('Login error:', error);
@@ -47,18 +38,17 @@ export async function logout(): Promise<void> {
     });
   } catch (error) {
     console.error('Logout error:', error);
-  } finally {
-    // Clear both cookies
-    Cookies.remove(COOKIE_NAME);
-    Cookies.remove('admin_token');
   }
+  // Note: Server clears HTTP-only cookie
 }
 
 /**
- * Get current auth token
+ * Check if user has an active session
+ * Note: This checks if the user is authenticated by calling the verify endpoint
  */
-export function getToken(): string | undefined {
-  return Cookies.get(COOKIE_NAME);
+export async function hasSession(): Promise<boolean> {
+  const user = await verifyToken();
+  return user !== null;
 }
 
 /**
@@ -83,9 +73,6 @@ export async function verifyToken(): Promise<AuthUser | null> {
  * Check if user is authenticated
  */
 export async function isAuthenticated(): Promise<boolean> {
-  const token = getToken();
-  if (!token) return false;
-  
   const user = await verifyToken();
   return user !== null;
 }
@@ -94,9 +81,6 @@ export async function isAuthenticated(): Promise<boolean> {
  * Check if user is admin
  */
 export async function isAdmin(): Promise<boolean> {
-  const token = getToken();
-  if (!token) return false;
-  
   const user = await verifyToken();
   return user !== null && user.role === 'admin';
 }
@@ -105,8 +89,5 @@ export async function isAdmin(): Promise<boolean> {
  * Get current user from token
  */
 export async function getCurrentUser(): Promise<AuthUser | null> {
-  const token = getToken();
-  if (!token) return null;
-  
   return await verifyToken();
 }

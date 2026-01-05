@@ -1,7 +1,5 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import bcrypt from 'bcryptjs';
-import { createUser } from '@/lib/services/user.service';
 import { CreateUserInput } from '@/lib/types/user.types';
 
 interface UseAddUserFormReturn {
@@ -44,7 +42,7 @@ export function useAddUserForm(): UseAddUserFormReturn {
     setError(null);
 
     try {
-      // Validate form
+      // Client-side validation
       if (!formData.name.trim()) {
         throw new Error('Name is required');
       }
@@ -55,7 +53,8 @@ export function useAddUserForm(): UseAddUserFormReturn {
         throw new Error('Invalid email format');
       }
 
-      // Validate password if role is admin
+      // Validate password ONLY if role is admin
+      // Regular users don't need passwords (they use Google/Apple sign-in)
       if (formData.role === 'admin') {
         if (!formData.password) {
           throw new Error('Password is required for admin users');
@@ -68,8 +67,8 @@ export function useAddUserForm(): UseAddUserFormReturn {
         }
       }
 
-      // Prepare user data
-      const userData: CreateUserInput = {
+      // Prepare request data
+      const requestData: any = {
         name: formData.name,
         email: formData.email,
         language: formData.language,
@@ -78,16 +77,27 @@ export function useAddUserForm(): UseAddUserFormReturn {
         role: formData.role,
       };
 
-      // Hash password if role is admin
+      // Add password ONLY for admin users
       if (formData.role === 'admin' && formData.password) {
-        const hashedPassword = await bcrypt.hash(formData.password, 10);
-        userData.password = hashedPassword;
+        requestData.password = formData.password;
       }
 
-      // Remove confirmPassword before saving (not needed in database)
-      delete userData.confirmPassword;
+      // Send to API route (password will be hashed on server)
+      const response = await fetch('/api/users', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestData),
+      });
 
-      await createUser(userData);
+      const data = await response.json();
+
+      if (!data.success) {
+        throw new Error(data.message || 'Failed to create user');
+      }
+
+      // Success! Redirect to users list
       router.push('/users');
     } catch (err: any) {
       console.error('Error creating user:', err);

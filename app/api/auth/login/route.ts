@@ -1,15 +1,30 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { collection, query, where, getDocs, doc, updateDoc, Timestamp } from 'firebase/firestore';
-import { db } from '@/config/firebase';
+import { admin, adminDb } from '@/config/firebase-admin';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 import { User } from '@/lib/types/user.types';
 
-const JWT_SECRET = process.env.NEXT_PUBLIC_JWT_SECRET || 'your-secret-key-change-this-in-production';
+const JWT_SECRET = process.env.JWT_SECRET;
 const TOKEN_EXPIRY = '7d';
+
+// Validate JWT_SECRET is configured
+if (!JWT_SECRET) {
+  console.error('CRITICAL: JWT_SECRET environment variable is not set!');
+  console.error('   Please add JWT_SECRET to your .env.local file');
+  console.error('   Example: JWT_SECRET=your-super-secret-jwt-key');
+}
 
 export async function POST(request: NextRequest) {
   try {
+    // Check if JWT_SECRET is configured
+    if (!JWT_SECRET) {
+      console.error('JWT_SECRET not configured');
+      return NextResponse.json(
+        { success: false, message: 'Server configuration error. Please contact administrator.' },
+        { status: 500 }
+      );
+    }
+
     const { email, password } = await request.json();
 
     if (!email || !password) {
@@ -19,10 +34,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Find user by email
-    const usersRef = collection(db, 'users');
-    const q = query(usersRef, where('email', '==', email));
-    const querySnapshot = await getDocs(q);
+    // Find user by email using Admin SDK
+    const usersRef = adminDb.collection('users');
+    const querySnapshot = await usersRef.where('email', '==', email).get();
 
     if (querySnapshot.empty) {
       return NextResponse.json(
@@ -32,7 +46,21 @@ export async function POST(request: NextRequest) {
     }
 
     const userDoc = querySnapshot.docs[0];
-    const user = { id: userDoc.id, ...userDoc.data() } as User;
+    const userData = userDoc.data();
+    
+    // Create user object WITHOUT password
+    const user = {
+      id: userDoc.id,
+      email: userData.email,
+      name: userData.name,
+      photoURL: userData.photoURL,
+      role: userData.role,
+      provider: userData.provider,
+      language: userData.language,
+      createdAt: userData.createdAt,
+      lastLogin: userData.lastLogin,
+      password: userData.password, // Only for verification, not sent to client
+    } as User;
 
     // Check if user has admin role
     if (user.role !== 'admin') {
@@ -58,10 +86,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Update lastLogin timestamp
-    const userRef = doc(db, 'users', user.id);
-    const now = Timestamp.now();
-    await updateDoc(userRef, {
+    // Update lastLogin timestamp using Admin SDK
+    const userRef = adminDb.collection('users').doc(user.id);
+    const now = admin.firestore.Timestamp.now();
+    await userRef.update({
       lastLogin: now,
     });
 
@@ -74,6 +102,7 @@ export async function POST(request: NextRequest) {
 
     const token = jwt.sign(payload, JWT_SECRET, { expiresIn: TOKEN_EXPIRY });
 
+    // Create auth user object WITHOUT password
     const authUser = {
       id: user.id,
       email: user.email,
@@ -83,7 +112,8 @@ export async function POST(request: NextRequest) {
       provider: user.provider,
       language: user.language,
       createdAt: user.createdAt,
-      lastLogin: now, // Use the updated timestamp
+      lastLogin: now,
+      // password is NOT included here
     };
 
     // Create response with cookie
@@ -103,14 +133,8 @@ export async function POST(request: NextRequest) {
       path: '/',
     });
 
-    // Set readable cookie for client-side (for persistence check)
-    response.cookies.set('admin_token_client', token, {
-      httpOnly: false, // JavaScript can read this
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
-      maxAge: 60 * 60 * 24 * 7, // 7 days
-      path: '/',
-    });
+    // Note: Removed admin_token_client cookie for security
+    // Client should check auth status via /api/auth/verify endpoint
 
     return response;
   } catch (error) {

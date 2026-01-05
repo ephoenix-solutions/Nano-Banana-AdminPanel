@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useMemo, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { useRouter } from 'next/navigation';
 import { Icons } from '@/config/icons';
 
@@ -261,17 +262,20 @@ export default function GlobalSearch({ isOpen, onClose }: GlobalSearchProps) {
 
   if (!isOpen) return null;
 
-  return (
+  // Use portal to render outside of Header's stacking context
+  if (typeof window === 'undefined') return null;
+
+  return createPortal(
     <>
       {/* Backdrop */}
       <div 
-        className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[200]"
+        className="fixed inset-0 bg-black/60 backdrop-blur-md z-[1500]"
         onClick={onClose}
       />
 
       {/* Search Modal */}
-      <div className="fixed inset-0 z-[201] flex items-start justify-center pt-[10vh] px-4">
-        <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[70vh] flex flex-col overflow-hidden">
+      <div className="fixed inset-0 z-[1501] flex items-start justify-center pt-[10vh] px-4 ">
+        <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[70vh] flex flex-col overflow-hidden pointer-events-auto">
           {/* Search Input */}
           <div className="p-4 border-b border-primary/10">
             <div className="relative">
@@ -385,6 +389,7 @@ export default function GlobalSearch({ isOpen, onClose }: GlobalSearchProps) {
           </div>
         </div>
       </div>
-    </>
+    </>,
+    document.body
   );
 }
