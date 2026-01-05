@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { User } from '@/lib/types/user.types';
-import { getAllUsers, deleteUser } from '@/lib/services/user.service';
+import { getAllUsers, deleteUser, getUsersByIds } from '@/lib/services/user.service';
 import { Timestamp } from 'firebase/firestore';
 
 export type SortField = 'name' | 'email' | 'role' | 'provider' | 'createdAt' | 'lastLogin';
@@ -13,6 +13,7 @@ interface UseUsersListReturn {
   // Data
   users: User[];
   filteredAndSortedUsers: User[];
+  userCache: Record<string, User>;
   
   // Loading states
   loading: boolean;
@@ -60,6 +61,7 @@ export function useUsersList(): UseUsersListReturn {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [userCache, setUserCache] = useState<Record<string, User>>({});
   
   // Filter states
   const [searchQuery, setSearchQuery] = useState('');
@@ -82,6 +84,13 @@ export function useUsersList(): UseUsersListReturn {
     fetchUsers();
   }, []);
 
+  // Fetch all creator users when users change
+  useEffect(() => {
+    if (users.length > 0) {
+      fetchCreatorUsers();
+    }
+  }, [users]);
+
   const fetchUsers = async () => {
     try {
       setLoading(true);
@@ -93,6 +102,31 @@ export function useUsersList(): UseUsersListReturn {
       setError('Failed to load users');
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Fetch all unique creator users to display who created each user
+  const fetchCreatorUsers = async () => {
+    try {
+      const uniqueCreatorIds = [
+        ...new Set(
+          users
+            .map(u => u.createdBy)
+            .filter(Boolean) as string[]
+        )
+      ];
+      
+      if (uniqueCreatorIds.length === 0) return;
+      
+      const creatorUsers = await getUsersByIds(uniqueCreatorIds);
+      const userMap = creatorUsers.reduce((acc, user) => {
+        acc[user.id] = user;
+        return acc;
+      }, {} as Record<string, User>);
+      
+      setUserCache(userMap);
+    } catch (err) {
+      console.error('Error fetching creator users:', err);
     }
   };
 
@@ -247,6 +281,7 @@ export function useUsersList(): UseUsersListReturn {
     // Data
     users,
     filteredAndSortedUsers,
+    userCache,
     
     // Loading states
     loading,

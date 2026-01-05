@@ -17,6 +17,7 @@ export default function ViewUserPage() {
     loading,
     error,
     user,
+    creatorUser,
     handleBack,
     handleEdit,
     formatTimestamp,
@@ -108,7 +109,7 @@ export default function ViewUserPage() {
               Account Information
             </h3>
             
-            <UserInfoGrid user={user} formatTimestamp={formatTimestamp} />
+            <UserInfoGrid user={user} creatorUser={creatorUser} formatTimestamp={formatTimestamp} />
 
             {/* Photo URL Section */}
             <UserPhotoSection photoURL={user.photoURL} />

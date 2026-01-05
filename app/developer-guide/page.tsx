@@ -38,6 +38,7 @@ const collections: Collection[] = [
       { name: 'photoURL', type: 'string', required: true, description: 'Profile photo URL', example: 'https://example.com/photo.jpg' },
       { name: 'role', type: 'string', required: true, description: 'User role (user/admin)', example: 'user' },
       { name: 'password', type: 'string', required: false, description: 'Hashed password (optional)', example: 'hashed_password_string' },
+      { name: 'createdBy', type: 'string', required: false, description: 'Manual created user by User', example: 'user_abc123' },
       { name: 'createdAt', type: 'Timestamp', required: true, description: 'Account creation date', example: 'Timestamp.now()' },
       { name: 'lastLogin', type: 'Timestamp', required: true, description: 'Last login timestamp', example: 'Timestamp.now()' },
     ],

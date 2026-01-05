@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { getUserById } from '@/lib/services/user.service';
+import { getUserById, getUsersByIds } from '@/lib/services/user.service';
 import { User } from '@/lib/types/user.types';
 import { Timestamp } from 'firebase/firestore';
 
@@ -8,6 +8,7 @@ interface UseUserDetailsReturn {
   loading: boolean;
   error: string | null;
   user: User | null;
+  creatorUser: User | null;
   handleBack: () => void;
   handleEdit: () => void;
   formatTimestamp: (timestamp: Timestamp) => string;
@@ -18,10 +19,17 @@ export function useUserDetails(userId: string): UseUserDetailsReturn {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [user, setUser] = useState<User | null>(null);
+  const [creatorUser, setCreatorUser] = useState<User | null>(null);
 
   useEffect(() => {
     fetchUser();
   }, [userId]);
+
+  useEffect(() => {
+    if (user?.createdBy) {
+      fetchCreatorUser();
+    }
+  }, [user]);
 
   const fetchUser = async () => {
     try {
@@ -37,6 +45,19 @@ export function useUserDetails(userId: string): UseUserDetailsReturn {
       setError('Failed to load user');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchCreatorUser = async () => {
+    try {
+      if (!user?.createdBy) return;
+      
+      const creators = await getUsersByIds([user.createdBy]);
+      if (creators.length > 0) {
+        setCreatorUser(creators[0]);
+      }
+    } catch (err) {
+      console.error('Error fetching creator user:', err);
     }
   };
 
@@ -65,6 +86,7 @@ export function useUserDetails(userId: string): UseUserDetailsReturn {
     loading,
     error,
     user,
+    creatorUser,
     handleBack,
     handleEdit,
     formatTimestamp,

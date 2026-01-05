@@ -3,6 +3,7 @@ import { Timestamp } from 'firebase/firestore';
 export interface User {
   id: string;
   createdAt: Timestamp;
+  createdBy?: string; // User ID of who created this user
   email: string;
   language: string;
   lastLogin: Timestamp;

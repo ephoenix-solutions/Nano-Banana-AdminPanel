@@ -18,6 +18,7 @@ export default function UsersPage() {
     // Data
     users,
     filteredAndSortedUsers,
+    userCache,
     
     // Loading states
     loading,
@@ -96,6 +97,7 @@ export default function UsersPage() {
         {filteredAndSortedUsers.length > 0 && (
           <UsersTable
             users={filteredAndSortedUsers}
+            userCache={userCache}
             sortField={sortField}
             sortOrder={sortOrder}
             formatTimestamp={formatTimestamp}
