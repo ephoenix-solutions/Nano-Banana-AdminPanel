@@ -4,6 +4,7 @@ import AdminLayout from '@/components/AdminLayout';
 import Breadcrumbs from '@/components/Breadcrumbs';
 import ConfirmModal from '@/components/ConfirmModal';
 import { useUsersList } from '@/lib/hooks/useUsersList';
+import { exportUsers, ExportFormat } from '@/lib/utils/exportUsers';
 
 // Import list components
 import PageHeader from '@/components/users/list/PageHeader';
@@ -54,6 +55,14 @@ export default function UsersPage() {
     formatTimestamp,
   } = useUsersList();
 
+  // Handle export
+  const handleExport = (format: ExportFormat) => {
+    exportUsers(format, {
+      users: filteredAndSortedUsers,
+      formatTimestamp,
+    });
+  };
+
   if (loading) {
     return (
       <AdminLayout>
@@ -71,7 +80,7 @@ export default function UsersPage() {
         <Breadcrumbs items={[{ label: 'Users' }]} />
 
         {/* Page Header */}
-        <PageHeader onAddUser={handleAddUser} />
+        <PageHeader onAddUser={handleAddUser} onExport={handleExport} totalUsers={filteredAndSortedUsers.length} />
 
         {/* Search and Filter Bar */}
         <SearchFilterBar

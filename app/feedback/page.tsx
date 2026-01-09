@@ -4,6 +4,7 @@ import AdminLayout from '@/components/AdminLayout';
 import Breadcrumbs from '@/components/Breadcrumbs';
 import ConfirmModal from '@/components/ConfirmModal';
 import { useFeedbackList } from '@/lib/hooks/useFeedbackList';
+import { exportFeedback, ExportFormat } from '@/lib/utils/exportFeedback';
 
 // Import list components
 import PageHeader from '@/components/feedback/list/PageHeader';
@@ -52,6 +53,15 @@ export default function FeedbackPage() {
     getRatingCount,
   } = useFeedbackList();
 
+  // Handle export
+  const handleExport = (format: ExportFormat) => {
+    exportFeedback(format, {
+      feedback: filteredAndSortedFeedback,
+      userCache,
+      formatTimestamp,
+    });
+  };
+
   if (loading) {
     return (
       <AdminLayout>
@@ -69,7 +79,7 @@ export default function FeedbackPage() {
         <Breadcrumbs items={[{ label: 'Feedback' }]} />
 
         {/* Page Header */}
-        <PageHeader />
+        <PageHeader onExport={handleExport} totalFeedback={filteredAndSortedFeedback.length} />
 
         {/* Search and Filter Bar */}
         <SearchFilterBar

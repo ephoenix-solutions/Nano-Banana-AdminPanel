@@ -95,7 +95,7 @@ export default function PreviewTable({
                     <span>{prompt.category || prompt.Category}</span>
                     {warnings.includes('category') && (
                       <div className="relative group">
-                        <Icons.alert size={16} className="text-secondary cursor-help" />
+                        <Icons.alert size={16} className="text-red-500 cursor-help" />
                         <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-primary text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-10">
                           Category not found in database
                           <div className="absolute top-full left-1/2 transform -translate-x-1/2 -mt-1 border-4 border-transparent border-t-primary"></div>
@@ -109,7 +109,7 @@ export default function PreviewTable({
                     <span>{prompt.subcategory || prompt.Subcategory}</span>
                     {warnings.includes('subcategory') && (
                       <div className="relative group">
-                        <Icons.alert size={16} className="text-secondary cursor-help" />
+                        <Icons.alert size={16} className="text-red-500 cursor-help" />
                         <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-primary text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-10">
                           Subcategory not found
                           <div className="absolute top-full left-1/2 transform -translate-x-1/2 -mt-1 border-4 border-transparent border-t-primary"></div>
@@ -125,7 +125,7 @@ export default function PreviewTable({
                     </span>
                     {warnings.includes('imageRequirement') && (
                       <div className="relative group">
-                        <Icons.alert size={16} className="text-secondary cursor-help" />
+                        <Icons.alert size={16} className="text-red-500 cursor-help" />
                         <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-primary text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-10">
                           Invalid value (must be -1 to 4)
                           <div className="absolute top-full left-1/2 transform -translate-x-1/2 -mt-1 border-4 border-transparent border-t-primary"></div>
@@ -145,7 +145,7 @@ export default function PreviewTable({
                     </span>
                     {warnings.includes('trending') && (
                       <div className="relative group">
-                        <Icons.alert size={16} className="text-secondary cursor-help" />
+                        <Icons.alert size={16} className="text-red-500 cursor-help" />
                         <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-primary text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-10">
                           Must be "Yes" or "No"
                           <div className="absolute top-full left-1/2 transform -translate-x-1/2 -mt-1 border-4 border-transparent border-t-primary"></div>
@@ -159,7 +159,7 @@ export default function PreviewTable({
                     <span>{prompt.likesCount || prompt['Likes Count'] || 0}</span>
                     {warnings.includes('likesCount') && (
                       <div className="relative group">
-                        <Icons.alert size={16} className="text-secondary cursor-help" />
+                        <Icons.alert size={16} className="text-red-500 cursor-help" />
                         <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-primary text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-10">
                           Cannot be negative
                           <div className="absolute top-full left-1/2 transform -translate-x-1/2 -mt-1 border-4 border-transparent border-t-primary"></div>
@@ -173,7 +173,7 @@ export default function PreviewTable({
                     <span>{prompt.savesCount || prompt['Saves Count'] || 0}</span>
                     {warnings.includes('savesCount') && (
                       <div className="relative group">
-                        <Icons.alert size={16} className="text-secondary cursor-help" />
+                        <Icons.alert size={16} className="text-red-500 cursor-help" />
                         <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-primary text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-10">
                           Cannot be negative
                           <div className="absolute top-full left-1/2 transform -translate-x-1/2 -mt-1 border-4 border-transparent border-t-primary"></div>
@@ -187,7 +187,7 @@ export default function PreviewTable({
                     <span>{prompt.searchCount || prompt['Search Count'] || 0}</span>
                     {warnings.includes('searchCount') && (
                       <div className="relative group">
-                        <Icons.alert size={16} className="text-secondary cursor-help" />
+                        <Icons.alert size={16} className="text-red-500 cursor-help" />
                         <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-primary text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-10">
                           Cannot be negative
                           <div className="absolute top-full left-1/2 transform -translate-x-1/2 -mt-1 border-4 border-transparent border-t-primary"></div>
@@ -206,7 +206,7 @@ export default function PreviewTable({
                     {hasWarnings && (
                       <div className="relative group">
                         <div className="flex items-center gap-1 px-2 py-1 rounded-md bg-secondary/20">
-                          <Icons.alert size={16} className="text-secondary cursor-help" />
+                          <Icons.alert size={16} className="text-red-500 cursor-help" />
                           <span className="text-xs font-medium text-secondary">{warnings.length}</span>
                         </div>
                         <div className="absolute bottom-full right-0 mb-2 px-3 py-2 bg-primary text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-10">

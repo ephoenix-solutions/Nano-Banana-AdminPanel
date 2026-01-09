@@ -5,6 +5,7 @@ import Breadcrumbs from '@/components/Breadcrumbs';
 import ConfirmModal from '@/components/ConfirmModal';
 import CategoryDeleteModal from '@/components/categories/utils/CategoryDeleteModal';
 import { useCategoriesList } from '@/lib/hooks/useCategoriesList';
+import { exportCategories, ExportFormat } from '@/lib/utils/exportCategories';
 
 // Import list components
 import PageHeader from '@/components/categories/list/PageHeader';
@@ -58,6 +59,15 @@ export default function CategoriesPage() {
     formatTimestamp,
   } = useCategoriesList();
 
+  // Handle export
+  const handleExport = (format: ExportFormat) => {
+    exportCategories(format, {
+      categories: filteredAndSortedCategories,
+      userCache,
+      formatTimestamp,
+    });
+  };
+
   if (loading) {
     return (
       <AdminLayout>
@@ -75,7 +85,7 @@ export default function CategoriesPage() {
         <Breadcrumbs items={[{ label: 'Categories' }]} />
 
         {/* Page Header */}
-        <PageHeader onAddCategory={handleAddCategory} />
+        <PageHeader onAddCategory={handleAddCategory} onExport={handleExport} totalCategories={filteredAndSortedCategories.length} />
 
         {/* Search and Filter Bar */}
         <SearchFilterBar

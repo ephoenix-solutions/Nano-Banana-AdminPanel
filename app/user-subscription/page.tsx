@@ -4,6 +4,7 @@ import AdminLayout from '@/components/AdminLayout';
 import Breadcrumbs from '@/components/Breadcrumbs';
 import ConfirmModal from '@/components/ConfirmModal';
 import { useUserSubscriptionsList } from '@/lib/hooks/useUserSubscriptionsList';
+import { exportUserSubscriptions, ExportFormat } from '@/lib/utils/exportUserSubscriptions';
 
 // Import list components
 import PageHeader from '@/components/user-subscription/list/PageHeader';
@@ -57,6 +58,17 @@ export default function UserSubscriptionsPage() {
     isExpired,
   } = useUserSubscriptionsList();
 
+  // Handle export
+  const handleExport = (format: ExportFormat) => {
+    exportUserSubscriptions(format, {
+      subscriptions: filteredAndSortedSubscriptions,
+      getUserName,
+      getPlanName,
+      formatTimestamp,
+      isExpired,
+    });
+  };
+
   if (loading) {
     return (
       <AdminLayout>
@@ -74,7 +86,7 @@ export default function UserSubscriptionsPage() {
         <Breadcrumbs items={[{ label: 'User Subscriptions' }]} />
 
         {/* Page Header */}
-        <PageHeader />
+        <PageHeader onExport={handleExport} totalSubscriptions={filteredAndSortedSubscriptions.length} />
 
         {/* Search and Filter Bar */}
         <SearchFilterBar

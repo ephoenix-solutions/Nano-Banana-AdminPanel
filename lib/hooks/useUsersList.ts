@@ -139,7 +139,7 @@ export function useUsersList(): UseUsersListReturn {
       day: 'numeric',
       hour: '2-digit',
       minute: '2-digit',
-    }).format(date);
+    }).format(date).replace(/,/g, '');
   };
 
   // Navigation handlers
