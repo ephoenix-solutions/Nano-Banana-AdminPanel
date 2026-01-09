@@ -1,9 +1,11 @@
 'use client';
 
+import { useRouter } from 'next/navigation';
 import AdminLayout from '@/components/AdminLayout';
 import Breadcrumbs from '@/components/Breadcrumbs';
 import ConfirmModal from '@/components/ConfirmModal';
 import { usePromptsList } from '@/lib/hooks/usePromptsList';
+import { exportPrompts, ExportFormat } from '@/lib/utils/exportPrompts';
 
 // Import list components
 import PageHeader from '@/components/prompts/list/PageHeader';
@@ -14,6 +16,8 @@ import EmptyState from '@/components/prompts/list/EmptyState';
 import ErrorMessage from '@/components/prompts/list/ErrorMessage';
 
 export default function PromptsPage() {
+  const router = useRouter();
+  
   const {
     // Data
     prompts,
@@ -61,6 +65,22 @@ export default function PromptsPage() {
     formatTimestamp,
   } = usePromptsList();
 
+  // Handle export
+  const handleExport = (format: ExportFormat) => {
+    exportPrompts(format, {
+      prompts: filteredAndSortedPrompts,
+      userCache,
+      getCategoryName,
+      getSubcategoryName,
+      formatTimestamp,
+    });
+  };
+
+  // Handle import
+  const handleImport = () => {
+    router.push('/prompts/import');
+  };
+
   if (loading) {
     return (
       <AdminLayout>
@@ -78,7 +98,7 @@ export default function PromptsPage() {
         <Breadcrumbs items={[{ label: 'Prompts' }]} />
 
         {/* Page Header */}
-        <PageHeader onAddPrompt={handleAddPrompt} />
+        <PageHeader onAddPrompt={handleAddPrompt} onExport={handleExport} onImport={handleImport} totalPrompts={filteredAndSortedPrompts.length} />
 
         {/* Search and Filter Bar */}
         <SearchFilterBar

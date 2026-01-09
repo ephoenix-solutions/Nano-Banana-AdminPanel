@@ -58,6 +58,7 @@ const menuItems: MenuItem[] = [
     href: '/prompts',
     subItems: [
       { id: 'add-prompt', label: 'Add Prompt', href: '/prompts/add' },
+      { id: 'import-prompts', label: 'Import Prompts', href: '/prompts/import' },
     ]
   },
   { id: 'countries', label: 'Countries', icon: Icons.globe, href: '/countries' },

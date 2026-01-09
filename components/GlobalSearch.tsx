@@ -22,15 +22,16 @@ const searchItems: SearchItem[] = [
   
   // Users
   { id: 'users', label: 'Users', href: '/users', icon: Icons.users, category: 'Main Menu' },
-  { id: 'add-user', label: 'Add User', href: '/users/add', icon: Icons.chevronRight, category: 'Users' },
+  { id: 'add-user', label: 'Add User', href: '/users/add', icon: Icons.cornerDownRight, category: 'Users' },
   
   // Categories
   { id: 'categories', label: 'Categories', href: '/categories', icon: Icons.categories, category: 'Main Menu' },
-  { id: 'add-category', label: 'Add Category', href: '/categories/add', icon: Icons.chevronRight, category: 'Categories' },
+  { id: 'add-category', label: 'Add Category', href: '/categories/add', icon: Icons.cornerDownRight, category: 'Categories' },
   
   // Prompts
   { id: 'prompts', label: 'Prompts', href: '/prompts', icon: Icons.images, category: 'Main Menu' },
-  { id: 'add-prompt', label: 'Add Prompt', href: '/prompts/add', icon: Icons.chevronRight, category: 'Prompts' },
+  { id: 'add-prompt', label: 'Add Prompt', href: '/prompts/add', icon: Icons.cornerDownRight, category: 'Prompts' },
+  { id: 'import-prompts', label: 'Import Prompts', href: '/prompts/import', icon: Icons.cornerDownRight , category: 'Prompts' },
   
   // Countries
   { id: 'countries', label: 'Countries', href: '/countries', icon: Icons.globe, category: 'Main Menu' },

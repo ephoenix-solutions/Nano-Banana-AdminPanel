@@ -12,8 +12,8 @@ export default function UserCell({ user, timestamp, formatTimestamp }: UserCellP
   const userPhoto = user?.photoURL || '';
 
   return (
-    <div className="flex flex-col gap-1">
-      <div className="flex items-center gap-2">
+    <div className="flex flex-col gap-1 min-w-max">
+      <div className="flex items-center gap-2 whitespace-nowrap">
         {userPhoto ? (
           <img
             src={userPhoto}
@@ -35,7 +35,7 @@ export default function UserCell({ user, timestamp, formatTimestamp }: UserCellP
         <span className="text-sm">{userName}</span>
       </div>
       {timestamp && (
-        <span className="text-xs text-secondary">
+        <span className="text-xs text-secondary whitespace-nowrap">
           {formatTimestamp(timestamp)}
         </span>
       )}
