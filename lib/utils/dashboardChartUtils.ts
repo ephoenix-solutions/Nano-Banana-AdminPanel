@@ -1,6 +1,7 @@
 import { User } from '@/lib/types/user.types';
 import { Category } from '@/lib/types/category.types';
 import { Prompt } from '@/lib/types/prompt.types';
+import { UserGeneration } from '@/lib/types/user-generation.types';
 
 /**
  * Process user login data for charts
@@ -132,4 +133,102 @@ export function processPromptsAnalyticsData(prompts: Prompt[]) {
   };
   
   return { topPrompts, overview };
+}
+
+/**
+ * Process generation data for charts
+ */
+export function processGenerationData(generations: UserGeneration[]) {
+  const now = new Date();
+
+  // Day-wise data (last 30 days)
+  const dayWise = [];
+  for (let i = 29; i >= 0; i--) {
+    const date = new Date(now);
+    date.setDate(date.getDate() - i);
+    const dateStr = date.toISOString().split('T')[0];
+    
+    const dayGenerations = generations.filter(gen => {
+      if (!gen.createdAt) return false;
+      const genDate = gen.createdAt.toDate ? gen.createdAt.toDate() : new Date(gen.createdAt as any);
+      return genDate.toISOString().split('T')[0] === dateStr;
+    });
+
+    const success = dayGenerations.filter(g => g.generationStatus === 'success').length;
+    const failed = dayGenerations.filter(g => g.generationStatus === 'failed').length;
+    const pending = dayGenerations.filter(g => g.generationStatus === 'pending').length;
+    const total = dayGenerations.length;
+    const successRate = total > 0 ? Math.round((success / total) * 100) : 0;
+
+    dayWise.push({
+      date: `${date.getMonth() + 1}/${date.getDate()}`,
+      success,
+      failed,
+      pending,
+      total,
+      successRate,
+    });
+  }
+
+  // Month-wise data (last 12 months)
+  const monthWise = [];
+  const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  for (let i = 11; i >= 0; i--) {
+    const date = new Date(now);
+    date.setMonth(date.getMonth() - i);
+    const year = date.getFullYear();
+    const month = date.getMonth();
+    
+    const monthGenerations = generations.filter(gen => {
+      if (!gen.createdAt) return false;
+      const genDate = gen.createdAt.toDate ? gen.createdAt.toDate() : new Date(gen.createdAt as any);
+      return genDate.getFullYear() === year && genDate.getMonth() === month;
+    });
+
+    const success = monthGenerations.filter(g => g.generationStatus === 'success').length;
+    const failed = monthGenerations.filter(g => g.generationStatus === 'failed').length;
+    const pending = monthGenerations.filter(g => g.generationStatus === 'pending').length;
+    const total = monthGenerations.length;
+    const successRate = total > 0 ? Math.round((success / total) * 100) : 0;
+
+    monthWise.push({
+      month: monthNames[month],
+      success,
+      failed,
+      pending,
+      total,
+      successRate,
+    });
+  }
+
+  // Year-wise data (last 5 years)
+  const yearWise = [];
+  for (let i = 4; i >= 0; i--) {
+    const date = new Date(now);
+    date.setFullYear(date.getFullYear() - i);
+    const year = date.getFullYear();
+    
+    const yearGenerations = generations.filter(gen => {
+      if (!gen.createdAt) return false;
+      const genDate = gen.createdAt.toDate ? gen.createdAt.toDate() : new Date(gen.createdAt as any);
+      return genDate.getFullYear() === year;
+    });
+
+    const success = yearGenerations.filter(g => g.generationStatus === 'success').length;
+    const failed = yearGenerations.filter(g => g.generationStatus === 'failed').length;
+    const pending = yearGenerations.filter(g => g.generationStatus === 'pending').length;
+    const total = yearGenerations.length;
+    const successRate = total > 0 ? Math.round((success / total) * 100) : 0;
+
+    yearWise.push({
+      year: year.toString(),
+      success,
+      failed,
+      pending,
+      total,
+      successRate,
+    });
+  }
+
+  return { dayWise, monthWise, yearWise };
 }

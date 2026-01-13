@@ -45,6 +45,9 @@ const searchItems: SearchItem[] = [
   // Feedback
   { id: 'feedback', label: 'Feedback', href: '/feedback', icon: Icons.feedback, category: 'Main Menu' },
   
+  // User Generations
+  { id: 'user_generations', label: 'User Generations', href: '/user-generations', icon: Icons.images, category: 'Main Menu' },
+  
   // App Settings
   { id: 'app_settings', label: 'App Settings', href: '/app-settings', icon: Icons.appSettings, category: 'Main Menu' },
   

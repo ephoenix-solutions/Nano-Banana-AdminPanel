@@ -61,6 +61,7 @@ const menuItems: MenuItem[] = [
       { id: 'import-prompts', label: 'Import Prompts', href: '/prompts/import' },
     ]
   },
+  { id: 'user_generations', label: 'User Generations', icon: Icons.images, href: '/user-generations' },
   { id: 'countries', label: 'Countries', icon: Icons.globe, href: '/countries' },
   { id: 'subscription_plan', label: 'Subscription Plan', icon: Icons.subscriptionPlan, href: '/subscription-plan' },
   { id: 'user_subscription', label: 'User Subscription', icon: Icons.userSubscription, href: '/user-subscription' },

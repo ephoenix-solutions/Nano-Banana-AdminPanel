@@ -13,10 +13,12 @@ import { getAllUserSubscriptions } from '@/lib/services/user-subscription.servic
 import { getAllFeedback, getAverageRating } from '@/lib/services/feedback.service';
 import { getAppSettings } from '@/lib/services/app-settings.service';
 import { getAllCountries } from '@/lib/services/country.service';
+import { getAllUserGenerations } from '@/lib/services/user-generation.service';
 import UserLoginActivityChart from '@/components/dashboard/UserLoginActivityChart';
 import CategorySearchChart from '@/components/dashboard/CategorySearchChart';
 import PromptsAnalyticsChart from '@/components/dashboard/PromptsAnalyticsChart';
-import { processUserLoginData, processCategorySearchData, processPromptsAnalyticsData } from '@/lib/utils/dashboardChartUtils';
+import GenerationStatsChart from '@/components/dashboard/GenerationStatsChart';
+import { processUserLoginData, processCategorySearchData, processPromptsAnalyticsData, processGenerationData } from '@/lib/utils/dashboardChartUtils';
 
 interface DashboardStats {
   users: {
@@ -96,6 +98,7 @@ export default function DashboardPage() {
   const [userLoginData, setUserLoginData] = useState<any>(null);
   const [categorySearchData, setCategorySearchData] = useState<any[]>([]);
   const [promptsAnalyticsData, setPromptsAnalyticsData] = useState<any>(null);
+  const [generationData, setGenerationData] = useState<any>(null);
 
   useEffect(() => {
     fetchDashboardData();
@@ -131,6 +134,7 @@ export default function DashboardPage() {
         feedback,
         settings,
         countries,
+        generations,
       ] = await Promise.all([
         getAllUsers(),
         getAllCategories(),
@@ -140,6 +144,7 @@ export default function DashboardPage() {
         getAllFeedback(),
         getAppSettings(),
         getAllCountries(),
+        getAllUserGenerations(),
       ]);
 
       // Calculate average rating
@@ -326,6 +331,9 @@ export default function DashboardPage() {
       const promptsData = processPromptsAnalyticsData(prompts);
       setPromptsAnalyticsData(promptsData);
 
+      const genData = processGenerationData(generations);
+      setGenerationData(genData);
+
     } catch (err) {
       console.error('Error fetching dashboard data:', err);
       setError('Failed to load dashboard data');
@@ -419,6 +427,11 @@ export default function DashboardPage() {
           {/* User Login Activity Chart */}
           {userLoginData && (
             <UserLoginActivityChart data={userLoginData} />
+          )}
+          
+          {/* Image Generation Analytics Chart */}
+          {generationData && (
+            <GenerationStatsChart data={generationData} />
           )}
 
           {/* Category Search and Prompts Analytics */}

@@ -58,6 +58,7 @@ import {
   Star,
   Bookmark,
   Code,
+  TrendingUp,
 } from 'lucide-react';
 
 // Export all icons
@@ -105,6 +106,8 @@ export const Icons = {
   info: Info,
   star: Star,
   bookmark: Bookmark,
+  trending: TrendingUp,
+  x: X,
   
   // General Icons
   home: Home,
@@ -180,6 +183,7 @@ export {
   Star,
   Bookmark,
   Code,
+  TrendingUp,
 };
 
 export default Icons;
