@@ -59,7 +59,10 @@ export default function CategorySearchChart({ data }: CategorySearchChartProps) 
               borderRadius: '8px',
               fontSize: '12px'
             }}
-            formatter={(value: number) => [value.toLocaleString(), 'Searches']}
+            formatter={(value: number | undefined) => [
+               (value ?? 0).toLocaleString(),
+               'Searches'
+             ]}
           />
           <Bar 
             dataKey="searches" 
