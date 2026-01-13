@@ -6,6 +6,7 @@ import TableRow from './TableRow';
 
 interface UsersTableProps {
   users: User[];
+  userCache: Record<string, User>;
   sortField: SortField;
   sortOrder: SortOrder;
   formatTimestamp: (timestamp: Timestamp) => string;
@@ -17,6 +18,7 @@ interface UsersTableProps {
 
 export default function UsersTable({
   users,
+  userCache,
   sortField,
   sortOrder,
   formatTimestamp,
@@ -71,6 +73,9 @@ export default function UsersTable({
                 />
               </th>
               <th className="px-6 py-4 text-left text-sm font-semibold text-primary font-body">
+                Created By
+              </th>
+              <th className="px-6 py-4 text-left text-sm font-semibold text-primary font-body">
                 <SortableHeader
                   field="lastLogin"
                   label="Last Login"
@@ -90,6 +95,7 @@ export default function UsersTable({
                 key={user.id}
                 user={user}
                 index={index}
+                userCache={userCache}
                 formatTimestamp={formatTimestamp}
                 onView={onView}
                 onEdit={onEdit}

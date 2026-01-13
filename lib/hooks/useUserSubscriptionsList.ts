@@ -135,7 +135,7 @@ export function useUserSubscriptionsList(): UseUserSubscriptionsListReturn {
       year: 'numeric',
       month: 'short',
       day: 'numeric',
-    }).format(date);
+    }).format(date).replace(/,/g, '');
   };
 
   const isExpired = (endDate: Timestamp) => {

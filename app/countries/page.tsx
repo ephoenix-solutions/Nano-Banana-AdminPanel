@@ -4,6 +4,7 @@ import AdminLayout from '@/components/AdminLayout';
 import Breadcrumbs from '@/components/Breadcrumbs';
 import ConfirmModal from '@/components/ConfirmModal';
 import { useCountriesList } from '@/lib/hooks/useCountriesList';
+import { exportCountries, ExportFormat } from '@/lib/utils/exportCountries';
 
 // Import list components
 import PageHeader from '@/components/countries/list/PageHeader';
@@ -54,6 +55,16 @@ export default function CountriesPage() {
     formatTimestamp,
   } = useCountriesList();
 
+  // Handle export
+  const handleExport = async (format: ExportFormat) => {
+    await exportCountries(format, {
+      countries: filteredAndSortedCountries,
+      getCategoryNames,
+      fetchUserName,
+      formatTimestamp,
+    });
+  };
+
   if (loading) {
     return (
       <AdminLayout>
@@ -71,7 +82,7 @@ export default function CountriesPage() {
         <Breadcrumbs items={[{ label: 'Countries' }]} />
 
         {/* Page Header */}
-        <PageHeader onAddCountry={handleAddCountry} />
+        <PageHeader onAddCountry={handleAddCountry} onExport={handleExport} totalCountries={filteredAndSortedCountries.length} />
 
         {/* Search and Filter Bar */}
         <SearchFilterBar

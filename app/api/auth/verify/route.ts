@@ -1,13 +1,28 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { doc, getDoc } from 'firebase/firestore';
-import { db } from '@/config/firebase';
+import { adminDb } from '@/config/firebase-admin';
 import jwt from 'jsonwebtoken';
 import { User } from '@/lib/types/user.types';
 
-const JWT_SECRET = process.env.NEXT_PUBLIC_JWT_SECRET || 'your-secret-key-change-this-in-production';
+const JWT_SECRET = process.env.JWT_SECRET;
+
+// Validate JWT_SECRET is configured
+if (!JWT_SECRET) {
+  console.error('❌ CRITICAL: JWT_SECRET environment variable is not set!');
+  console.error('   Please add JWT_SECRET to your .env.local file');
+  console.error('   Example: JWT_SECRET=your-super-secret-jwt-key');
+}
 
 export async function GET(request: NextRequest) {
   try {
+    // Check if JWT_SECRET is configured
+    if (!JWT_SECRET) {
+      console.error('❌ JWT_SECRET not configured');
+      return NextResponse.json(
+        { success: false, message: 'Server configuration error' },
+        { status: 500 }
+      );
+    }
+
     const token = request.cookies.get('admin_token')?.value;
 
     if (!token) {
@@ -20,11 +35,11 @@ export async function GET(request: NextRequest) {
     // Verify JWT token
     const decoded = jwt.verify(token, JWT_SECRET) as any;
 
-    // Fetch full user data from Firestore
-    const userRef = doc(db, 'users', decoded.userId);
-    const userSnap = await getDoc(userRef);
+    // Fetch full user data from Firestore using Admin SDK
+    const userRef = adminDb.collection('users').doc(decoded.userId);
+    const userSnap = await userRef.get();
 
-    if (!userSnap.exists()) {
+    if (!userSnap.exists) {
       return NextResponse.json(
         { success: false, message: 'User not found' },
         { status: 404 }

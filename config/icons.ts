@@ -57,6 +57,8 @@ import {
   CornerDownRight,
   Star,
   Bookmark,
+  Code,
+  TrendingUp,
 } from 'lucide-react';
 
 // Export all icons
@@ -104,11 +106,14 @@ export const Icons = {
   info: Info,
   star: Star,
   bookmark: Bookmark,
+  trending: TrendingUp,
+  x: X,
   
   // General Icons
   home: Home,
   chart: BarChart3,
   file: FileText,
+  fileText: FileText,
   download: Download,
   upload: Upload,
   filter: Filter,
@@ -121,6 +126,7 @@ export const Icons = {
   link: LinkIcon,
   copy: Copy,
   share: Share2,
+  code: Code,
 };
 
 // Export individual icons for direct import
@@ -176,6 +182,8 @@ export {
   CornerDownRight,
   Star,
   Bookmark,
+  Code,
+  TrendingUp,
 };
 
 export default Icons;

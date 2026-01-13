@@ -4,10 +4,11 @@ import { Timestamp } from 'firebase/firestore';
 
 interface UserInfoGridProps {
   user: User;
+  creatorUser: User | null;
   formatTimestamp: (timestamp: Timestamp) => string;
 }
 
-export default function UserInfoGrid({ user, formatTimestamp }: UserInfoGridProps) {
+export default function UserInfoGrid({ user, creatorUser, formatTimestamp }: UserInfoGridProps) {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
       {/* User ID */}
@@ -98,6 +99,40 @@ export default function UserInfoGrid({ user, formatTimestamp }: UserInfoGridProp
             <p className="text-base font-semibold text-primary font-body">
               {formatTimestamp(user.createdAt)}
             </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Created By */}
+      <div className="bg-background rounded-lg p-4 border border-primary/10">
+        <div className="flex items-start gap-3">
+          <div className="w-10 h-10 bg-secondary/20 rounded-lg flex items-center justify-center flex-shrink-0">
+            <Icons.users size={20} className="text-secondary" />
+          </div>
+          <div className="flex-1">
+            <p className="text-sm text-secondary font-body mb-1">Created By</p>
+            {creatorUser ? (
+              <div className="flex items-center gap-2">
+                {creatorUser.photoURL ? (
+                  <img
+                    src={creatorUser.photoURL}
+                    alt={creatorUser.name}
+                    className="w-6 h-6 rounded-full object-cover border border-accent/20"
+                  />
+                ) : (
+                  <div className="w-6 h-6 rounded-full bg-accent/20 flex items-center justify-center">
+                    <Icons.users size={12} className="text-accent" />
+                  </div>
+                )}
+                <p className="text-base font-semibold text-primary font-body">
+                  {creatorUser.name}
+                </p>
+              </div>
+            ) : (
+              <p className="text-base font-semibold text-primary font-body">
+                By Login
+              </p>
+            )}
           </div>
         </div>
       </div>

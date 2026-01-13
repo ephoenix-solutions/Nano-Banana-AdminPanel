@@ -4,6 +4,7 @@ import AdminLayout from '@/components/AdminLayout';
 import Breadcrumbs from '@/components/Breadcrumbs';
 import ConfirmModal from '@/components/ConfirmModal';
 import { useSubscriptionPlansList } from '@/lib/hooks/useSubscriptionPlansList';
+import { exportSubscriptionPlans, ExportFormat } from '@/lib/utils/exportSubscriptionPlans';
 
 // Import list components
 import PageHeader from '@/components/subscription-plan/list/PageHeader';
@@ -37,6 +38,15 @@ export default function SubscriptionPlansPage() {
     formatTimestamp,
   } = useSubscriptionPlansList();
 
+  // Handle export
+  const handleExport = async (format: ExportFormat) => {
+    await exportSubscriptionPlans(format, {
+      plans,
+      fetchUserName,
+      formatTimestamp,
+    });
+  };
+
   if (loading) {
     return (
       <AdminLayout>
@@ -54,7 +64,7 @@ export default function SubscriptionPlansPage() {
         <Breadcrumbs items={[{ label: 'Subscription Plans' }]} />
 
         {/* Page Header */}
-        <PageHeader onAddPlan={handleAddPlan} />
+        <PageHeader onAddPlan={handleAddPlan} onExport={handleExport} totalPlans={plans.length} />
 
         {/* Stats Cards */}
         <StatsCards plans={plans} />

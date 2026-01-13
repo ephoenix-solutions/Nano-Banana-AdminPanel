@@ -108,7 +108,7 @@ export function useSubscriptionPlansList(): UseSubscriptionPlansListReturn {
         day: 'numeric',
         hour: '2-digit',
         minute: '2-digit',
-      }).format(date);
+      }).format(date).replace(/,/g, '');
     } catch (error) {
       return null;
     }

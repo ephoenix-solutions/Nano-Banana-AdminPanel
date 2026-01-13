@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useMemo, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { useRouter } from 'next/navigation';
 import { Icons } from '@/config/icons';
 
@@ -21,15 +22,16 @@ const searchItems: SearchItem[] = [
   
   // Users
   { id: 'users', label: 'Users', href: '/users', icon: Icons.users, category: 'Main Menu' },
-  { id: 'add-user', label: 'Add User', href: '/users/add', icon: Icons.chevronRight, category: 'Users' },
+  { id: 'add-user', label: 'Add User', href: '/users/add', icon: Icons.cornerDownRight, category: 'Users' },
   
   // Categories
   { id: 'categories', label: 'Categories', href: '/categories', icon: Icons.categories, category: 'Main Menu' },
-  { id: 'add-category', label: 'Add Category', href: '/categories/add', icon: Icons.chevronRight, category: 'Categories' },
+  { id: 'add-category', label: 'Add Category', href: '/categories/add', icon: Icons.cornerDownRight, category: 'Categories' },
   
   // Prompts
   { id: 'prompts', label: 'Prompts', href: '/prompts', icon: Icons.images, category: 'Main Menu' },
-  { id: 'add-prompt', label: 'Add Prompt', href: '/prompts/add', icon: Icons.chevronRight, category: 'Prompts' },
+  { id: 'add-prompt', label: 'Add Prompt', href: '/prompts/add', icon: Icons.cornerDownRight, category: 'Prompts' },
+  { id: 'import-prompts', label: 'Import Prompts', href: '/prompts/import', icon: Icons.cornerDownRight , category: 'Prompts' },
   
   // Countries
   { id: 'countries', label: 'Countries', href: '/countries', icon: Icons.globe, category: 'Main Menu' },
@@ -42,6 +44,9 @@ const searchItems: SearchItem[] = [
   
   // Feedback
   { id: 'feedback', label: 'Feedback', href: '/feedback', icon: Icons.feedback, category: 'Main Menu' },
+  
+  // User Generations
+  { id: 'user_generations', label: 'User Generations', href: '/user-generations', icon: Icons.images, category: 'Main Menu' },
   
   // App Settings
   { id: 'app_settings', label: 'App Settings', href: '/app-settings', icon: Icons.appSettings, category: 'Main Menu' },
@@ -261,17 +266,20 @@ export default function GlobalSearch({ isOpen, onClose }: GlobalSearchProps) {
 
   if (!isOpen) return null;
 
-  return (
+  // Use portal to render outside of Header's stacking context
+  if (typeof window === 'undefined') return null;
+
+  return createPortal(
     <>
       {/* Backdrop */}
       <div 
-        className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[200]"
+        className="fixed inset-0 bg-black/60 backdrop-blur-md z-[1500]"
         onClick={onClose}
       />
 
       {/* Search Modal */}
-      <div className="fixed inset-0 z-[201] flex items-start justify-center pt-[10vh] px-4">
-        <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[70vh] flex flex-col overflow-hidden">
+      <div className="fixed inset-0 z-[1501] flex items-start justify-center pt-[10vh] px-4 ">
+        <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[70vh] flex flex-col overflow-hidden pointer-events-auto">
           {/* Search Input */}
           <div className="p-4 border-b border-primary/10">
             <div className="relative">
@@ -385,6 +393,7 @@ export default function GlobalSearch({ isOpen, onClose }: GlobalSearchProps) {
           </div>
         </div>
       </div>
-    </>
+    </>,
+    document.body
   );
 }

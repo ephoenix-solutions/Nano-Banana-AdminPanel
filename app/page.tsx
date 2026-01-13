@@ -13,6 +13,12 @@ import { getAllUserSubscriptions } from '@/lib/services/user-subscription.servic
 import { getAllFeedback, getAverageRating } from '@/lib/services/feedback.service';
 import { getAppSettings } from '@/lib/services/app-settings.service';
 import { getAllCountries } from '@/lib/services/country.service';
+import { getAllUserGenerations } from '@/lib/services/user-generation.service';
+import UserLoginActivityChart from '@/components/dashboard/UserLoginActivityChart';
+import CategorySearchChart from '@/components/dashboard/CategorySearchChart';
+import PromptsAnalyticsChart from '@/components/dashboard/PromptsAnalyticsChart';
+import GenerationStatsChart from '@/components/dashboard/GenerationStatsChart';
+import { processUserLoginData, processCategorySearchData, processPromptsAnalyticsData, processGenerationData } from '@/lib/utils/dashboardChartUtils';
 
 interface DashboardStats {
   users: {
@@ -88,6 +94,12 @@ export default function DashboardPage() {
   const [recentPrompts, setRecentPrompts] = useState<RecentItem[]>([]);
   const [recentFeedback, setRecentFeedback] = useState<RecentItem[]>([]);
 
+  // Chart data states
+  const [userLoginData, setUserLoginData] = useState<any>(null);
+  const [categorySearchData, setCategorySearchData] = useState<any[]>([]);
+  const [promptsAnalyticsData, setPromptsAnalyticsData] = useState<any>(null);
+  const [generationData, setGenerationData] = useState<any>(null);
+
   useEffect(() => {
     fetchDashboardData();
   }, []);
@@ -122,6 +134,7 @@ export default function DashboardPage() {
         feedback,
         settings,
         countries,
+        generations,
       ] = await Promise.all([
         getAllUsers(),
         getAllCategories(),
@@ -131,6 +144,7 @@ export default function DashboardPage() {
         getAllFeedback(),
         getAppSettings(),
         getAllCountries(),
+        getAllUserGenerations(),
       ]);
 
       // Calculate average rating
@@ -307,6 +321,19 @@ export default function DashboardPage() {
       );
       setRecentFeedback(feedbackWithUser);
 
+      // Process chart data
+      const loginData = processUserLoginData(users);
+      setUserLoginData(loginData);
+
+      const categoryData = processCategorySearchData(categories);
+      setCategorySearchData(categoryData);
+
+      const promptsData = processPromptsAnalyticsData(prompts);
+      setPromptsAnalyticsData(promptsData);
+
+      const genData = processGenerationData(generations);
+      setGenerationData(genData);
+
     } catch (err) {
       console.error('Error fetching dashboard data:', err);
       setError('Failed to load dashboard data');
@@ -392,6 +419,32 @@ export default function DashboardPage() {
               <Icons.globe size={20} className="md:w-6 md:h-6 text-accent" />
               <span className="text-xs md:text-sm font-medium text-primary font-body text-center">Add Country</span>
             </button>
+          </div>
+        </div>
+
+        {/* Analytics Charts */}
+        <div className="space-y-6">
+          {/* User Login Activity Chart */}
+          {userLoginData && (
+            <UserLoginActivityChart data={userLoginData} />
+          )}
+          
+          {/* Image Generation Analytics Chart */}
+          {generationData && (
+            <GenerationStatsChart data={generationData} />
+          )}
+
+          {/* Category Search and Prompts Analytics */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Category Search Chart */}
+            {categorySearchData.length > 0 && (
+              <CategorySearchChart data={categorySearchData} />
+            )}
+
+            {/* Prompts Analytics Chart */}
+            {promptsAnalyticsData && (
+              <PromptsAnalyticsChart data={promptsAnalyticsData} />
+            )}
           </div>
         </div>
 

@@ -58,8 +58,10 @@ const menuItems: MenuItem[] = [
     href: '/prompts',
     subItems: [
       { id: 'add-prompt', label: 'Add Prompt', href: '/prompts/add' },
+      { id: 'import-prompts', label: 'Import Prompts', href: '/prompts/import' },
     ]
   },
+  { id: 'user_generations', label: 'User Generations', icon: Icons.images, href: '/user-generations' },
   { id: 'countries', label: 'Countries', icon: Icons.globe, href: '/countries' },
   { id: 'subscription_plan', label: 'Subscription Plan', icon: Icons.subscriptionPlan, href: '/subscription-plan' },
   { id: 'user_subscription', label: 'User Subscription', icon: Icons.userSubscription, href: '/user-subscription' },
@@ -125,10 +127,32 @@ export default function Sidebar({ onWidthChange, isMobileOpen = false, onMobileC
   const toggleDropdown = (itemId: string) => {
     if (isCollapsed) return;
     
-    setManualToggles((prev) => ({
-      ...prev,
-      [itemId]: !prev[itemId],
-    }));
+    setManualToggles((prev) => {
+      const currentState = prev[itemId] !== undefined ? prev[itemId] : autoOpenDropdowns.has(itemId);
+      const willBeOpen = !currentState;
+      
+      if (willBeOpen) {
+        // Opening this dropdown: close all others by setting them to false
+        const newToggles: Record<string, boolean> = {};
+        
+        // Explicitly close all menu items that have subItems
+        menuItems.forEach((item) => {
+          if (item.subItems && item.subItems.length > 0 && item.id !== itemId) {
+            newToggles[item.id] = false;
+          }
+        });
+        
+        // Open the clicked one
+        newToggles[itemId] = true;
+        return newToggles;
+      } else {
+        // Closing this dropdown
+        return {
+          ...prev,
+          [itemId]: false,
+        };
+      }
+    });
   };
 
   const isDropdownOpen = (itemId: string) => {
@@ -179,7 +203,7 @@ export default function Sidebar({ onWidthChange, isMobileOpen = false, onMobileC
       </div>
 
       {/* Navigation Menu */}
-      <nav className="flex-1 py-6 overflow-y-auto overflow-x-hidden">
+      <nav className="flex-1 py-6 overflow-y-auto overflow-x-hidden sidebar-scroll">
         <ul className="flex flex-col gap-2 px-3">
           {menuItems.map((item) => {
             const IconComponent = item.icon;
@@ -202,10 +226,9 @@ export default function Sidebar({ onWidthChange, isMobileOpen = false, onMobileC
               <li key={item.id}>
                 {/* Main Menu Item */}
                 <div className="relative group">
-                  <Link
-                    href={item.href}
+                  <div
                     className={`
-                      flex items-center gap-3 px-4 py-3.5 rounded-lg transition-all duration-200
+                      flex items-center gap-3 rounded-lg transition-all duration-200
                       font-body text-sm
                       ${isCollapsed ? 'justify-center' : 'justify-start'}
                       ${
@@ -215,30 +238,35 @@ export default function Sidebar({ onWidthChange, isMobileOpen = false, onMobileC
                       }
                     `}
                   >
-                    <IconComponent size={20} strokeWidth={2} className="flex-shrink-0" />
-                    {!isCollapsed && (
-                      <>
+                    <Link
+                      href={item.href}
+                      className="flex items-center gap-3 flex-1 min-w-0 px-4 py-3.5"
+                    >
+                      <IconComponent size={20} strokeWidth={2} className="flex-shrink-0" />
+                      {!isCollapsed && (
                         <span className="whitespace-nowrap flex-1">{item.label}</span>
-                        {hasSubItems && (
-                          <button
-                            onClick={(e) => {
-                              e.preventDefault();
-                              e.stopPropagation();
-                              toggleDropdown(item.id);
-                            }}
-                            className="p-1 hover:bg-primary/10 rounded transition-colors"
-                          >
-                            <Icons.chevronDown
-                              size={16}
-                              className={`transition-transform duration-200 ${
-                                dropdownOpen ? 'rotate-180' : ''
-                              }`}
-                            />
-                          </button>
-                        )}
-                      </>
+                      )}
+                    </Link>
+                    {!isCollapsed && hasSubItems && (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          toggleDropdown(item.id);
+                        }}
+                        className="p-1 hover:bg-primary/10 rounded transition-colors flex-shrink-0 mr-3"
+                        aria-label={`Toggle ${item.label} submenu`}
+                      >
+                        <Icons.chevronDown
+                          size={16}
+                          className={`transition-transform duration-200 ${
+                            dropdownOpen ? 'rotate-180' : ''
+                          }`}
+                        />
+                      </button>
                     )}
-                  </Link>
+                  </div>
                   
                   {/* Tooltip for collapsed state */}
                   {isCollapsed && (

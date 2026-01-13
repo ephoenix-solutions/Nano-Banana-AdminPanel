@@ -1,10 +1,12 @@
 import { Icons } from '@/config/icons';
 import { User } from '@/lib/types/user.types';
 import { Timestamp } from 'firebase/firestore';
+import UserCell from './UserCell';
 
 interface TableRowProps {
   user: User;
   index: number;
+  userCache: Record<string, User>;
   formatTimestamp: (timestamp: Timestamp) => string;
   onView: (user: User) => void;
   onEdit: (user: User) => void;
@@ -14,6 +16,7 @@ interface TableRowProps {
 export default function TableRow({
   user,
   index,
+  userCache,
   formatTimestamp,
   onView,
   onEdit,
@@ -89,6 +92,19 @@ export default function TableRow({
       {/* Created At Column */}
       <td className="px-6 py-4 text-sm text-primary font-body">
         <span className="text-sm">{formatTimestamp(user.createdAt)}</span>
+      </td>
+
+      {/* Created By Column */}
+      <td className="px-6 py-4 text-sm text-primary font-body">
+        {user.createdBy ? (
+          <UserCell
+            user={userCache[user.createdBy] || null}
+            timestamp={null}
+            formatTimestamp={formatTimestamp}
+          />
+        ) : (
+          <span className="text-secondary text-xs">By Login</span>
+        )}
       </td>
 
       {/* Last Login Column */}
