@@ -5,6 +5,7 @@ export interface AppSettings {
   terms: string;
   minimumVersion: string;
   liveVersion: string;
+  banner: string;
 }
 
 export interface UpdateAppSettingsInput {
@@ -13,4 +14,5 @@ export interface UpdateAppSettingsInput {
   terms?: string;
   minimumVersion?: string;
   liveVersion?: string;
+  banner?: string;
 }

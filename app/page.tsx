@@ -322,7 +322,7 @@ export default function DashboardPage() {
       setRecentFeedback(feedbackWithUser);
 
       // Process chart data
-      const loginData = processUserLoginData(users);
+      const loginData = await processUserLoginData(users);
       setUserLoginData(loginData);
 
       const categoryData = processCategorySearchData(categories);

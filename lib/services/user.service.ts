@@ -14,9 +14,16 @@ import {
   QueryConstraint,
 } from 'firebase/firestore';
 import { db } from '@/config/firebase';
-import { User, CreateUserInput, UpdateUserInput } from '@/lib/types/user.types';
+import { 
+  User, 
+  CreateUserInput, 
+  UpdateUserInput,
+  LoginHistory,
+  CreateLoginHistoryInput,
+} from '@/lib/types/user.types';
 
 const COLLECTION_NAME = 'users';
+const LOGIN_HISTORY_SUBCOLLECTION = 'loginHistory';
 
 /**
  * Get all users from Firestore
@@ -326,5 +333,149 @@ export async function getUserInfo(userId: string): Promise<{ name: string; photo
   } catch (error) {
     console.error('Error getting user info:', error);
     return null;
+  }
+}
+
+// ============================================
+// LOGIN HISTORY OPERATIONS (Subcollection)
+// ============================================
+
+/**
+ * Add a new login history record to user's subcollection
+ * Path: users/{userId}/loginHistory/{loginId}
+ */
+export async function addLoginHistory(
+  userId: string,
+  loginData: CreateLoginHistoryInput
+): Promise<string> {
+  try {
+    if (!userId || typeof userId !== 'string' || userId.trim() === '') {
+      throw new Error('Invalid userId provided to addLoginHistory');
+    }
+
+    // Reference to the loginHistory subcollection under the user
+    const loginHistoryRef = collection(
+      db,
+      COLLECTION_NAME,
+      userId,
+      LOGIN_HISTORY_SUBCOLLECTION
+    );
+    
+    const newLoginHistory = {
+      loginTime: Timestamp.now(),
+      deviceInfo: loginData.deviceInfo,
+      deviceId: loginData.deviceId,
+    };
+    
+    const docRef = await addDoc(loginHistoryRef, newLoginHistory);
+    console.log('Login history added:', docRef.id);
+    return docRef.id;
+  } catch (error) {
+    console.error('Error adding login history:', error);
+    throw error;
+  }
+}
+
+/**
+ * Get all login history for a user
+ * Path: users/{userId}/loginHistory
+ */
+export async function getLoginHistory(
+  userId: string,
+  limitCount: number = 50
+): Promise<LoginHistory[]> {
+  try {
+    if (!userId || typeof userId !== 'string' || userId.trim() === '') {
+      console.warn('Invalid userId provided to getLoginHistory:', userId);
+      return [];
+    }
+
+    // Reference to the loginHistory subcollection
+    const loginHistoryRef = collection(
+      db,
+      COLLECTION_NAME,
+      userId,
+      LOGIN_HISTORY_SUBCOLLECTION
+    );
+    
+    // Query to get login history ordered by loginTime (most recent first)
+    const q = query(
+      loginHistoryRef,
+      orderBy('loginTime', 'desc'),
+      limit(limitCount)
+    );
+    
+    const querySnapshot = await getDocs(q);
+    
+    const loginHistory: LoginHistory[] = querySnapshot.docs.map((doc) => ({
+      id: doc.id,
+      ...doc.data(),
+    } as LoginHistory));
+    
+    return loginHistory;
+  } catch (error) {
+    console.error('Error getting login history:', error);
+    return [];
+  }
+}
+
+/**
+ * Get recent login history (last N logins)
+ */
+export async function getRecentLoginHistory(
+  userId: string,
+  count: number = 10
+): Promise<LoginHistory[]> {
+  return getLoginHistory(userId, count);
+}
+
+/**
+ * Delete a specific login history record
+ */
+export async function deleteLoginHistory(
+  userId: string,
+  loginHistoryId: string
+): Promise<void> {
+  try {
+    if (!userId || !loginHistoryId) {
+      throw new Error('Invalid userId or loginHistoryId');
+    }
+
+    const loginHistoryDocRef = doc(
+      db,
+      COLLECTION_NAME,
+      userId,
+      LOGIN_HISTORY_SUBCOLLECTION,
+      loginHistoryId
+    );
+    await deleteDoc(loginHistoryDocRef);
+    console.log('Login history deleted:', loginHistoryId);
+  } catch (error) {
+    console.error('Error deleting login history:', error);
+    throw error;
+  }
+}
+
+/**
+ * Get login history count for a user
+ */
+export async function getLoginHistoryCount(userId: string): Promise<number> {
+  try {
+    if (!userId || typeof userId !== 'string' || userId.trim() === '') {
+      return 0;
+    }
+
+    const loginHistoryRef = collection(
+      db,
+      COLLECTION_NAME,
+      userId,
+      LOGIN_HISTORY_SUBCOLLECTION
+    );
+    const querySnapshot = await getDocs(loginHistoryRef);
+    
+    return querySnapshot.size;
+  } catch (error) {
+    console.error('Error getting login history count:', error);
+    return 0;
   }
 }

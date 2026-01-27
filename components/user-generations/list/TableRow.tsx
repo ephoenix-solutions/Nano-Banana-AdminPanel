@@ -51,14 +51,14 @@ export default function TableRow({
               <img
                 src={generation.imageUrl}
                 alt="Generated"
-                className="w-16 h-16 rounded-lg object-cover border border-primary/10 hover:scale-105 transition-transform"
+                className="w-20 h-16 rounded-lg object-cover border border-primary/10 hover:scale-105 transition-transform"
               />
-              <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg flex items-center justify-center">
+              <div className="absolute w-20 h-16 inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg flex items-center justify-center">
                 <Icons.eye size={20} className="text-white" />
               </div>
             </div>
           ) : (
-            <div className="w-16 h-16 rounded-lg bg-secondary/10 flex items-center justify-center border border-primary/10">
+            <div className="w-20 h-16 rounded-lg bg-secondary/10 flex items-center justify-center border border-primary/10">
               <Icons.images size={24} className="text-secondary/40" />
             </div>
           )}
@@ -71,7 +71,7 @@ export default function TableRow({
 
         {/* Prompt Text Column */}
         <td className="px-6 py-4 text-sm text-primary font-body">
-          <p className="line-clamp-2 max-w-md">
+          <p className="line-clamp-2 max-w-xs">
             {generation.promptText}
           </p>
         </td>

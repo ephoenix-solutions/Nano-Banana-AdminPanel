@@ -8,6 +8,7 @@ import { useUserDetails } from '@/lib/hooks/useUserDetails';
 import UserHeader from '@/components/users/view/UserHeader';
 import UserInfoGrid from '@/components/users/view/UserInfoGrid';
 import UserPhotoSection from '@/components/users/view/UserPhotoSection';
+import LoginHistoryTable from '@/components/users/view/LoginHistoryTable';
 
 export default function ViewUserPage() {
   const params = useParams();
@@ -18,6 +19,8 @@ export default function ViewUserPage() {
     error,
     user,
     creatorUser,
+    loginHistory,
+    loginHistoryLoading,
     handleBack,
     handleEdit,
     formatTimestamp,
@@ -115,6 +118,21 @@ export default function ViewUserPage() {
             <UserPhotoSection photoURL={user.photoURL} />
           </div>
         </div>
+
+        {/* Login History Section */}
+        {loginHistoryLoading ? (
+          <div className="bg-white rounded-lg border border-primary/10 p-8">
+            <div className="flex items-center justify-center">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-accent"></div>
+              <span className="ml-3 text-secondary font-body">Loading login history...</span>
+            </div>
+          </div>
+        ) : (
+          <LoginHistoryTable 
+            loginHistory={loginHistory} 
+            formatTimestamp={formatTimestamp}
+          />
+        )}
       </div>
     </AdminLayout>
   );

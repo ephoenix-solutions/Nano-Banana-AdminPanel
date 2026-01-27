@@ -1,7 +1,11 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { getUserById, getUsersByIds } from '@/lib/services/user.service';
-import { User } from '@/lib/types/user.types';
+import { 
+  getUserById, 
+  getUsersByIds,
+  getRecentLoginHistory,
+} from '@/lib/services/user.service';
+import { User, LoginHistory } from '@/lib/types/user.types';
 import { Timestamp } from 'firebase/firestore';
 
 interface UseUserDetailsReturn {
@@ -9,6 +13,8 @@ interface UseUserDetailsReturn {
   error: string | null;
   user: User | null;
   creatorUser: User | null;
+  loginHistory: LoginHistory[];
+  loginHistoryLoading: boolean;
   handleBack: () => void;
   handleEdit: () => void;
   formatTimestamp: (timestamp: Timestamp) => string;
@@ -20,6 +26,8 @@ export function useUserDetails(userId: string): UseUserDetailsReturn {
   const [error, setError] = useState<string | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [creatorUser, setCreatorUser] = useState<User | null>(null);
+  const [loginHistory, setLoginHistory] = useState<LoginHistory[]>([]);
+  const [loginHistoryLoading, setLoginHistoryLoading] = useState(false);
 
   useEffect(() => {
     fetchUser();
@@ -30,6 +38,12 @@ export function useUserDetails(userId: string): UseUserDetailsReturn {
       fetchCreatorUser();
     }
   }, [user]);
+
+  useEffect(() => {
+    if (userId) {
+      fetchLoginHistory();
+    }
+  }, [userId]);
 
   const fetchUser = async () => {
     try {
@@ -61,6 +75,18 @@ export function useUserDetails(userId: string): UseUserDetailsReturn {
     }
   };
 
+  const fetchLoginHistory = async () => {
+    try {
+      setLoginHistoryLoading(true);
+      const history = await getRecentLoginHistory(userId, 20); // Get last 20 logins
+      setLoginHistory(history);
+    } catch (err) {
+      console.error('Error fetching login history:', err);
+    } finally {
+      setLoginHistoryLoading(false);
+    }
+  };
+
   const handleBack = () => {
     router.push('/users');
   };
@@ -87,6 +113,8 @@ export function useUserDetails(userId: string): UseUserDetailsReturn {
     error,
     user,
     creatorUser,
+    loginHistory,
+    loginHistoryLoading,
     handleBack,
     handleEdit,
     formatTimestamp,

@@ -47,6 +47,21 @@ const collections: Collection[] = [
     ],
   },
   {
+    id: 'user-login-history',
+    name: 'User Login History',
+    icon: Icons.clock,
+    description: 'Track user login activity and device information (subcollection under users)',
+    firebaseCollection: 'users/{userId}/loginHistory',
+    fields: [
+      { name: 'id', type: 'string', required: true, description: 'Unique login history ID', example: 'login_xyz789' },
+      { name: 'loginTime', type: 'Timestamp', required: true, description: 'When the user logged in', example: 'Timestamp.now()' },
+      { name: 'deviceId', type: 'string', required: true, description: 'Unique device identifier', example: 'device_abc123' },
+      { name: 'deviceInfo.model', type: 'string', required: true, description: 'Device model', example: 'iPhone 14 Pro' },
+      { name: 'deviceInfo.os', type: 'string', required: true, description: 'Operating system', example: 'iOS 16.5' },
+      { name: 'deviceInfo.appVersion', type: 'string', required: true, description: 'App version', example: '1.2.0' },
+    ],
+  },
+  {
     id: 'categories',
     name: 'Categories',
     icon: Icons.categories,
@@ -231,6 +246,7 @@ const collections: Collection[] = [
       { name: 'terms', type: 'string', required: false, description: 'Terms & conditions URL', example: 'https://example.com/terms' },
       { name: 'minimumVersion', type: 'string', required: false, description: 'Minimum required app version', example: '1.0.0' },
       { name: 'liveVersion', type: 'string', required: false, description: 'Current live app version', example: '1.2.0' },
+      { name: 'banner', type: 'string', required: false, description: 'Banner image URL for app', example: 'https://example.com/banner.jpg' },
     ],
   },
 ];

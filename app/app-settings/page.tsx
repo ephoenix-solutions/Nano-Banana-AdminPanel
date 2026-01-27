@@ -24,6 +24,7 @@ export default function AppSettingsPage() {
     terms: '',
     minimumVersion: '',
     liveVersion: '',
+    banner: '',
   });
   const [formData, setFormData] = useState<UpdateAppSettingsInput>({
     languagesSupported: [],
@@ -31,6 +32,7 @@ export default function AppSettingsPage() {
     terms: '',
     minimumVersion: '',
     liveVersion: '',
+    banner: '',
   });
 
   useEffect(() => {
@@ -53,6 +55,7 @@ export default function AppSettingsPage() {
           terms: settings.terms || '',
           minimumVersion: settings.minimumVersion || '',
           liveVersion: settings.liveVersion || '',
+          banner: settings.banner || '',
         };
         setFormData(data);
         setOriginalData(data);
@@ -386,6 +389,55 @@ export default function AppSettingsPage() {
                   className="w-full px-4 py-3 border border-primary/10 rounded-lg text-sm font-body text-primary bg-background transition-all duration-200 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 disabled:opacity-60 disabled:cursor-not-allowed"
                   placeholder="https://example.com/terms-and-conditions"
                 />
+              </div>
+            </div>
+
+            {/* Banner Image URL */}
+            <div>
+              <h2 className="text-xl font-bold text-primary font-heading mb-4">
+                Banner Image
+              </h2>
+              <div className="space-y-3">
+                <div>
+                  <label
+                    htmlFor="banner"
+                    className="block text-sm font-semibold text-primary mb-2 font-body"
+                  >
+                    Banner Image URL
+                  </label>
+                  <input
+                    type="url"
+                    id="banner"
+                    name="banner"
+                    value={formData.banner || ''}
+                    onChange={handleChange}
+                    disabled={!isEditing}
+                    className="w-full px-4 py-3 border border-primary/10 rounded-lg text-sm font-body text-primary bg-background transition-all duration-200 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 disabled:opacity-60 disabled:cursor-not-allowed"
+                    placeholder="https://example.com/banner.jpg"
+                  />
+                  <p className="text-xs text-secondary mt-1 font-body">
+                    Image for displaying on the application's home screen.
+                  </p>
+                </div>
+                
+                {/* Banner Preview */}
+                {formData.banner && (
+                  <div className="mt-3">
+                    <p className="text-sm font-semibold text-primary mb-2 font-body">
+                      Preview:
+                    </p>
+                    <div className="border border-primary/10 rounded-lg overflow-hidden">
+                      <img
+                        src={formData.banner}
+                        alt="Banner preview"
+                        className="w-full h-92 object-cover"
+                        onError={(e) => {
+                          e.currentTarget.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="1200" height="400"%3E%3Crect fill="%23f0f0f0" width="1200" height="400"/%3E%3Ctext fill="%23999" font-family="sans-serif" font-size="24" x="50%25" y="50%25" text-anchor="middle" dominant-baseline="middle"%3EInvalid Image URL%3C/text%3E%3C/svg%3E';
+                        }}
+                      />
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </div>
