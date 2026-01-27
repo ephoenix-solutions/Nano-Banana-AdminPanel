@@ -63,6 +63,13 @@ export async function updateAppSettings(
     if (settingsData.banner !== undefined) {
       updateData.banner = settingsData.banner;
     }
+    if (settingsData.maxAccountsPerDevice !== undefined) {
+      // Validate minimum value
+      if (settingsData.maxAccountsPerDevice < 1) {
+        throw new Error('maxAccountsPerDevice must be at least 1');
+      }
+      updateData.maxAccountsPerDevice = settingsData.maxAccountsPerDevice;
+    }
     
     await updateDoc(settingsRef, updateData);
   } catch (error) {
@@ -87,6 +94,7 @@ export async function initializeAppSettings(): Promise<void> {
         minimumVersion: '1.0.0',
         liveVersion: '1.0.0',
         banner: '',
+        maxAccountsPerDevice: 3,
       };
       
       await setDoc(settingsRef, defaultSettings);
@@ -94,5 +102,27 @@ export async function initializeAppSettings(): Promise<void> {
   } catch (error) {
     console.error('Error initializing app settings:', error);
     throw error;
+  }
+}
+
+/**
+ * Get maximum accounts per device
+ * Fetches directly from Firestore without caching
+ */
+export async function getMaxAccountsPerDevice(): Promise<number> {
+  try {
+    const settings = await getAppSettings();
+    const limit = settings?.maxAccountsPerDevice || 3;
+    
+    // Validate and sanitize
+    if (typeof limit !== 'number' || limit < 1) {
+      console.warn('Invalid maxAccountsPerDevice value, using default:', limit);
+      return 3;
+    }
+    
+    return limit;
+  } catch (error) {
+    console.error('Error fetching maxAccountsPerDevice, using default:', error);
+    return 3; // Fallback to safe default
   }
 }

@@ -62,11 +62,20 @@ const menuItems: MenuItem[] = [
     ]
   },
   { id: 'user_generations', label: 'User Generations', icon: Icons.images, href: '/user-generations' },
+  { id: 'devices', label: 'Devices', icon: Icons.smartphone, href: '/devices' },
   { id: 'countries', label: 'Countries', icon: Icons.globe, href: '/countries' },
   { id: 'subscription_plan', label: 'Subscription Plan', icon: Icons.subscriptionPlan, href: '/subscription-plan' },
   { id: 'user_subscription', label: 'User Subscription', icon: Icons.userSubscription, href: '/user-subscription' },
   { id: 'feedback', label: 'Feedback', icon: Icons.feedback, href: '/feedback' },
-  { id: 'app_settings', label: 'App Settings', icon: Icons.appSettings, href: '/app-settings' },
+  { 
+    id: 'app_settings', 
+    label: 'App Settings', 
+    icon: Icons.appSettings, 
+    href: '/app-settings',
+    subItems: [
+      { id: 'app-settings-activity', label: 'Activity Log', href: '/app-settings-activity' },
+    ]
+  },
   { id: 'developer_guide', label: 'Developer Guide', icon: Icons.file, href: '/developer-guide' },
 ];
 

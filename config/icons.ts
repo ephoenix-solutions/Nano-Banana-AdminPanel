@@ -59,6 +59,8 @@ import {
   Bookmark,
   Code,
   TrendingUp,
+  Shield,
+  Smartphone
 } from 'lucide-react';
 
 // Export all icons
@@ -127,6 +129,8 @@ export const Icons = {
   copy: Copy,
   share: Share2,
   code: Code,
+  shield: Shield,
+  smartphone: Smartphone,
 };
 
 // Export individual icons for direct import
@@ -184,6 +188,8 @@ export {
   Bookmark,
   Code,
   TrendingUp,
+  Shield,
+  Smartphone
 };
 
 export default Icons;
