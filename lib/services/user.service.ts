@@ -179,7 +179,7 @@ export async function updateLastLogin(userId: string): Promise<void> {
 }
 
 /**
- * Delete a user
+ * Delete a user and their S3 photo if applicable
  */
 export async function deleteUser(userId: string): Promise<void> {
   try {
@@ -187,8 +187,26 @@ export async function deleteUser(userId: string): Promise<void> {
       throw new Error('Invalid userId provided to deleteUser');
     }
 
+    // Get user to retrieve photo URL
+    const user = await getUserById(userId);
+
     const userRef = doc(db, COLLECTION_NAME, userId);
     await deleteDoc(userRef);
+    
+    // Delete photo from S3 if it's an S3 URL
+    if (user?.photoURL && typeof window === 'undefined') {
+      // Only attempt S3 deletion on server-side
+      try {
+        const bucketName = process.env.AWS_S3_BUCKET_NAME || 'nano-banana-images';
+        if (user.photoURL.includes(bucketName) || user.photoURL.includes('s3.amazonaws.com')) {
+          const { deleteFromS3 } = await import('@/lib/utils/s3-upload');
+          await deleteFromS3(user.photoURL);
+        }
+      } catch (s3Error) {
+        console.error('Error deleting S3 photo (non-critical):', s3Error);
+        // Don't throw - Firestore deletion succeeded
+      }
+    }
   } catch (error) {
     console.error('Error deleting user:', error);
     throw error;

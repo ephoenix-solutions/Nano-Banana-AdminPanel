@@ -4,6 +4,7 @@ import "./index.css";
 import { ReduxProvider } from "@/lib/store/ReduxProvider";
 import AuthInitializer from "@/components/auth/AuthInitializer";
 import NextTopLoader from 'nextjs-toploader';
+import { ToastProvider } from "@/components/shared/Toast";
 
 export const metadata: Metadata = {
   title: "Nano Banana - Admin Panel",
@@ -20,12 +21,14 @@ export default function RootLayout({
       <body className="antialiased">
         <ReduxProvider>
           <AuthInitializer>
-            <NextTopLoader 
-              color="#FFB22C"
-              height={3}
-              showSpinner={false}
-            />
-            {children}
+            <ToastProvider>
+              <NextTopLoader 
+                color="#FFB22C"
+                height={3}
+                showSpinner={false}
+              />
+              {children}
+            </ToastProvider>
           </AuthInitializer>
         </ReduxProvider>
       </body>

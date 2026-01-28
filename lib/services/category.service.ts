@@ -140,10 +140,13 @@ export async function updateCategory(
 }
 
 /**
- * Delete a category and all its subcategories
+ * Delete a category, all its subcategories, and S3 icon if applicable
  */
 export async function deleteCategory(categoryId: string): Promise<void> {
   try {
+    // Get category to retrieve icon URL
+    const category = await getCategoryById(categoryId);
+    
     // First, delete all subcategories
     const subcategories = await getSubcategories(categoryId);
     await Promise.all(
@@ -153,6 +156,21 @@ export async function deleteCategory(categoryId: string): Promise<void> {
     // Then delete the category
     const categoryRef = doc(db, COLLECTION_NAME, categoryId);
     await deleteDoc(categoryRef);
+    
+    // Delete icon from S3 if it's an S3 URL
+    if (category?.iconImage && typeof window === 'undefined') {
+      // Only attempt S3 deletion on server-side
+      try {
+        const bucketName = process.env.AWS_S3_BUCKET_NAME || 'nano-banana-images';
+        if (category.iconImage.includes(bucketName) || category.iconImage.includes('s3.amazonaws.com')) {
+          const { deleteFromS3 } = await import('@/lib/utils/s3-upload');
+          await deleteFromS3(category.iconImage);
+        }
+      } catch (s3Error) {
+        console.error('Error deleting S3 icon (non-critical):', s3Error);
+        // Don't throw - Firestore deletion succeeded
+      }
+    }
   } catch (error) {
     console.error('Error deleting category:', error);
     throw error;

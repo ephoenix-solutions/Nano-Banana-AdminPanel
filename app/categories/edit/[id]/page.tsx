@@ -9,6 +9,7 @@ import FormInput from '@/components/categories/utils/FormInput';
 import ErrorMessage from '@/components/categories/utils/ErrorMessage';
 import FormActions from '@/components/categories/utils/FormActions';
 import SubcategoriesSection from '@/components/categories/utils/SubcategoriesSection';
+import ImageUpload from '@/components/shared/ImageUpload';
 
 export default function EditCategoryPage() {
   const params = useParams();
@@ -84,16 +85,15 @@ export default function EditCategoryPage() {
               />
             </div>
 
-            {/* Icon Image URL Field - Full Width */}
-            <FormInput
-              id="iconImage"
-              name="iconImage"
-              label="Icon Image URL"
+            {/* Icon Image Upload Field - Full Width */}
+            <ImageUpload
               value={formData.iconImage}
-              onChange={handleChange}
-              type="url"
-              required
-              placeholder="https://example.com/icon.png"
+              onChange={(url) => handleChange({ target: { name: 'iconImage', value: url } } as any)}
+              folder="categories"
+              label="Category Icon"
+              required={true}
+              enableCrop={true}
+              aspectRatio={1}
             />
 
             {/* Subcategories Section */}

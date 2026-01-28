@@ -60,7 +60,9 @@ import {
   Code,
   TrendingUp,
   Shield,
-  Smartphone
+  Smartphone,
+  RotateCcw,
+  RotateCw
 } from 'lucide-react';
 
 // Export all icons
@@ -100,6 +102,8 @@ export const Icons = {
   check: Check,
   save: Save,
   refresh: RefreshCw,
+  rotateCcw: RotateCcw,
+  rotateCw: RotateCw,
   moreVertical: MoreVertical,
   moreHorizontal: MoreHorizontal,
   
@@ -175,6 +179,8 @@ export {
   Share2,
   Save,
   RefreshCw,
+  RotateCcw,
+  RotateCw,
   MoreVertical,
   MoreHorizontal,
   ArrowLeft,

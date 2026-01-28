@@ -197,13 +197,32 @@ export async function updatePrompt(
 }
 
 /**
- * Delete a prompt
+ * Delete a prompt and its S3 image if applicable
  * Note: Subcollections (likes, saves) are automatically deleted by Firestore when parent is deleted
  */
 export async function deletePrompt(promptId: string): Promise<void> {
   try {
+    // Get prompt to retrieve image URL
+    const prompt = await getPromptById(promptId);
+    
+    // Delete from Firestore
     const promptRef = doc(db, COLLECTION_NAME, promptId);
     await deleteDoc(promptRef);
+    
+    // Delete image from S3 if it's an S3 URL
+    if (prompt?.url && typeof window === 'undefined') {
+      // Only attempt S3 deletion on server-side
+      try {
+        const bucketName = process.env.AWS_S3_BUCKET_NAME || 'nano-banana-images';
+        if (prompt.url.includes(bucketName) || prompt.url.includes('s3.amazonaws.com')) {
+          const { deleteFromS3 } = await import('@/lib/utils/s3-upload');
+          await deleteFromS3(prompt.url);
+        }
+      } catch (s3Error) {
+        console.error('Error deleting S3 image (non-critical):', s3Error);
+        // Don't throw - Firestore deletion succeeded
+      }
+    }
     // Note: Firestore automatically deletes subcollections (likes, saves) when parent document is deleted
   } catch (error) {
     console.error('Error deleting prompt:', error);
