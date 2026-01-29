@@ -60,8 +60,8 @@ export async function updateAppSettings(
     if (settingsData.liveVersion !== undefined) {
       updateData.liveVersion = settingsData.liveVersion;
     }
-    if (settingsData.banner !== undefined) {
-      updateData.banner = settingsData.banner;
+    if (settingsData.banners !== undefined) {
+      updateData.banners = settingsData.banners;
     }
     if (settingsData.maxAccountsPerDevice !== undefined) {
       // Validate minimum value
@@ -93,7 +93,7 @@ export async function initializeAppSettings(): Promise<void> {
         terms: '',
         minimumVersion: '1.0.0',
         liveVersion: '1.0.0',
-        banner: '',
+        banners: [],
         maxAccountsPerDevice: 3,
       };
       

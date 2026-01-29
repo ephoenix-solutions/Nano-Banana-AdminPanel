@@ -21,12 +21,20 @@ import {
 const COLLECTION_NAME = 'prompt'; // Firestore collection name
 
 /**
- * Get all prompts
+ * Get all prompts (excluding deleted by default)
  */
-export async function getAllPrompts(): Promise<Prompt[]> {
+export async function getAllPrompts(includeDeleted: boolean = false): Promise<Prompt[]> {
   try {
     const promptsRef = collection(db, COLLECTION_NAME);
-    const q = query(promptsRef, orderBy('createdAt', 'desc'));
+    const constraints = [];
+    
+    if (!includeDeleted) {
+      constraints.push(where('isDeleted', '==', false));
+    }
+    
+    constraints.push(orderBy('createdAt', 'desc'));
+    
+    const q = query(promptsRef, ...constraints);
     const querySnapshot = await getDocs(q);
     
     const prompts: Prompt[] = querySnapshot.docs.map((doc) => ({
@@ -37,6 +45,31 @@ export async function getAllPrompts(): Promise<Prompt[]> {
     return prompts;
   } catch (error) {
     console.error('Error getting prompts:', error);
+    throw error;
+  }
+}
+
+/**
+ * Get deleted prompts (trash)
+ */
+export async function getDeletedPrompts(): Promise<Prompt[]> {
+  try {
+    const promptsRef = collection(db, COLLECTION_NAME);
+    const q = query(
+      promptsRef,
+      where('isDeleted', '==', true),
+      orderBy('deletedAt', 'desc')
+    );
+    const querySnapshot = await getDocs(q);
+    
+    const prompts: Prompt[] = querySnapshot.docs.map((doc) => ({
+      id: doc.id,
+      ...doc.data(),
+    } as Prompt));
+    
+    return prompts;
+  } catch (error) {
+    console.error('Error getting deleted prompts:', error);
     throw error;
   }
 }
@@ -64,7 +97,7 @@ export async function getPromptById(promptId: string): Promise<Prompt | null> {
 }
 
 /**
- * Get prompts by category
+ * Get prompts by category (excluding deleted)
  */
 export async function getPromptsByCategory(categoryId: string): Promise<Prompt[]> {
   try {
@@ -72,6 +105,7 @@ export async function getPromptsByCategory(categoryId: string): Promise<Prompt[]
     const q = query(
       promptsRef,
       where('categoryId', '==', categoryId),
+      where('isDeleted', '==', false),
       orderBy('createdAt', 'desc')
     );
     const querySnapshot = await getDocs(q);
@@ -89,12 +123,16 @@ export async function getPromptsByCategory(categoryId: string): Promise<Prompt[]
 }
 
 /**
- * Count prompts by category
+ * Count prompts by category (excluding deleted)
  */
 export async function countPromptsByCategory(categoryId: string): Promise<number> {
   try {
     const promptsRef = collection(db, COLLECTION_NAME);
-    const q = query(promptsRef, where('categoryId', '==', categoryId));
+    const q = query(
+      promptsRef,
+      where('categoryId', '==', categoryId),
+      where('isDeleted', '==', false)
+    );
     const querySnapshot = await getDocs(q);
     
     return querySnapshot.size;
@@ -105,7 +143,7 @@ export async function countPromptsByCategory(categoryId: string): Promise<number
 }
 
 /**
- * Get trending prompts
+ * Get trending prompts (excluding deleted)
  */
 export async function getTrendingPrompts(): Promise<Prompt[]> {
   try {
@@ -113,6 +151,7 @@ export async function getTrendingPrompts(): Promise<Prompt[]> {
     const q = query(
       promptsRef,
       where('isTrending', '==', true),
+      where('isDeleted', '==', false),
       orderBy('createdAt', 'desc')
     );
     const querySnapshot = await getDocs(q);
@@ -150,6 +189,7 @@ export async function createPrompt(promptData: CreatePromptInput): Promise<strin
       searchCount: promptData.searchCount || 0,
       createdAt: Timestamp.now(),
       createdBy: promptData.createdBy,
+      isDeleted: false, // New prompts are not deleted
     };
     
     const docRef = await addDoc(promptsRef, newPrompt);
@@ -197,10 +237,46 @@ export async function updatePrompt(
 }
 
 /**
- * Delete a prompt and its S3 image if applicable
- * Note: Subcollections (likes, saves) are automatically deleted by Firestore when parent is deleted
+ * Soft delete a prompt
  */
-export async function deletePrompt(promptId: string): Promise<void> {
+export async function softDeletePrompt(
+  promptId: string,
+  deletedBy: string
+): Promise<void> {
+  try {
+    const promptRef = doc(db, COLLECTION_NAME, promptId);
+    await updateDoc(promptRef, {
+      isDeleted: true,
+      deletedAt: Timestamp.now(),
+      deletedBy: deletedBy,
+    });
+  } catch (error) {
+    console.error('Error soft deleting prompt:', error);
+    throw error;
+  }
+}
+
+/**
+ * Restore a deleted prompt
+ */
+export async function restorePrompt(promptId: string): Promise<void> {
+  try {
+    const promptRef = doc(db, COLLECTION_NAME, promptId);
+    await updateDoc(promptRef, {
+      isDeleted: false,
+      deletedAt: null,
+      deletedBy: null,
+    });
+  } catch (error) {
+    console.error('Error restoring prompt:', error);
+    throw error;
+  }
+}
+
+/**
+ * Permanently delete a prompt (hard delete)
+ */
+export async function permanentlyDeletePrompt(promptId: string): Promise<void> {
   try {
     // Get prompt to retrieve image URL
     const prompt = await getPromptById(promptId);
@@ -223,9 +299,9 @@ export async function deletePrompt(promptId: string): Promise<void> {
         // Don't throw - Firestore deletion succeeded
       }
     }
-    // Note: Firestore automatically deletes subcollections (likes, saves) when parent document is deleted
+    // Note: Subcollections (likes, saves) are NOT automatically deleted
   } catch (error) {
-    console.error('Error deleting prompt:', error);
+    console.error('Error permanently deleting prompt:', error);
     throw error;
   }
 }

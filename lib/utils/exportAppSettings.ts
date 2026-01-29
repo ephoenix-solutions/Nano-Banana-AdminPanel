@@ -34,7 +34,7 @@ function exportAsCSV(settings: AppSettings): void {
     ['Supported Languages', settings.languagesSupported.join(', ')],
     ['Privacy Policy URL', settings.privacyPolicy || '(empty)'],
     ['Terms & Conditions URL', settings.terms || '(empty)'],
-    ['Banner Image URL', settings.banner || '(empty)'],
+    ['Banner Images', `${settings.banners?.length || 0} image${settings.banners?.length !== 1 ? 's' : ''}`],
   ];
 
   const csvContent = [
@@ -62,7 +62,7 @@ function exportAsJSON(settings: AppSettings): void {
     languagesSupported: settings.languagesSupported,
     privacyPolicy: settings.privacyPolicy,
     terms: settings.terms,
-    banner: settings.banner,
+    banners: settings.banners || [],
     exportedAt: new Date().toISOString(),
   };
 

@@ -9,6 +9,10 @@ export interface Country {
   createdBy: string;
   updatedBy?: string;
   updatedAt?: Timestamp;
+  // Soft delete fields
+  isDeleted: boolean;
+  deletedAt?: Timestamp;
+  deletedBy?: string;
 }
 
 export interface CreateCountryInput {
@@ -23,5 +27,8 @@ export interface UpdateCountryInput {
   isoCode?: string;
   categories?: string[];
   updatedBy?: string;
+  // Soft delete fields
+  isDeleted?: boolean;
+  deletedAt?: Timestamp;
+  deletedBy?: string;
 }
-  

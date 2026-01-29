@@ -13,9 +13,9 @@ import { logAppSettingsActivity } from '@/lib/services/app-settings-activity.ser
 import { FieldChange } from '@/lib/types/app-settings-activity.types';
 import { useAuth } from '@/lib/hooks/useAuth';
 import { exportAppSettings, ExportFormat } from '@/lib/utils/exportAppSettings';
+import { useToast } from '@/components/shared/Toast';
 
 import PageHeader from '@/components/app-settings/PageHeader';
-import StatusMessages from '@/components/app-settings/StatusMessages';
 import VersionSettings from '@/components/app-settings/VersionSettings';
 import DeviceSecuritySettings from '@/components/app-settings/DeviceSecuritySettings';
 import LanguageSettings from '@/components/app-settings/LanguageSettings';
@@ -25,11 +25,10 @@ import BannerSettings from '@/components/app-settings/BannerSettings';
 
 export default function AppSettingsPage() {
   const { user } = useAuth();
+  const { showToast } = useToast();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
   const [newLanguage, setNewLanguage] = useState('');
   const [originalData, setOriginalData] = useState<UpdateAppSettingsInput>({
     languagesSupported: [],
@@ -37,7 +36,7 @@ export default function AppSettingsPage() {
     terms: '',
     minimumVersion: '',
     liveVersion: '',
-    banner: '',
+    banners: [],
     maxAccountsPerDevice: 3,
   });
   const [formData, setFormData] = useState<UpdateAppSettingsInput>({
@@ -46,7 +45,7 @@ export default function AppSettingsPage() {
     terms: '',
     minimumVersion: '',
     liveVersion: '',
-    banner: '',
+    banners: [],
     maxAccountsPerDevice: 3,
   });
 
@@ -57,7 +56,6 @@ export default function AppSettingsPage() {
   const fetchSettings = async () => {
     try {
       setLoading(true);
-      setError(null);
       
       await initializeAppSettings();
       
@@ -69,7 +67,7 @@ export default function AppSettingsPage() {
           terms: settings.terms || '',
           minimumVersion: settings.minimumVersion || '',
           liveVersion: settings.liveVersion || '',
-          banner: settings.banner || '',
+          banners: settings.banners || [],
           maxAccountsPerDevice: settings.maxAccountsPerDevice || 3,
         };
         setFormData(data);
@@ -77,7 +75,7 @@ export default function AppSettingsPage() {
       }
     } catch (err) {
       console.error('Error fetching settings:', err);
-      setError('Failed to load app settings');
+      showToast('Failed to load app settings', 'error');
     } finally {
       setLoading(false);
     }
@@ -121,8 +119,7 @@ export default function AppSettingsPage() {
         }));
         setNewLanguage('');
       } else {
-        setError('Language already exists');
-        setTimeout(() => setError(null), 3000);
+        showToast('Language already exists', 'error');
       }
     }
   };
@@ -138,22 +135,16 @@ export default function AppSettingsPage() {
 
   const handleEdit = () => {
     setIsEditing(true);
-    setError(null);
-    setSuccess(null);
   };
 
   const handleCancel = () => {
     setIsEditing(false);
     setFormData(originalData);
     setNewLanguage('');
-    setError(null);
-    setSuccess(null);
   };
 
   const handleSave = async () => {
     setSaving(true);
-    setError(null);
-    setSuccess(null);
 
     try {
       if (!formData.minimumVersion?.trim()) {
@@ -226,12 +217,12 @@ export default function AppSettingsPage() {
         });
       }
       
-      if (formData.banner !== originalData.banner) {
+      if (JSON.stringify(formData.banners) !== JSON.stringify(originalData.banners)) {
         changes.push({
-          field: 'banner',
-          fieldLabel: 'Banner Image URL',
-          oldValue: originalData.banner || '(empty)',
-          newValue: formData.banner || '(empty)',
+          field: 'banners',
+          fieldLabel: 'Banner Images',
+          oldValue: `${originalData.banners?.length || 0} image${originalData.banners?.length !== 1 ? 's' : ''}`,
+          newValue: `${formData.banners?.length || 0} image${formData.banners?.length !== 1 ? 's' : ''}`,
         });
       }
 
@@ -249,11 +240,10 @@ export default function AppSettingsPage() {
       
       setOriginalData(formData);
       setIsEditing(false);
-      setSuccess('Settings updated successfully!');
-      setTimeout(() => setSuccess(null), 3000);
+      showToast('Settings updated successfully!', 'success');
     } catch (err: any) {
       console.error('Error updating settings:', err);
-      setError(err.message || 'Failed to update settings');
+      showToast(err.message || 'Failed to update settings', 'error');
     } finally {
       setSaving(false);
     }
@@ -266,7 +256,7 @@ export default function AppSettingsPage() {
       formData.liveVersion !== originalData.liveVersion ||
       formData.privacyPolicy !== originalData.privacyPolicy ||
       formData.terms !== originalData.terms ||
-      formData.banner !== originalData.banner ||
+      JSON.stringify(formData.banners) !== JSON.stringify(originalData.banners) ||
       formData.maxAccountsPerDevice !== originalData.maxAccountsPerDevice ||
       JSON.stringify(formData.languagesSupported) !== JSON.stringify(originalData.languagesSupported)
     );
@@ -279,8 +269,7 @@ export default function AppSettingsPage() {
       exportAppSettings(format, settings);
     } catch (err) {
       console.error('Error exporting settings:', err);
-      setError('Failed to export settings');
-      setTimeout(() => setError(null), 3000);
+      showToast('Failed to export settings', 'error');
     }
   };
 
@@ -308,8 +297,6 @@ export default function AppSettingsPage() {
           onSave={handleSave}
           onExport={handleExport}
         />
-
-        <StatusMessages success={success} error={error} />
 
         <div className="grid grid-cols-1 gap-6">
           <VersionSettings
@@ -350,9 +337,9 @@ export default function AppSettingsPage() {
           </div>
 
           <BannerSettings
-            banner={formData.banner || ''}
+            banners={formData.banners || []}
             isEditing={isEditing}
-            onChange={handleChange}
+            onChange={(banners) => setFormData(prev => ({ ...prev, banners }))}
           />
         </div>
       </div>

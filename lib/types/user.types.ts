@@ -17,6 +17,11 @@ export interface User {
   generatedCount: number; // Total images generated (lifetime)
   currentPeriodCount: number; // Count for current subscription period
   lastResetDate: Timestamp; // When the count was last reset
+  
+  // Soft delete fields
+  isDeleted: boolean; // false by default
+  deletedAt?: Timestamp; // When the user was deleted
+  deletedBy?: string | { id: string; name: string; email: string }; // User ID or user info of who deleted this user
 }
 
 export interface CreateUserInput {
@@ -44,6 +49,11 @@ export interface UpdateUserInput {
   generatedCount?: number;
   currentPeriodCount?: number;
   lastResetDate?: Timestamp;
+  
+  // Soft delete fields
+  isDeleted?: boolean;
+  deletedAt?: Timestamp;
+  deletedBy?: string | { id: string; name: string; email: string };
 }
 
 // ============================================

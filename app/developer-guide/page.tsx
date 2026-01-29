@@ -46,6 +46,9 @@ const collections: Collection[] = [
       { name: 'generatedCount', type: 'number', required: true, description: 'Total images generated (lifetime)', example: '150' },
       { name: 'currentPeriodCount', type: 'number', required: true, description: 'Images generated in current subscription period', example: '25' },
       { name: 'lastResetDate', type: 'Timestamp', required: true, description: 'When generation count was last reset', example: 'Timestamp.now()' },
+      { name: 'isDeleted', type: 'boolean', required: true, description: 'Soft delete flag', example: 'false' },
+      { name: 'deletedAt', type: 'Timestamp', required: false, description: 'When user was deleted', example: 'Timestamp.now()' },
+      { name: 'deletedBy', type: 'string', required: false, description: 'User ID who deleted', example: 'user_abc123' },
     ],
     subCollections: [
       {
@@ -82,6 +85,9 @@ const collections: Collection[] = [
       { name: 'createdAt', type: 'Timestamp', required: true, description: 'Creation timestamp', example: 'Timestamp.now()' },
       { name: 'updatedBy', type: 'string', required: false, description: 'User ID who last updated', example: 'user_abc123' },
       { name: 'updatedAt', type: 'Timestamp', required: false, description: 'Last update timestamp', example: 'Timestamp.now()' },
+      { name: 'isDeleted', type: 'boolean', required: true, description: 'Soft delete flag', example: 'false' },
+      { name: 'deletedAt', type: 'Timestamp', required: false, description: 'When category was deleted', example: 'Timestamp.now()' },
+      { name: 'deletedBy', type: 'string', required: false, description: 'User ID who deleted', example: 'user_abc123' },
     ],
     subCollections: [
       {
@@ -99,6 +105,9 @@ const collections: Collection[] = [
           { name: 'createdAt', type: 'Timestamp', required: true, description: 'Creation timestamp', example: 'Timestamp.now()' },
           { name: 'updatedBy', type: 'string', required: false, description: 'User ID who last updated', example: 'user_abc123' },
           { name: 'updatedAt', type: 'Timestamp', required: false, description: 'Last update timestamp', example: 'Timestamp.now()' },
+          { name: 'isDeleted', type: 'boolean', required: true, description: 'Soft delete flag', example: 'false' },
+          { name: 'deletedAt', type: 'Timestamp', required: false, description: 'When subcategory was deleted', example: 'Timestamp.now()' },
+          { name: 'deletedBy', type: 'string', required: false, description: 'User ID who deleted', example: 'user_abc123' },
         ],
         isSubCollection: true,
       },
@@ -127,6 +136,9 @@ const collections: Collection[] = [
       { name: 'createdBy', type: 'string', required: true, description: 'User ID who created', example: 'user_abc123' },
       { name: 'updatedBy', type: 'string', required: false, description: 'User ID who last updated', example: 'user_abc123' },
       { name: 'updatedAt', type: 'Timestamp', required: false, description: 'Last update timestamp', example: 'Timestamp.now()' },
+      { name: 'isDeleted', type: 'boolean', required: true, description: 'Soft delete flag', example: 'false' },
+      { name: 'deletedAt', type: 'Timestamp', required: false, description: 'When prompt was deleted', example: 'Timestamp.now()' },
+      { name: 'deletedBy', type: 'string', required: false, description: 'User ID who deleted', example: 'user_abc123' },
     ],
     subCollections: [
       {
@@ -207,6 +219,9 @@ const collections: Collection[] = [
       { name: 'createdBy', type: 'string', required: true, description: 'User ID who created', example: 'user_abc123' },
       { name: 'updatedBy', type: 'string', required: false, description: 'User ID who last updated', example: 'user_abc123' },
       { name: 'updatedAt', type: 'Timestamp', required: false, description: 'Last update timestamp', example: 'Timestamp.now()' },
+      { name: 'isDeleted', type: 'boolean', required: true, description: 'Soft delete flag', example: 'false' },
+      { name: 'deletedAt', type: 'Timestamp', required: false, description: 'When country was deleted', example: 'Timestamp.now()' },
+      { name: 'deletedBy', type: 'string', required: false, description: 'User ID who deleted', example: 'user_abc123' },
     ],
   },
   {
@@ -276,7 +291,7 @@ const collections: Collection[] = [
       { name: 'terms', type: 'string', required: false, description: 'Terms & conditions URL', example: 'https://example.com/terms' },
       { name: 'minimumVersion', type: 'string', required: false, description: 'Minimum required app version', example: '1.0.0' },
       { name: 'liveVersion', type: 'string', required: false, description: 'Current live app version', example: '1.2.0' },
-      { name: 'banner', type: 'string', required: false, description: 'Banner image URL for app', example: 'https://example.com/banner.jpg' },
+      { name: 'banners', type: 'string[]', required: false, description: 'Array of banner image URLs for app', example: '["https://example.com/banner1.jpg", "https://example.com/banner2.jpg"]' },
       { name: 'maxAccountsPerDevice', type: 'number', required: true, description: 'Maximum accounts allowed per device', example: '3' },
     ],
   },

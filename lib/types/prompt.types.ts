@@ -17,6 +17,10 @@ export interface Prompt {
   createdBy: string;
   updatedBy?: string;
   updatedAt?: Timestamp;
+  // Soft delete fields
+  isDeleted: boolean;
+  deletedAt?: Timestamp;
+  deletedBy?: string;
 }
 
 export interface CreatePromptInput {
@@ -47,4 +51,8 @@ export interface UpdatePromptInput {
   savesCount?: number;
   searchCount?: number;
   updatedBy?: string;
+  // Soft delete fields
+  isDeleted?: boolean;
+  deletedAt?: Timestamp;
+  deletedBy?: string;
 }

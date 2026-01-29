@@ -4,10 +4,11 @@ import { useState } from 'react';
 interface PageHeaderProps {
   onAddCategory: () => void;
   onExport: (format: 'csv' | 'json') => void;
+  onViewTrash: () => void;
   totalCategories: number;
 }
 
-export default function PageHeader({ onAddCategory, onExport, totalCategories }: PageHeaderProps) {
+export default function PageHeader({ onAddCategory, onExport, onViewTrash, totalCategories }: PageHeaderProps) {
   const [showExportMenu, setShowExportMenu] = useState(false);
 
   const handleExport = (format: 'csv' | 'json') => {

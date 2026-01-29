@@ -27,7 +27,6 @@ export default function PromptsPage() {
     
     // Loading states
     loading,
-    error,
     
     // Filter states
     searchQuery,
@@ -81,6 +80,11 @@ export default function PromptsPage() {
     router.push('/prompts/import');
   };
 
+  // Handle view trash
+  const handleViewTrash = () => {
+    router.push('/prompts/trash');
+  };
+
   if (loading) {
     return (
       <AdminLayout>
@@ -98,7 +102,7 @@ export default function PromptsPage() {
         <Breadcrumbs items={[{ label: 'Prompts' }]} />
 
         {/* Page Header */}
-        <PageHeader onAddPrompt={handleAddPrompt} onExport={handleExport} onImport={handleImport} totalPrompts={filteredAndSortedPrompts.length} />
+        <PageHeader onAddPrompt={handleAddPrompt} onExport={handleExport} onImport={handleImport} onViewTrash={handleViewTrash} totalPrompts={filteredAndSortedPrompts.length} />
 
         {/* Search and Filter Bar */}
         <SearchFilterBar
@@ -120,9 +124,6 @@ export default function PromptsPage() {
 
         {/* Stats Cards */}
         <StatsCards prompts={prompts} />
-
-        {/* Error Message */}
-        <ErrorMessage message={error} />
 
         {/* Prompts Table - Only show if there are results */}
         {filteredAndSortedPrompts.length > 0 && (

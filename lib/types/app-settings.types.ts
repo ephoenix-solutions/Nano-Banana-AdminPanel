@@ -5,7 +5,7 @@ export interface AppSettings {
   terms: string;
   minimumVersion: string;
   liveVersion: string;
-  banner: string;
+  banners: string[];
   maxAccountsPerDevice: number;
 }
 
@@ -15,6 +15,6 @@ export interface UpdateAppSettingsInput {
   terms?: string;
   minimumVersion?: string;
   liveVersion?: string;
-  banner?: string;
+  banners?: string[];
   maxAccountsPerDevice?: number;
 }

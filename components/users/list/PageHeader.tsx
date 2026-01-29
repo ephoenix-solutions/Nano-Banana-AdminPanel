@@ -1,5 +1,6 @@
 import { Icons } from '@/config/icons';
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 
 interface PageHeaderProps {
   onAddUser: () => void;
@@ -8,6 +9,7 @@ interface PageHeaderProps {
 }
 
 export default function PageHeader({ onAddUser, onExport, totalUsers }: PageHeaderProps) {
+  const router = useRouter();
   const [showExportMenu, setShowExportMenu] = useState(false);
 
   const handleExport = (format: 'csv' | 'json') => {
