@@ -23,6 +23,7 @@ interface UseCountriesListReturn {
   
   // Loading states
   loading: boolean;
+  error: string | null;
   
   // Filter states
   searchQuery: string;
@@ -67,6 +68,7 @@ export function useCountriesList(): UseCountriesListReturn {
   const [countries, setCountries] = useState<Country[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [userNames, setUserNames] = useState<Record<string, string>>({});
   
   // Filter states
@@ -92,6 +94,7 @@ export function useCountriesList(): UseCountriesListReturn {
   const fetchData = async () => {
     try {
       setLoading(true);
+      setError(null);
       const [countriesData, categoriesData] = await Promise.all([
         getAllCountries(),
         getAllCategories(),
@@ -100,6 +103,7 @@ export function useCountriesList(): UseCountriesListReturn {
       setCategories(categoriesData);
     } catch (err) {
       console.error('Error fetching data:', err);
+      setError('Failed to load countries');
       showToast('Failed to load countries', 'error');
     } finally {
       setLoading(false);
@@ -301,6 +305,7 @@ export function useCountriesList(): UseCountriesListReturn {
     
     // Loading states
     loading,
+    error,
     
     // Filter states
     searchQuery,

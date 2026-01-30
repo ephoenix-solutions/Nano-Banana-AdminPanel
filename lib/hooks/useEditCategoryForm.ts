@@ -6,7 +6,7 @@ import {
   getSubcategories,
   createSubcategory,
   updateSubcategory,
-  deleteSubcategory,
+  softDeleteSubcategory,
 } from '@/lib/services/category.service';
 import { UpdateCategoryInput } from '@/lib/types/category.types';
 import { useAuth } from '@/lib/hooks/useAuth';
@@ -206,8 +206,8 @@ export function useEditCategoryForm(categoryId: string): UseEditCategoryFormRetu
         .map(async (sub) => {
           // Delete marked subcategories
           if (sub.isDeleted && sub.id) {
-            return deleteSubcategory(categoryId, sub.id);
-          }
+            return softDeleteSubcategory(categoryId, sub.id, user.id);
+            }
           // Create new subcategories
           else if (sub.isNew) {
             return createSubcategory(categoryId, {
