@@ -58,7 +58,8 @@ export function usePromptLikedBy(promptId: string): UsePromptLikedByReturn {
       
       const likesData = await Promise.all(
         likes.map(async (like) => {
-          const user = await getUserById(like.userId);
+          // Include deleted users by passing true
+          const user = await getUserById(like.userId, true);
           if (user) {
             return {
               user,

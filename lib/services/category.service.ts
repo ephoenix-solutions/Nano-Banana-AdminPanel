@@ -237,12 +237,14 @@ export async function updateCategory(
 
 /**
  * Soft delete a category and all its subcategories
+ * Also removes the category from all countries that reference it
  */
 export async function softDeleteCategory(
   categoryId: string,
   deletedBy: string
 ): Promise<void> {
   try {
+    // 1. Soft delete the category
     const categoryRef = doc(db, COLLECTION_NAME, categoryId);
     await updateDoc(categoryRef, {
       isDeleted: true,
@@ -250,11 +252,50 @@ export async function softDeleteCategory(
       deletedBy: deletedBy,
     });
     
-    // Soft delete all subcategories
+    // 2. Soft delete all subcategories
     const subcategories = await getSubcategories(categoryId, false);
     await Promise.all(
       subcategories.map((sub) => softDeleteSubcategory(categoryId, sub.id, deletedBy))
     );
+    
+    // 3. Remove category from all countries that reference it
+    try {
+      // Import country service functions
+      const { getAllCountries } = await import('./country.service');
+      
+      // Get all active countries
+      const allCountries = await getAllCountries(false);
+      
+      // Filter countries that have this category
+      const affectedCountries = allCountries.filter(
+        (country) => country.categories && country.categories.includes(categoryId)
+      );
+      
+      // Update each affected country to remove the deleted category
+      if (affectedCountries.length > 0) {
+        const countriesRef = collection(db, 'countries');
+        
+        await Promise.all(
+          affectedCountries.map(async (country) => {
+            const countryRef = doc(countriesRef, country.id);
+            const updatedCategories = country.categories.filter(
+              (catId) => catId !== categoryId
+            );
+            
+            await updateDoc(countryRef, {
+              categories: updatedCategories,
+              updatedAt: Timestamp.now(),
+              updatedBy: deletedBy,
+            });
+          })
+        );
+        
+        console.log(`Removed category ${categoryId} from ${affectedCountries.length} countries`);
+      }
+    } catch (countryError) {
+      console.error('Error removing category from countries (non-critical):', countryError);
+      // Don't throw - category deletion succeeded
+    }
   } catch (error) {
     console.error('Error soft deleting category:', error);
     throw error;
@@ -263,6 +304,8 @@ export async function softDeleteCategory(
 
 /**
  * Restore a deleted category and all its subcategories
+ * Note: Does NOT automatically re-add the category to countries
+ * Countries must manually re-assign the restored category if needed
  */
 export async function restoreCategory(categoryId: string): Promise<void> {
   try {
@@ -278,6 +321,10 @@ export async function restoreCategory(categoryId: string): Promise<void> {
     await Promise.all(
       subcategories.map((sub) => restoreSubcategory(categoryId, sub.id))
     );
+    
+    // Note: We do NOT automatically re-add the category to countries
+    // This is intentional - countries should manually re-assign if needed
+    console.log(`Category ${categoryId} restored. Countries must manually re-assign if needed.`);
   } catch (error) {
     console.error('Error restoring category:', error);
     throw error;

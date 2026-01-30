@@ -245,11 +245,18 @@ export async function softDeletePrompt(
 ): Promise<void> {
   try {
     const promptRef = doc(db, COLLECTION_NAME, promptId);
-    await updateDoc(promptRef, {
+    
+    const updateData: Record<string, any> = {
       isDeleted: true,
       deletedAt: Timestamp.now(),
-      deletedBy: deletedBy,
-    });
+    };
+    
+    // Only add deletedBy if it's provided and not empty
+    if (deletedBy && typeof deletedBy === 'string' && deletedBy.trim() !== '') {
+      updateData.deletedBy = deletedBy;
+    }
+    
+    await updateDoc(promptRef, updateData);
   } catch (error) {
     console.error('Error soft deleting prompt:', error);
     throw error;

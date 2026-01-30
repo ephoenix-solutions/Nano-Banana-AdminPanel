@@ -58,7 +58,8 @@ export function usePromptSavedBy(promptId: string): UsePromptSavedByReturn {
       
       const savesData = await Promise.all(
         saves.map(async (save) => {
-          const user = await getUserById(save.userId);
+          // Include deleted users by passing true
+          const user = await getUserById(save.userId, true);
           if (user) {
             return {
               user,

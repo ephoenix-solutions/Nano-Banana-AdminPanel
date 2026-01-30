@@ -1,6 +1,12 @@
 'use client';
 
 import Modal from './Modal';
+import { Icons } from '@/config/icons';
+
+interface ProgressStep {
+  message: string;
+  timestamp: number;
+}
 
 interface ConfirmModalProps {
   isOpen: boolean;
@@ -11,6 +17,8 @@ interface ConfirmModalProps {
   confirmText?: string;
   cancelText?: string;
   type?: 'danger' | 'warning' | 'info';
+  isLoading?: boolean;
+  progress?: ProgressStep[];
 }
 
 export default function ConfirmModal({
@@ -22,10 +30,17 @@ export default function ConfirmModal({
   confirmText = 'Confirm',
   cancelText = 'Cancel',
   type = 'danger',
+  isLoading = false,
+  progress = [],
 }: ConfirmModalProps) {
   const handleConfirm = () => {
     onConfirm();
-    onClose();
+  };
+
+  const handleClose = () => {
+    if (!isLoading) {
+      onClose();
+    }
   };
 
   const typeStyles = {
@@ -37,27 +52,44 @@ export default function ConfirmModal({
   return (
     <Modal
       isOpen={isOpen}
-      onClose={onClose}
+      onClose={handleClose}
       title={title}
       size="sm"
       footer={
         <div className="flex items-center justify-end gap-3">
           <button
-            onClick={onClose}
-            className="px-4 py-2 text-sm font-medium text-primary bg-background hover:bg-primary/5 rounded-lg transition-all border border-primary/10"
+            onClick={handleClose}
+            disabled={isLoading}
+            className={`px-4 py-2 text-sm font-medium text-primary bg-background hover:bg-primary/5 rounded-lg transition-all border border-primary/10 ${
+              isLoading ? 'opacity-50 cursor-not-allowed' : ''
+            }`}
           >
             {cancelText}
           </button>
           <button
             onClick={handleConfirm}
-            className={`px-4 py-2 text-sm font-medium text-white rounded-lg transition-all ${typeStyles[type]}`}
+            disabled={isLoading}
+            className={`px-4 py-2 text-sm font-medium text-white rounded-lg transition-all ${typeStyles[type]} ${
+              isLoading ? 'opacity-50 cursor-not-allowed' : ''
+            }`}
           >
             {confirmText}
           </button>
         </div>
       }
     >
-      <p className="text-primary font-body">{message}</p>
+      <div>
+        <p className="text-primary font-body">{message}</p>
+        
+        {isLoading && progress.length > 0 && (
+          <div className="mt-4 flex items-center gap-2 p-3 rounded bg-background/50">
+            <div className="animate-spin rounded-full h-4 w-4 border-2 border-accent border-t-transparent" />
+            <p className="text-sm text-secondary font-body">
+              {progress[progress.length - 1].message}
+            </p>
+          </div>
+        )}
+      </div>
     </Modal>
   );
 }

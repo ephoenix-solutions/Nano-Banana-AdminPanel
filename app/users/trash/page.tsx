@@ -57,6 +57,10 @@ export default function UsersTrashPage() {
     setRestoreModal,
     setPermanentDeleteModal,
     
+    // Delete progress states
+    deleteProgress,
+    isDeleting,
+    
     // Utilities
     formatTimestamp,
     getDeletedById,
@@ -156,15 +160,21 @@ export default function UsersTrashPage() {
         type="warning"
       />
 
-      {/* Permanent Delete Confirmation Modal */}
+      {/* Permanent Delete Confirmation Modal with Loading */}
       <ConfirmModal
         isOpen={permanentDeleteModal.isOpen}
-        onClose={() => setPermanentDeleteModal({ isOpen: false, user: null })}
+        onClose={() => {
+          if (!isDeleting) {
+            setPermanentDeleteModal({ isOpen: false, user: null });
+          }
+        }}
         onConfirm={handlePermanentDeleteConfirm}
         title="Permanently Delete User"
         message={`Are you sure you want to permanently delete "${permanentDeleteModal.user?.name}"? This action cannot be undone and all user data will be lost forever.`}
         confirmText="Permanently Delete"
         type="danger"
+        isLoading={isDeleting}
+        progress={deleteProgress}
       />
     </AdminLayout>
   );
