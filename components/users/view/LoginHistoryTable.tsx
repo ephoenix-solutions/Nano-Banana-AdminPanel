@@ -108,7 +108,7 @@ export default function LoginHistoryTable({
                 </td>
                 <td className="px-6 py-4">
                   <code className="text-xs font-mono text-primary bg-background px-2 py-1 rounded border border-primary/10">
-                    {login.deviceId.substring(0, 16)}...
+                    {login.deviceId || 'N/A'}
                   </code>
                 </td>
               </tr>

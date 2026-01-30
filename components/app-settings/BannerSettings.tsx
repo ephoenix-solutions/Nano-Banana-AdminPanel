@@ -123,7 +123,7 @@ export default function BannerSettings({
                   <button
                     type="button"
                     onClick={() => handleRemoveBanner(index)}
-                    className="p-2 text-secondary hover:text-white hover:bg-red-500 rounded-lg transition-all"
+                    className="p-2 text-secondary hover:text-white hover:bg-secondary rounded-lg transition-all"
                     title="Remove banner"
                   >
                     <Icons.trash size={18} />
