@@ -18,12 +18,11 @@ export default function UsersPage() {
   const {
     // Data
     users,
-    filteredAndSortedUsers,
+    paginatedUsers,
     userCache,
     
     // Loading states
     loading,
-    error,
     
     // Filter states
     searchQuery,
@@ -58,7 +57,7 @@ export default function UsersPage() {
   // Handle export
   const handleExport = (format: ExportFormat) => {
     exportUsers(format, {
-      users: filteredAndSortedUsers,
+      users: users,
       formatTimestamp,
     });
   };
@@ -80,7 +79,7 @@ export default function UsersPage() {
         <Breadcrumbs items={[{ label: 'Users' }]} />
 
         {/* Page Header */}
-        <PageHeader onAddUser={handleAddUser} onExport={handleExport} totalUsers={filteredAndSortedUsers.length} />
+        <PageHeader onAddUser={handleAddUser} onExport={handleExport} totalUsers={users.length} />
 
         {/* Search and Filter Bar */}
         <SearchFilterBar
@@ -89,7 +88,7 @@ export default function UsersPage() {
           providerFilter={providerFilter}
           hasActiveFilters={hasActiveFilters}
           totalUsers={users.length}
-          filteredCount={filteredAndSortedUsers.length}
+          filteredCount={paginatedUsers.length}
           onSearchChange={setSearchQuery}
           onRoleChange={setRoleFilter}
           onProviderChange={setProviderFilter}
@@ -99,31 +98,30 @@ export default function UsersPage() {
         {/* Stats Cards */}
         <StatsCards users={users} />
 
-        {/* Error Message */}
-        <ErrorMessage message={error} />
-
         {/* Users Table - Only show if there are results */}
-        {filteredAndSortedUsers.length > 0 && (
-          <UsersTable
-            users={filteredAndSortedUsers}
-            userCache={userCache}
-            sortField={sortField}
-            sortOrder={sortOrder}
-            formatTimestamp={formatTimestamp}
-            onSort={handleSort}
-            onView={handleView}
-            onEdit={handleEdit}
-            onDelete={handleDeleteClick}
-          />
+        {paginatedUsers.length > 0 && (
+          <>
+            <UsersTable
+              users={paginatedUsers}
+              userCache={userCache}
+              sortField={sortField}
+              sortOrder={sortOrder}
+              formatTimestamp={formatTimestamp}
+              onSort={handleSort}
+              onView={handleView}
+              onEdit={handleEdit}
+              onDelete={handleDeleteClick}
+            />
+          </>
         )}
 
         {/* No Results Message - Show when filters are active but no matches */}
-        {filteredAndSortedUsers.length === 0 && users.length > 0 && (
+        {paginatedUsers.length === 0 && hasActiveFilters && (
           <EmptyState type="no-results" onClearFilters={clearFilters} />
         )}
 
         {/* No Data Message - Show when database is truly empty */}
-        {users.length === 0 && (
+        {paginatedUsers.length === 0 && !hasActiveFilters && (
           <EmptyState type="no-data" onAddUser={handleAddUser} />
         )}
 

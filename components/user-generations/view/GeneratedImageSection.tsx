@@ -21,7 +21,7 @@ export default function GeneratedImageSection({ imageUrl, promptText }: Generate
           <div className="flex flex-col gap-4">
             {/* Image Preview - Fixed Width, Dynamic Height */}
             <div 
-              className="relative group cursor-pointer w-full max-w-2xl"
+              className="relative group cursor-pointer w-full max-w-screen"
               onClick={() => setShowFullImage(true)}
             >
               <img

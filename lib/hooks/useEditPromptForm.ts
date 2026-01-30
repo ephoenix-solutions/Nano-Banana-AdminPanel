@@ -190,13 +190,29 @@ export function useEditPromptForm(promptId: string): UseEditPromptFormReturn {
 
       const userId = user.id; // Type narrowing
 
+      // Handle file upload if a file was selected
+      let finalUrl = formData.url;
+      if (formData.url.startsWith('__FILE_SELECTED__')) {
+        // Find the upload function in the DOM
+        const uploadInput = document.querySelector('[data-folder="prompts"][data-upload-function="true"]') as any;
+        if (uploadInput && uploadInput.uploadFile) {
+          try {
+            finalUrl = await uploadInput.uploadFile();
+          } catch (uploadError) {
+            throw new Error('Failed to upload image. Please try again.');
+          }
+        } else {
+          throw new Error('Please select an image file');
+        }
+      }
+
       // Prepare data for API
       const promptData: UpdatePromptInput = {
         title: formData.title,
         categoryId: formData.categoryId,
         subCategoryId: formData.subCategoryId,
         prompt: formData.prompt,
-        url: formData.url,
+        url: finalUrl,
         imageRequirement: formData.imageRequirement,
         tags: formData.tags.length > 0 ? formData.tags : undefined,
         isTrending: formData.isTrending,

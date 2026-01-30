@@ -9,6 +9,7 @@ import FormInput from '@/components/users/utils/FormInput';
 import FormSelect from '@/components/users/utils/FormSelect';
 import ErrorMessage from '@/components/users/utils/ErrorMessage';
 import FormActions from '@/components/users/utils/FormActions';
+import ImageUpload from '@/components/shared/ImageUpload';
 
 export default function EditUserPage() {
   const params = useParams();
@@ -143,16 +144,17 @@ export default function EditUserPage() {
               />
             </div>
 
-            {/* Photo URL Field - Full Width */}
-            <FormInput
-              id="photoURL"
-              name="photoURL"
-              label="Photo URL"
+            {/* Photo Upload Field - Full Width */}
+            <ImageUpload
               value={formData.photoURL || ''}
-              onChange={handleChange}
-              type="url"
-              optional
-              placeholder="https://example.com/photo.jpg"
+              onChange={(url) => handleChange({ target: { name: 'photoURL', value: url } } as any)}
+              folder="users"
+              label="User Photo"
+              optional={true}
+              enableCrop={true}
+              aspectRatio={1}
+              circularCrop={true}
+              showAspectRatioButtons={false}
             />
 
             {/* Password Fields - Show based on role changes */}

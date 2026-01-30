@@ -36,13 +36,15 @@ export default function PromptsTable({
   return (
     <div className="bg-white rounded-lg border border-primary/10 overflow-hidden">
       <div className="overflow-x-auto">
-        <table className="w-full">
+        <table className="w-full table-fixed">
           <thead className="bg-background border-b border-primary/10">
             <tr>
-              <th className="px-6 py-4 text-left text-sm font-semibold text-primary font-body">
+              {/* Image - Fixed width */}
+              <th className="w-24 px-6 py-4 text-left text-sm font-semibold text-primary font-body">
                 Image
               </th>
-              <th className="px-6 py-4 text-left text-sm font-semibold text-primary font-body">
+              {/* Title - Flexible */}
+              <th className="w-64 px-6 py-4 text-left text-sm font-semibold text-primary font-body">
                 <SortableHeader
                   field="title"
                   label="Title"
@@ -51,10 +53,12 @@ export default function PromptsTable({
                   onSort={onSort}
                 />
               </th>
-              <th className="px-6 py-4 text-left text-sm font-semibold text-primary font-body">
+              {/* Required - Fixed width */}
+              <th className="w-24 px-6 py-4 text-left text-sm font-semibold text-primary font-body">
                 Required
               </th>
-              <th className="px-6 py-4 text-left text-sm font-semibold text-primary font-body">
+              {/* Category - Fixed width */}
+              <th className="w-48 px-6 py-4 text-left text-sm font-semibold text-primary font-body">
                 <SortableHeader
                   field="category"
                   label="Category"
@@ -63,10 +67,12 @@ export default function PromptsTable({
                   onSort={onSort}
                 />
               </th>
-              <th className="px-6 py-4 text-left text-sm font-semibold text-primary font-body">
+              {/* Trending - Fixed width */}
+              <th className="w-24 px-6 py-4 text-left text-sm font-semibold text-primary font-body">
                 Trending
               </th>
-              <th className="px-6 py-4 text-left text-sm font-semibold text-primary font-body">
+              {/* Likes - Fixed width */}
+              <th className="w-20 px-6 py-4 text-left text-sm font-semibold text-primary font-body">
                 <SortableHeader
                   field="likes"
                   label="Likes"
@@ -75,7 +81,8 @@ export default function PromptsTable({
                   onSort={onSort}
                 />
               </th>
-              <th className="px-6 py-4 text-left text-sm font-semibold text-primary font-body">
+              {/* Searches - Fixed width */}
+              <th className="w-24 px-6 py-4 text-left text-sm font-semibold text-primary font-body">
                 <SortableHeader
                   field="searchCount"
                   label="Searches"
@@ -84,7 +91,8 @@ export default function PromptsTable({
                   onSort={onSort}
                 />
               </th>
-              <th className="px-6 py-4 text-left text-sm font-semibold text-primary font-body">
+              {/* Saves - Fixed width */}
+              <th className="w-20 px-6 py-4 text-left text-sm font-semibold text-primary font-body">
                 <SortableHeader
                   field="saveCount"
                   label="Saves"
@@ -93,7 +101,8 @@ export default function PromptsTable({
                   onSort={onSort}
                 />
               </th>
-              <th className="px-6 py-4 text-left text-sm font-semibold text-primary font-body">
+              {/* Created At - Fixed width */}
+              <th className="w-48 px-6 py-4 text-left text-sm font-semibold text-primary font-body">
                 <SortableHeader
                   field="createdAt"
                   label="Created At"
@@ -102,7 +111,8 @@ export default function PromptsTable({
                   onSort={onSort}
                 />
               </th>
-              <th className="px-6 py-4 text-left text-sm font-semibold text-primary font-body">
+              {/* Updated By - Fixed width */}
+              <th className="w-48 px-6 py-4 text-left text-sm font-semibold text-primary font-body">
                 <SortableHeader
                   field="updatedAt"
                   label="Updated By"
@@ -111,7 +121,8 @@ export default function PromptsTable({
                   onSort={onSort}
                 />
               </th>
-              <th className="px-6 py-4 text-right text-sm font-semibold text-primary font-body">
+              {/* Actions - Fixed width */}
+              <th className="w-40 px-6 py-4 text-right text-sm font-semibold text-primary font-body">
                 Actions
               </th>
             </tr>

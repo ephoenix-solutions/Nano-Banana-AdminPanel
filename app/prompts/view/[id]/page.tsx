@@ -10,7 +10,6 @@ import PromptInfoGrid from '@/components/prompts/view/PromptInfoGrid';
 import PromptTextSection from '@/components/prompts/view/PromptTextSection';
 import PromptTagsSection from '@/components/prompts/view/PromptTagsSection';
 import PromptImageSection from '@/components/prompts/view/PromptImageSection';
-import UsersTable from '@/components/prompts/view/UsersTable';
 
 export default function ViewPromptPage() {
   const router = useRouter();
@@ -26,11 +25,9 @@ export default function ViewPromptPage() {
     creatorPhoto,
     updaterName,
     updaterPhoto,
-    likedByUsers,
-    savedByUsers,
-    loadingLikes,
-    loadingSaves,
-  } = usePromptDetails(promptId);
+    handleLikedBy,
+    handleSavedBy,
+  } = usePromptDetails(promptId, router);
 
   const handleBack = () => {
     router.push('/prompts');
@@ -38,10 +35,6 @@ export default function ViewPromptPage() {
 
   const handleEdit = () => {
     router.push(`/prompts/edit/${promptId}`);
-  };
-
-  const handleViewUser = (userId: string) => {
-    router.push(`/users/view/${userId}`);
   };
 
   if (loading) {
@@ -110,13 +103,29 @@ export default function ViewPromptPage() {
               View prompt information and generated image
             </p>
           </div>
-          <button
-            onClick={handleEdit}
-            className="flex items-center gap-2 px-6 py-3 bg-accent text-primary rounded-lg font-semibold hover:bg-accent/90 transition-all"
-          >
-            <Icons.edit size={20} />
-            <span>Edit Prompt</span>
-          </button>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={handleLikedBy}
+              className="flex items-center gap-2 px-6 py-3 bg-accent/10 text-accent rounded-lg font-semibold hover:bg-accent/20 transition-all border border-accent/20"
+            >
+              <Icons.heart size={20} />
+              <span>Liked By</span>
+            </button>
+            <button
+              onClick={handleSavedBy}
+              className="flex items-center gap-2 px-6 py-3 bg-secondary/10 text-secondary rounded-lg font-semibold hover:bg-secondary/20 transition-all border border-secondary/20"
+            >
+              <Icons.bookmark size={20} />
+              <span>Saved By</span>
+            </button>
+            <button
+              onClick={handleEdit}
+              className="flex items-center gap-2 px-6 py-3 bg-accent text-primary rounded-lg font-semibold hover:bg-accent/90 transition-all"
+            >
+              <Icons.edit size={20} />
+              <span>Edit Prompt</span>
+            </button>
+          </div>
         </div>
 
         {/* Prompt Details Card */}
@@ -142,31 +151,6 @@ export default function ViewPromptPage() {
             <PromptTextSection prompt={prompt} />
             <PromptTagsSection prompt={prompt} />
             <PromptImageSection prompt={prompt} />
-
-            {/* Users Who Liked and Saved - Grid Layout */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-2 mt-4">
-              {/* Users Who Liked This Prompt - Left Side */}
-              <UsersTable
-                users={likedByUsers.map(item => ({ user: item.user, timestamp: item.likedAt }))}
-                loading={loadingLikes}
-                title="Liked By"
-                icon="check"
-                emptyMessage="No users have liked this prompt yet."
-                timestampLabel="Liked At"
-                onViewUser={handleViewUser}
-              />
-
-              {/* Users Who Saved This Prompt - Right Side */}
-              <UsersTable
-                users={savedByUsers.map(item => ({ user: item.user, timestamp: item.savedAt }))}
-                loading={loadingSaves}
-                title="Saved By"
-                icon="bookmark"
-                emptyMessage="No users have saved this prompt yet."
-                timestampLabel="Saved At"
-                onViewUser={handleViewUser}
-              />
-            </div>
           </div>
         </div>
 

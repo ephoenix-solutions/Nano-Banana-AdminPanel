@@ -56,9 +56,14 @@ import {
   ChevronUp,
   CornerDownRight,
   Star,
+  Heart,
   Bookmark,
   Code,
   TrendingUp,
+  Shield,
+  Smartphone,
+  RotateCcw,
+  RotateCw
 } from 'lucide-react';
 
 // Export all icons
@@ -98,6 +103,8 @@ export const Icons = {
   check: Check,
   save: Save,
   refresh: RefreshCw,
+  rotateCcw: RotateCcw,
+  rotateCw: RotateCw,
   moreVertical: MoreVertical,
   moreHorizontal: MoreHorizontal,
   
@@ -105,6 +112,7 @@ export const Icons = {
   alert: AlertCircle,
   info: Info,
   star: Star,
+  heart: Heart,
   bookmark: Bookmark,
   trending: TrendingUp,
   x: X,
@@ -127,6 +135,8 @@ export const Icons = {
   copy: Copy,
   share: Share2,
   code: Code,
+  shield: Shield,
+  smartphone: Smartphone,
 };
 
 // Export individual icons for direct import
@@ -171,6 +181,8 @@ export {
   Share2,
   Save,
   RefreshCw,
+  RotateCcw,
+  RotateCw,
   MoreVertical,
   MoreHorizontal,
   ArrowLeft,
@@ -181,9 +193,12 @@ export {
   ChevronUp,
   CornerDownRight,
   Star,
+  Heart,
   Bookmark,
   Code,
   TrendingUp,
+  Shield,
+  Smartphone
 };
 
 export default Icons;

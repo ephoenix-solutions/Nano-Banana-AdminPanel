@@ -5,6 +5,7 @@ import { Category, Subcategory } from '@/lib/types/category.types';
 import { createPrompt } from '@/lib/services/prompt.service';
 import { getAllCategories } from '@/lib/services/category.service';
 import { useAuth } from '@/lib/hooks/useAuth';
+import { useToast } from '@/components/shared/Toast';
 
 interface FormData {
   title: string;
@@ -23,7 +24,6 @@ interface FormData {
 interface UseAddPromptFormReturn {
   loading: boolean;
   loadingCategories: boolean;
-  error: string | null;
   categories: Category[];
   subcategories: Subcategory[];
   formData: FormData;
@@ -40,9 +40,9 @@ interface UseAddPromptFormReturn {
 export function useAddPromptForm(): UseAddPromptFormReturn {
   const router = useRouter();
   const { user } = useAuth();
+  const { showToast } = useToast();
   const [loading, setLoading] = useState(false);
   const [loadingCategories, setLoadingCategories] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [categories, setCategories] = useState<Category[]>([]);
   const [subcategories, setSubcategories] = useState<Subcategory[]>([]);
   const [formData, setFormData] = useState<FormData>({
@@ -81,7 +81,7 @@ export function useAddPromptForm(): UseAddPromptFormReturn {
       setCategories(data);
     } catch (err) {
       console.error('Error fetching categories:', err);
-      setError('Failed to load categories');
+      showToast('Failed to load categories', 'error');
     } finally {
       setLoadingCategories(false);
     }
@@ -144,7 +144,6 @@ export function useAddPromptForm(): UseAddPromptFormReturn {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    setError(null);
 
     try {
       if (!formData.title.trim()) {
@@ -169,13 +168,29 @@ export function useAddPromptForm(): UseAddPromptFormReturn {
 
       const userId = user.id; // Type narrowing
 
+      // Handle file upload if a file was selected
+      let finalUrl = formData.url;
+      if (formData.url.startsWith('__FILE_SELECTED__')) {
+        // Find the upload function in the DOM
+        const uploadInput = document.querySelector('[data-folder="prompts"][data-upload-function="true"]') as any;
+        if (uploadInput && uploadInput.uploadFile) {
+          try {
+            finalUrl = await uploadInput.uploadFile();
+          } catch (uploadError) {
+            throw new Error('Failed to upload image. Please try again.');
+          }
+        } else {
+          throw new Error('Please select an image file');
+        }
+      }
+
       // Prepare data for API
       const promptData: CreatePromptInput = {
         title: formData.title,
         categoryId: formData.categoryId,
         subCategoryId: formData.subCategoryId,
         prompt: formData.prompt,
-        url: formData.url,
+        url: finalUrl,
         imageRequirement: formData.imageRequirement,
         tags: formData.tags.length > 0 ? formData.tags : undefined,
         isTrending: formData.isTrending,
@@ -186,10 +201,11 @@ export function useAddPromptForm(): UseAddPromptFormReturn {
       };
 
       await createPrompt(promptData);
+      showToast('Prompt created successfully!', 'success');
       router.push('/prompts');
     } catch (err: any) {
       console.error('Error creating prompt:', err);
-      setError(err.message || 'Failed to create prompt');
+      showToast(err.message || 'Failed to create prompt', 'error');
     } finally {
       setLoading(false);
     }
@@ -202,7 +218,6 @@ export function useAddPromptForm(): UseAddPromptFormReturn {
   return {
     loading,
     loadingCategories,
-    error,
     categories,
     subcategories,
     formData,

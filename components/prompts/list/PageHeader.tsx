@@ -5,10 +5,11 @@ interface PageHeaderProps {
   onAddPrompt: () => void;
   onExport: (format: 'csv' | 'json') => void;
   onImport: () => void;
+  onViewTrash: () => void;
   totalPrompts: number;
 }
 
-export default function PageHeader({ onAddPrompt, onExport, onImport, totalPrompts }: PageHeaderProps) {
+export default function PageHeader({ onAddPrompt, onExport, onImport, onViewTrash, totalPrompts }: PageHeaderProps) {
   const [showExportMenu, setShowExportMenu] = useState(false);
 
   const handleExport = (format: 'csv' | 'json') => {

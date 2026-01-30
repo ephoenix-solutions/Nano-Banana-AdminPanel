@@ -4,10 +4,11 @@ import { Country } from '@/lib/types/country.types';
 import { Category } from '@/lib/types/category.types';
 import {
   getAllCountries,
-  deleteCountry,
+  softDeleteCountry,
 } from '@/lib/services/country.service';
 import { getAllCategories } from '@/lib/services/category.service';
 import { getUserById } from '@/lib/services/user.service';
+import { useToast } from '@/components/shared/Toast';
 
 export type SortField = 'name' | 'isoCode' | 'categories' | 'createdAt' | 'updatedAt';
 export type SortOrder = 'asc' | 'desc';
@@ -61,6 +62,7 @@ interface UseCountriesListReturn {
 
 export function useCountriesList(): UseCountriesListReturn {
   const router = useRouter();
+  const { showToast } = useToast();
   
   // Data states
   const [countries, setCountries] = useState<Country[]>([]);
@@ -101,7 +103,8 @@ export function useCountriesList(): UseCountriesListReturn {
       setCategories(categoriesData);
     } catch (err) {
       console.error('Error fetching data:', err);
-      setError('Failed to load data');
+      setError('Failed to load countries');
+      showToast('Failed to load countries', 'error');
     } finally {
       setLoading(false);
     }
@@ -184,12 +187,14 @@ export function useCountriesList(): UseCountriesListReturn {
     if (!deleteModal.country) return;
 
     try {
-      await deleteCountry(deleteModal.country.id);
+      const currentUserId = deleteModal.country.createdBy;
+      await softDeleteCountry(deleteModal.country.id, currentUserId);
       setDeleteModal({ isOpen: false, country: null });
       await fetchData();
+      showToast('Country moved to trash', 'success');
     } catch (err) {
       console.error('Error deleting country:', err);
-      setError('Failed to delete country');
+      showToast('Failed to delete country', 'error');
     }
   };
 

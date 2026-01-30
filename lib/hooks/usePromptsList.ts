@@ -5,11 +5,12 @@ import { Category } from '@/lib/types/category.types';
 import { User } from '@/lib/types/user.types';
 import {
   getAllPrompts,
-  deletePrompt,
+  softDeletePrompt,
   toggleTrending,
 } from '@/lib/services/prompt.service';
 import { getAllCategories } from '@/lib/services/category.service';
 import { getUserById, getUsersByIds } from '@/lib/services/user.service';
+import { useToast } from '@/components/shared/Toast';
 
 export type SortField = 'title' | 'likes' | 'createdAt' | 'searchCount' | 'saveCount' | 'category' | 'updatedAt';
 export type SortOrder = 'asc' | 'desc';
@@ -24,7 +25,6 @@ interface UsePromptsListReturn {
   
   // Loading states
   loading: boolean;
-  error: string | null;
   
   // Filter states
   searchQuery: string;
@@ -69,12 +69,12 @@ interface UsePromptsListReturn {
 
 export function usePromptsList(): UsePromptsListReturn {
   const router = useRouter();
+  const { showToast } = useToast();
   
   // Data states
   const [prompts, setPrompts] = useState<Prompt[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [userCache, setUserCache] = useState<Record<string, User>>({});
   
   // Filter states
@@ -116,7 +116,6 @@ export function usePromptsList(): UsePromptsListReturn {
   const fetchData = async () => {
     try {
       setLoading(true);
-      setError(null);
       const [promptsData, categoriesData] = await Promise.all([
         getAllPrompts(),
         getAllCategories(),
@@ -125,7 +124,7 @@ export function usePromptsList(): UsePromptsListReturn {
       setCategories(categoriesData);
     } catch (err) {
       console.error('Error fetching data:', err);
-      setError('Failed to load prompts');
+      showToast('Failed to load prompts', 'error');
     } finally {
       setLoading(false);
     }
@@ -206,12 +205,15 @@ export function usePromptsList(): UsePromptsListReturn {
     if (!deleteModal.prompt) return;
 
     try {
-      await deletePrompt(deleteModal.prompt.id);
+      // Get current user ID for soft delete
+      const currentUserId = deleteModal.prompt.createdBy; // You may want to get actual logged-in user
+      await softDeletePrompt(deleteModal.prompt.id, currentUserId);
       setDeleteModal({ isOpen: false, prompt: null });
       await fetchData();
+      showToast('Prompt moved to trash', 'success');
     } catch (err) {
       console.error('Error deleting prompt:', err);
-      setError('Failed to delete prompt');
+      showToast('Failed to delete prompt', 'error');
     }
   };
 
@@ -219,9 +221,10 @@ export function usePromptsList(): UsePromptsListReturn {
     try {
       await toggleTrending(promptId, !isTrending);
       await fetchData();
+      showToast(`Prompt ${!isTrending ? 'marked as' : 'removed from'} trending`, 'success');
     } catch (err) {
       console.error('Error toggling trending:', err);
-      setError('Failed to update trending status');
+      showToast('Failed to update trending status', 'error');
     }
   };
 
@@ -352,7 +355,6 @@ export function usePromptsList(): UsePromptsListReturn {
     
     // Loading states
     loading,
-    error,
     
     // Filter states
     searchQuery,

@@ -1,8 +1,14 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { User } from '@/lib/types/user.types';
-import { getAllUsers, deleteUser, getUsersByIds } from '@/lib/services/user.service';
+import { 
+  getAllUsers, 
+  softDeleteUser, 
+  getUsersByIds 
+} from '@/lib/services/user.service';
 import { Timestamp } from 'firebase/firestore';
+import { useAuth } from '@/lib/hooks/useAuth';
+import { useToast } from '@/components/shared/Toast';
 
 export type SortField = 'name' | 'email' | 'role' | 'provider' | 'createdAt' | 'lastLogin';
 export type SortOrder = 'asc' | 'desc';
@@ -12,12 +18,11 @@ export type ProviderFilter = 'all' | 'google' | 'apple' | 'manual';
 interface UseUsersListReturn {
   // Data
   users: User[];
-  filteredAndSortedUsers: User[];
+  paginatedUsers: User[];
   userCache: Record<string, User>;
   
   // Loading states
   loading: boolean;
-  error: string | null;
   
   // Filter states
   searchQuery: string;
@@ -56,11 +61,12 @@ interface UseUsersListReturn {
 
 export function useUsersList(): UseUsersListReturn {
   const router = useRouter();
+  const { user: currentUser } = useAuth();
+  const { showToast } = useToast();
   
   // Data states
-  const [users, setUsers] = useState<User[]>([]);
+  const [allUsers, setAllUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [userCache, setUserCache] = useState<Record<string, User>>({});
   
   // Filter states
@@ -69,6 +75,8 @@ export function useUsersList(): UseUsersListReturn {
   const [sortOrder, setSortOrder] = useState<SortOrder>('asc');
   const [roleFilter, setRoleFilter] = useState<RoleFilter>('all');
   const [providerFilter, setProviderFilter] = useState<ProviderFilter>('all');
+  
+
   
   // Delete modal state
   const [deleteModal, setDeleteModal] = useState<{
@@ -79,38 +87,40 @@ export function useUsersList(): UseUsersListReturn {
     user: null,
   });
 
-  // Fetch initial data
+  // Fetch users when filters change
   useEffect(() => {
     fetchUsers();
-  }, []);
+  }, []); // Only fetch once on mount
 
-  // Fetch all creator users when users change
+  // Fetch creator users when allUsers change
   useEffect(() => {
-    if (users.length > 0) {
+    if (allUsers.length > 0) {
       fetchCreatorUsers();
     }
-  }, [users]);
+  }, [allUsers]);
+
+
 
   const fetchUsers = async () => {
     try {
       setLoading(true);
-      setError(null);
-      const data = await getAllUsers();
-      setUsers(data);
+      
+      const users = await getAllUsers(false);
+      
+      setAllUsers(users);
     } catch (err) {
       console.error('Error fetching users:', err);
-      setError('Failed to load users');
+      showToast('Failed to load users', 'error');
     } finally {
       setLoading(false);
     }
   };
 
-  // Fetch all unique creator users to display who created each user
   const fetchCreatorUsers = async () => {
     try {
       const uniqueCreatorIds = [
         ...new Set(
-          users
+          allUsers
             .map(u => u.createdBy)
             .filter(Boolean) as string[]
         )
@@ -127,6 +137,7 @@ export function useUsersList(): UseUsersListReturn {
       setUserCache(userMap);
     } catch (err) {
       console.error('Error fetching creator users:', err);
+      showToast('Failed to load creator information', 'error');
     }
   };
 
@@ -142,7 +153,67 @@ export function useUsersList(): UseUsersListReturn {
     }).format(date).replace(/,/g, '');
   };
 
-  // Navigation handlers
+  // Client-side filtering, sorting, and pagination
+  const filteredAndSortedUsers = useMemo(() => {
+    let result = [...allUsers];
+    
+    // Apply role filter
+    if (roleFilter !== 'all') {
+      result = result.filter(user => user.role === roleFilter);
+    }
+    
+    // Apply provider filter
+    if (providerFilter !== 'all') {
+      if (providerFilter === 'apple') {
+        result = result.filter(user => 
+          user.provider === 'apple' || user.provider === 'ios'
+        );
+      } else {
+        result = result.filter(user => user.provider === providerFilter);
+      }
+    }
+    
+    // Apply search filter
+    if (searchQuery.trim()) {
+      const searchLower = searchQuery.toLowerCase();
+      result = result.filter(
+        (user) =>
+          user.name.toLowerCase().includes(searchLower) ||
+          user.email.toLowerCase().includes(searchLower)
+      );
+    }
+    
+    // Apply sorting
+    result.sort((a, b) => {
+      let aValue, bValue;
+      
+      switch (sortField) {
+        case 'name':
+        case 'email':
+        case 'role':
+        case 'provider':
+          aValue = (a[sortField] || '').toLowerCase();
+          bValue = (b[sortField] || '').toLowerCase();
+          const comparison = aValue.localeCompare(bValue);
+          return sortOrder === 'asc' ? comparison : -comparison;
+        
+        case 'createdAt':
+        case 'lastLogin':
+          aValue = a[sortField] instanceof Timestamp ? a[sortField].toMillis() : 0;
+          bValue = b[sortField] instanceof Timestamp ? b[sortField].toMillis() : 0;
+          return sortOrder === 'asc' ? aValue - bValue : bValue - aValue;
+        
+        default:
+          return 0;
+      }
+    });
+    
+    return result;
+  }, [allUsers, roleFilter, providerFilter, searchQuery, sortField, sortOrder]);
+
+  // Return all filtered and sorted users (no pagination)
+  const paginatedUsers = filteredAndSortedUsers;
+
   const handleAddUser = () => {
     router.push('/users/add');
   };
@@ -163,19 +234,18 @@ export function useUsersList(): UseUsersListReturn {
   };
 
   const handleDeleteConfirm = async () => {
-    if (!deleteModal.user) return;
+    if (!deleteModal.user || !currentUser) return;
 
     try {
-      await deleteUser(deleteModal.user.id);
+      await softDeleteUser(deleteModal.user.id, currentUser.id);
       setDeleteModal({ isOpen: false, user: null });
       await fetchUsers();
     } catch (err) {
       console.error('Error deleting user:', err);
-      setError('Failed to delete user');
+      showToast('Failed to delete user', 'error');
     }
   };
 
-  // Sorting handler
   const handleSort = (field: SortField) => {
     if (sortField === field) {
       setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
@@ -185,81 +255,6 @@ export function useUsersList(): UseUsersListReturn {
     }
   };
 
-  // Filter and Sort Users
-  const filteredAndSortedUsers = useMemo(() => {
-    let filtered = [...users];
-
-    // Search filter (name or email)
-    if (searchQuery.trim()) {
-      const query = searchQuery.toLowerCase();
-      filtered = filtered.filter(
-        (user) =>
-          user.name.toLowerCase().includes(query) ||
-          user.email.toLowerCase().includes(query)
-      );
-    }
-
-    // Role filter
-    if (roleFilter !== 'all') {
-      filtered = filtered.filter((user) => user.role === roleFilter);
-    }
-
-    // Provider filter
-    if (providerFilter !== 'all') {
-      filtered = filtered.filter((user) => {
-        if (providerFilter === 'apple') {
-          return user.provider === 'apple' || user.provider === 'ios';
-        }
-        return user.provider === providerFilter;
-      });
-    }
-
-    // Sort by selected field
-    filtered.sort((a, b) => {
-      let aValue: any;
-      let bValue: any;
-
-      switch (sortField) {
-        case 'name':
-          aValue = (a.name || '').toLowerCase();
-          bValue = (b.name || '').toLowerCase();
-          break;
-        case 'email':
-          aValue = (a.email || '').toLowerCase();
-          bValue = (b.email || '').toLowerCase();
-          break;
-        case 'role':
-          aValue = (a.role || 'user').toLowerCase();
-          bValue = (b.role || 'user').toLowerCase();
-          break;
-        case 'provider':
-          aValue = (a.provider || '').toLowerCase();
-          bValue = (b.provider || '').toLowerCase();
-          break;
-        case 'createdAt':
-          aValue = a.createdAt?.toMillis() || 0;
-          bValue = b.createdAt?.toMillis() || 0;
-          break;
-        case 'lastLogin':
-          aValue = a.lastLogin?.toMillis() || 0;
-          bValue = b.lastLogin?.toMillis() || 0;
-          break;
-        default:
-          aValue = (a.name || '').toLowerCase();
-          bValue = (b.name || '').toLowerCase();
-      }
-
-      if (sortOrder === 'asc') {
-        return aValue > bValue ? 1 : -1;
-      } else {
-        return aValue < bValue ? 1 : -1;
-      }
-    });
-
-    return filtered;
-  }, [users, searchQuery, sortField, sortOrder, roleFilter, providerFilter]);
-
-  // Clear all filters
   const clearFilters = () => {
     setSearchQuery('');
     setSortField('name');
@@ -268,7 +263,6 @@ export function useUsersList(): UseUsersListReturn {
     setProviderFilter('all');
   };
 
-  // Check if any filters are active
   const hasActiveFilters = useMemo(() => {
     return (
       searchQuery.trim() !== '' ||
@@ -279,13 +273,12 @@ export function useUsersList(): UseUsersListReturn {
 
   return {
     // Data
-    users,
-    filteredAndSortedUsers,
+    users: allUsers,
+    paginatedUsers,
     userCache,
     
     // Loading states
     loading,
-    error,
     
     // Filter states
     searchQuery,

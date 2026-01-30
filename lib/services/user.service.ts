@@ -14,17 +14,36 @@ import {
   QueryConstraint,
 } from 'firebase/firestore';
 import { db } from '@/config/firebase';
-import { User, CreateUserInput, UpdateUserInput } from '@/lib/types/user.types';
+import { 
+  User, 
+  CreateUserInput, 
+  UpdateUserInput,
+  LoginHistory,
+  CreateLoginHistoryInput,
+} from '@/lib/types/user.types';
 
 const COLLECTION_NAME = 'users';
+const LOGIN_HISTORY_SUBCOLLECTION = 'loginHistory';
 
 /**
  * Get all users from Firestore
+ * Filtering is done client-side to avoid complex indexes
  */
-export async function getAllUsers(): Promise<User[]> {
+export async function getAllUsers(
+  includeDeleted: boolean = false
+): Promise<User[]> {
   try {
     const usersRef = collection(db, COLLECTION_NAME);
-    const q = query(usersRef, orderBy('createdAt', 'desc'));
+    
+    const constraints: QueryConstraint[] = [];
+    
+    if (!includeDeleted) {
+      constraints.push(where('isDeleted', '==', false));
+    }
+    
+    constraints.push(orderBy('createdAt', 'desc'));
+    
+    const q = query(usersRef, ...constraints);
     const querySnapshot = await getDocs(q);
     
     const users: User[] = querySnapshot.docs.map((doc) => ({
@@ -40,11 +59,38 @@ export async function getAllUsers(): Promise<User[]> {
 }
 
 /**
+ * Get all deleted users
+ * Filtering is done client-side to avoid complex indexes
+ */
+export async function getDeletedUsers(): Promise<User[]> {
+  try {
+    const usersRef = collection(db, COLLECTION_NAME);
+    
+    const constraints: QueryConstraint[] = [
+      where('isDeleted', '==', true),
+      orderBy('deletedAt', 'desc')
+    ];
+    
+    const q = query(usersRef, ...constraints);
+    const querySnapshot = await getDocs(q);
+    
+    const users: User[] = querySnapshot.docs.map((doc) => ({
+      id: doc.id,
+      ...doc.data(),
+    } as User));
+    
+    return users;
+  } catch (error) {
+    console.error('Error getting deleted users:', error);
+    throw error;
+  }
+}
+
+/**
  * Get a single user by ID
  */
-export async function getUserById(userId: string): Promise<User | null> {
+export async function getUserById(userId: string, includeDeleted: boolean = false): Promise<User | null> {
   try {
-    // Validate userId
     if (!userId || typeof userId !== 'string' || userId.trim() === '') {
       console.warn('Invalid userId provided to getUserById:', userId);
       return null;
@@ -54,16 +100,22 @@ export async function getUserById(userId: string): Promise<User | null> {
     const userSnap = await getDoc(userRef);
     
     if (userSnap.exists()) {
-      return {
+      const user = {
         id: userSnap.id,
         ...userSnap.data(),
       } as User;
+      
+      // if (!includeDeleted && user.isDeleted) {
+      //   return null;
+      // }
+      
+      return user;
     }
     
     return null;
   } catch (error) {
     console.error('Error getting user:', error);
-    return null; // Return null instead of throwing to prevent crashes
+    return null;
   }
 }
 
@@ -107,9 +159,10 @@ export async function createUser(userData: CreateUserInput): Promise<string> {
     const newUser = {
       ...userData,
       photoURL: userData.photoURL || '',
-      role: userData.role || 'user', // Default role is 'user'
+      role: userData.role || 'user',
       createdAt: now,
       lastLogin: now,
+      isDeleted: false,
     };
     
     const docRef = await addDoc(usersRef, newUser);
@@ -135,14 +188,17 @@ export async function updateUser(
     const userRef = doc(db, COLLECTION_NAME, userId);
     const updateData: Record<string, any> = {};
     
-    // Only add defined fields to update
     if (userData.email !== undefined) updateData.email = userData.email;
     if (userData.language !== undefined) updateData.language = userData.language;
     if (userData.name !== undefined) updateData.name = userData.name;
     if (userData.photoURL !== undefined) updateData.photoURL = userData.photoURL;
     if (userData.provider !== undefined) updateData.provider = userData.provider;
     if (userData.role !== undefined) updateData.role = userData.role;
-    if (userData.password !== undefined) updateData.password = userData.password; // Add password field
+    if (userData.password !== undefined) updateData.password = userData.password;
+    
+    if (userData.isDeleted !== undefined) updateData.isDeleted = userData.isDeleted;
+    if (userData.deletedAt !== undefined) updateData.deletedAt = userData.deletedAt;
+    if (userData.deletedBy !== undefined) updateData.deletedBy = userData.deletedBy;
     
     await updateDoc(userRef, updateData);
   } catch (error) {
@@ -167,107 +223,80 @@ export async function updateLastLogin(userId: string): Promise<void> {
     });
   } catch (error) {
     console.error('Error updating last login:', error);
-    // Don't throw, just log the error
   }
 }
 
 /**
- * Delete a user
+ * Soft delete a user (mark as deleted)
  */
-export async function deleteUser(userId: string): Promise<void> {
+export async function softDeleteUser(
+  userId: string,
+  deletedBy: string
+): Promise<void> {
   try {
     if (!userId || typeof userId !== 'string' || userId.trim() === '') {
-      throw new Error('Invalid userId provided to deleteUser');
+      throw new Error('Invalid userId provided to softDeleteUser');
     }
 
     const userRef = doc(db, COLLECTION_NAME, userId);
+    await updateDoc(userRef, {
+      isDeleted: true,
+      deletedAt: Timestamp.now(),
+      deletedBy: deletedBy,
+    });
+  } catch (error) {
+    console.error('Error soft deleting user:', error);
+    throw error;
+  }
+}
+
+/**
+ * Restore a soft-deleted user
+ */
+export async function restoreUser(userId: string): Promise<void> {
+  try {
+    if (!userId || typeof userId !== 'string' || userId.trim() === '') {
+      throw new Error('Invalid userId provided to restoreUser');
+    }
+
+    const userRef = doc(db, COLLECTION_NAME, userId);
+    await updateDoc(userRef, {
+      isDeleted: false,
+      deletedAt: null,
+      deletedBy: null,
+    });
+  } catch (error) {
+    console.error('Error restoring user:', error);
+    throw error;
+  }
+}
+
+/**
+ * Permanently delete a user (hard delete)
+ */
+export async function permanentlyDeleteUser(userId: string): Promise<void> {
+  try {
+    if (!userId || typeof userId !== 'string' || userId.trim() === '') {
+      throw new Error('Invalid userId provided to permanentlyDeleteUser');
+    }
+
+    const user = await getUserById(userId, true);
+    const userRef = doc(db, COLLECTION_NAME, userId);
     await deleteDoc(userRef);
-  } catch (error) {
-    console.error('Error deleting user:', error);
-    throw error;
-  }
-}
-
-/**
- * Get users with pagination
- */
-export async function getUsersPaginated(
-  limitCount: number = 10,
-  orderByField: string = 'createdAt',
-  orderDirection: 'asc' | 'desc' = 'desc'
-): Promise<User[]> {
-  try {
-    const usersRef = collection(db, COLLECTION_NAME);
-    const q = query(
-      usersRef,
-      orderBy(orderByField, orderDirection),
-      limit(limitCount)
-    );
-    const querySnapshot = await getDocs(q);
     
-    const users: User[] = querySnapshot.docs.map((doc) => ({
-      id: doc.id,
-      ...doc.data(),
-    } as User));
-    
-    return users;
-  } catch (error) {
-    console.error('Error getting paginated users:', error);
-    throw error;
-  }
-}
-
-/**
- * Search users by name or email
- */
-export async function searchUsers(searchTerm: string): Promise<User[]> {
-  try {
-    if (!searchTerm || typeof searchTerm !== 'string') {
-      return [];
+    if (user?.photoURL && typeof window === 'undefined') {
+      try {
+        const bucketName = process.env.AWS_S3_BUCKET_NAME || 'nano-banana-images';
+        if (user.photoURL.includes(bucketName) || user.photoURL.includes('s3.amazonaws.com')) {
+          const { deleteFromS3 } = await import('@/lib/utils/s3-upload');
+          await deleteFromS3(user.photoURL);
+        }
+      } catch (s3Error) {
+        console.error('Error deleting S3 photo (non-critical):', s3Error);
+      }
     }
-
-    const usersRef = collection(db, COLLECTION_NAME);
-    const querySnapshot = await getDocs(usersRef);
-    
-    const users: User[] = querySnapshot.docs
-      .map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      } as User))
-      .filter(
-        (user) =>
-          user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          user.email.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-    
-    return users;
   } catch (error) {
-    console.error('Error searching users:', error);
-    throw error;
-  }
-}
-
-/**
- * Get users by provider
- */
-export async function getUsersByProvider(provider: string): Promise<User[]> {
-  try {
-    if (!provider || typeof provider !== 'string') {
-      return [];
-    }
-
-    const usersRef = collection(db, COLLECTION_NAME);
-    const q = query(usersRef, where('provider', '==', provider));
-    const querySnapshot = await getDocs(q);
-    
-    const users: User[] = querySnapshot.docs.map((doc) => ({
-      id: doc.id,
-      ...doc.data(),
-    } as User));
-    
-    return users;
-  } catch (error) {
-    console.error('Error getting users by provider:', error);
+    console.error('Error permanently deleting user:', error);
     throw error;
   }
 }
@@ -277,7 +306,6 @@ export async function getUsersByProvider(provider: string): Promise<User[]> {
  */
 export async function getUsersByIds(userIds: string[]): Promise<User[]> {
   try {
-    // Filter out invalid userIds
     const validUserIds = userIds.filter(
       (id) => id && typeof id === 'string' && id.trim() !== ''
     );
@@ -301,7 +329,7 @@ export async function getUsersByIds(userIds: string[]): Promise<User[]> {
     return users.filter((user): user is User => user !== null);
   } catch (error) {
     console.error('Error getting users by IDs:', error);
-    return []; // Return empty array instead of throwing
+    return [];
   }
 }
 
@@ -326,5 +354,128 @@ export async function getUserInfo(userId: string): Promise<{ name: string; photo
   } catch (error) {
     console.error('Error getting user info:', error);
     return null;
+  }
+}
+
+// ============================================
+// LOGIN HISTORY OPERATIONS (Subcollection)
+// ============================================
+
+export async function addLoginHistory(
+  userId: string,
+  loginData: CreateLoginHistoryInput
+): Promise<string> {
+  try {
+    if (!userId || typeof userId !== 'string' || userId.trim() === '') {
+      throw new Error('Invalid userId provided to addLoginHistory');
+    }
+
+    const loginHistoryRef = collection(
+      db,
+      COLLECTION_NAME,
+      userId,
+      LOGIN_HISTORY_SUBCOLLECTION
+    );
+    
+    const newLoginHistory = {
+      loginTime: Timestamp.now(),
+      deviceInfo: loginData.deviceInfo,
+      deviceId: loginData.deviceId,
+    };
+    
+    const docRef = await addDoc(loginHistoryRef, newLoginHistory);
+    return docRef.id;
+  } catch (error) {
+    console.error('Error adding login history:', error);
+    throw error;
+  }
+}
+
+export async function getLoginHistory(
+  userId: string,
+  limitCount: number = 50
+): Promise<LoginHistory[]> {
+  try {
+    if (!userId || typeof userId !== 'string' || userId.trim() === '') {
+      console.warn('Invalid userId provided to getLoginHistory:', userId);
+      return [];
+    }
+
+    const loginHistoryRef = collection(
+      db,
+      COLLECTION_NAME,
+      userId,
+      LOGIN_HISTORY_SUBCOLLECTION
+    );
+    
+    const q = query(
+      loginHistoryRef,
+      orderBy('loginTime', 'desc'),
+      limit(limitCount)
+    );
+    
+    const querySnapshot = await getDocs(q);
+    
+    const loginHistory: LoginHistory[] = querySnapshot.docs.map((doc) => ({
+      id: doc.id,
+      ...doc.data(),
+    } as LoginHistory));
+    
+    return loginHistory;
+  } catch (error) {
+    console.error('Error getting login history:', error);
+    return [];
+  }
+}
+
+export async function getRecentLoginHistory(
+  userId: string,
+  count: number = 10
+): Promise<LoginHistory[]> {
+  return getLoginHistory(userId, count);
+}
+
+export async function deleteLoginHistory(
+  userId: string,
+  loginHistoryId: string
+): Promise<void> {
+  try {
+    if (!userId || !loginHistoryId) {
+      throw new Error('Invalid userId or loginHistoryId');
+    }
+
+    const loginHistoryDocRef = doc(
+      db,
+      COLLECTION_NAME,
+      userId,
+      LOGIN_HISTORY_SUBCOLLECTION,
+      loginHistoryId
+    );
+    await deleteDoc(loginHistoryDocRef);
+    console.log('Login history deleted:', loginHistoryId);
+  } catch (error) {
+    console.error('Error deleting login history:', error);
+    throw error;
+  }
+}
+
+export async function getLoginHistoryCount(userId: string): Promise<number> {
+  try {
+    if (!userId || typeof userId !== 'string' || userId.trim() === '') {
+      return 0;
+    }
+
+    const loginHistoryRef = collection(
+      db,
+      COLLECTION_NAME,
+      userId,
+      LOGIN_HISTORY_SUBCOLLECTION
+    );
+    const querySnapshot = await getDocs(loginHistoryRef);
+    
+    return querySnapshot.size;
+  } catch (error) {
+    console.error('Error getting login history count:', error);
+    return 0;
   }
 }

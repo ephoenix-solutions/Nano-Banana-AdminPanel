@@ -20,6 +20,8 @@ interface Collection {
   description: string;
   firebaseCollection: string;
   fields: Field[];
+  subCollections?: Collection[];
+  isSubCollection?: boolean;
 }
 
 const collections: Collection[] = [
@@ -44,6 +46,27 @@ const collections: Collection[] = [
       { name: 'generatedCount', type: 'number', required: true, description: 'Total images generated (lifetime)', example: '150' },
       { name: 'currentPeriodCount', type: 'number', required: true, description: 'Images generated in current subscription period', example: '25' },
       { name: 'lastResetDate', type: 'Timestamp', required: true, description: 'When generation count was last reset', example: 'Timestamp.now()' },
+      { name: 'isDeleted', type: 'boolean', required: true, description: 'Soft delete flag', example: 'false' },
+      { name: 'deletedAt', type: 'Timestamp', required: false, description: 'When user was deleted', example: 'Timestamp.now()' },
+      { name: 'deletedBy', type: 'string', required: false, description: 'User ID who deleted', example: 'user_abc123' },
+    ],
+    subCollections: [
+      {
+        id: 'user-login-history',
+        name: 'User Login History',
+        icon: Icons.clock,
+        description: 'Track user login activity and device information (subcollection under users)',
+        firebaseCollection: 'users/{userId}/loginHistory',
+        fields: [
+          { name: 'id', type: 'string', required: true, description: 'Unique login history ID', example: 'login_xyz789' },
+          { name: 'loginTime', type: 'Timestamp', required: true, description: 'When the user logged in', example: 'Timestamp.now()' },
+          { name: 'deviceId', type: 'string', required: true, description: 'Unique device identifier', example: 'device_abc123' },
+          { name: 'deviceInfo.model', type: 'string', required: true, description: 'Device model', example: 'iPhone 14 Pro' },
+          { name: 'deviceInfo.os', type: 'string', required: true, description: 'Operating system', example: 'iOS 16.5' },
+          { name: 'deviceInfo.appVersion', type: 'string', required: true, description: 'App version', example: '1.2.0' },
+        ],
+        isSubCollection: true,
+      },
     ],
   },
   {
@@ -58,28 +81,36 @@ const collections: Collection[] = [
       { name: 'iconImage', type: 'string', required: true, description: 'Category icon URL', example: 'https://example.com/icon.png' },
       { name: 'order', type: 'number', required: true, description: 'Display order (lower first)', example: '1' },
       { name: 'searchCount', type: 'number', required: true, description: 'Total searches in category', example: '150' },
-      { name: 'subcategories', type: 'Subcategory[]', required: false, description: 'Array of subcategories', example: '[{id, name, order}]' },
       { name: 'createdBy', type: 'string', required: true, description: 'User ID who created', example: 'user_abc123' },
       { name: 'createdAt', type: 'Timestamp', required: true, description: 'Creation timestamp', example: 'Timestamp.now()' },
       { name: 'updatedBy', type: 'string', required: false, description: 'User ID who last updated', example: 'user_abc123' },
       { name: 'updatedAt', type: 'Timestamp', required: false, description: 'Last update timestamp', example: 'Timestamp.now()' },
+      { name: 'isDeleted', type: 'boolean', required: true, description: 'Soft delete flag', example: 'false' },
+      { name: 'deletedAt', type: 'Timestamp', required: false, description: 'When category was deleted', example: 'Timestamp.now()' },
+      { name: 'deletedBy', type: 'string', required: false, description: 'User ID who deleted', example: 'user_abc123' },
     ],
-  },
-  {
-    id: 'subcategories',
-    name: 'Subcategories',
-    icon: Icons.file,
-    description: 'Sub-level categorization within categories',
-    firebaseCollection: 'categories (nested)',
-    fields: [
-      { name: 'id', type: 'string', required: true, description: 'Unique subcategory ID', example: 'subcat_001' },
-      { name: 'name', type: 'string', required: true, description: 'Subcategory name', example: 'Mountains' },
-      { name: 'order', type: 'number', required: true, description: 'Display order', example: '1' },
-      { name: 'searchCount', type: 'number', required: true, description: 'Search count', example: '50' },
-      { name: 'createdBy', type: 'string', required: true, description: 'User ID who created', example: 'user_abc123' },
-      { name: 'createdAt', type: 'Timestamp', required: true, description: 'Creation timestamp', example: 'Timestamp.now()' },
-      { name: 'updatedBy', type: 'string', required: false, description: 'User ID who last updated', example: 'user_abc123' },
-      { name: 'updatedAt', type: 'Timestamp', required: false, description: 'Last update timestamp', example: 'Timestamp.now()' },
+    subCollections: [
+      {
+        id: 'subcategories',
+        name: 'Subcategories',
+        icon: Icons.file,
+        description: 'Sub-level categorization within categories (subcollection under each category)',
+        firebaseCollection: 'categories/{categoryId}/subcategories',
+        fields: [
+          { name: 'id', type: 'string', required: true, description: 'Unique subcategory ID', example: 'subcat_001' },
+          { name: 'name', type: 'string', required: true, description: 'Subcategory name', example: 'Mountains' },
+          { name: 'order', type: 'number', required: true, description: 'Display order', example: '1' },
+          { name: 'searchCount', type: 'number', required: true, description: 'Search count', example: '50' },
+          { name: 'createdBy', type: 'string', required: true, description: 'User ID who created', example: 'user_abc123' },
+          { name: 'createdAt', type: 'Timestamp', required: true, description: 'Creation timestamp', example: 'Timestamp.now()' },
+          { name: 'updatedBy', type: 'string', required: false, description: 'User ID who last updated', example: 'user_abc123' },
+          { name: 'updatedAt', type: 'Timestamp', required: false, description: 'Last update timestamp', example: 'Timestamp.now()' },
+          { name: 'isDeleted', type: 'boolean', required: true, description: 'Soft delete flag', example: 'false' },
+          { name: 'deletedAt', type: 'Timestamp', required: false, description: 'When subcategory was deleted', example: 'Timestamp.now()' },
+          { name: 'deletedBy', type: 'string', required: false, description: 'User ID who deleted', example: 'user_abc123' },
+        ],
+        isSubCollection: true,
+      },
     ],
   },
   {
@@ -105,26 +136,72 @@ const collections: Collection[] = [
       { name: 'createdBy', type: 'string', required: true, description: 'User ID who created', example: 'user_abc123' },
       { name: 'updatedBy', type: 'string', required: false, description: 'User ID who last updated', example: 'user_abc123' },
       { name: 'updatedAt', type: 'Timestamp', required: false, description: 'Last update timestamp', example: 'Timestamp.now()' },
+      { name: 'isDeleted', type: 'boolean', required: true, description: 'Soft delete flag', example: 'false' },
+      { name: 'deletedAt', type: 'Timestamp', required: false, description: 'When prompt was deleted', example: 'Timestamp.now()' },
+      { name: 'deletedBy', type: 'string', required: false, description: 'User ID who deleted', example: 'user_abc123' },
+    ],
+    subCollections: [
+      {
+        id: 'prompt-likes',
+        name: 'Prompt Likes',
+        icon: Icons.check,
+        description: 'User likes for prompts (subcollection under each prompt)',
+        firebaseCollection: 'prompt/{promptId}/likes/{userId}',
+        fields: [
+          { name: 'createdAt', type: 'Timestamp', required: true, description: 'Like timestamp', example: 'Timestamp.now()' },
+        ],
+        isSubCollection: true,
+      },
+      {
+        id: 'prompt-saves',
+        name: 'Prompt Saves',
+        icon: Icons.bookmark,
+        description: 'User saves for prompts (subcollection under each prompt)',
+        firebaseCollection: 'prompt/{promptId}/saves/{userId}',
+        fields: [
+          { name: 'createdAt', type: 'Timestamp', required: true, description: 'Save timestamp', example: 'Timestamp.now()' },
+        ],
+        isSubCollection: true,
+      },
     ],
   },
   {
-    id: 'prompt-likes',
-    name: 'Prompt Likes',
-    icon: Icons.check,
-    description: 'User likes for prompts (subcollection under each prompt)',
-    firebaseCollection: 'prompt/{promptId}/likes/{userId}',
+    id: 'user-generations',
+    name: 'User Generations',
+    icon: Icons.images,
+    description: 'Track user image generation history and usage',
+    firebaseCollection: 'user_generations',
     fields: [
-      { name: 'createdAt', type: 'Timestamp', required: true, description: 'Like timestamp', example: 'Timestamp.now()' },
+      { name: 'id', type: 'string', required: true, description: 'Unique generation ID', example: 'gen_abc123' },
+      { name: 'userId', type: 'string', required: true, description: 'User ID reference', example: 'user_abc123' },
+      { name: 'promptId', type: 'string', required: true, description: 'Prompt ID used', example: 'prompt_xyz789' },
+      { name: 'promptText', type: 'string', required: true, description: 'Actual prompt text used', example: 'A beautiful sunset' },
+      { name: 'imageUrl', type: 'string', required: true, description: 'Generated image URL', example: 'https://example.com/generated.jpg' },
+      { name: 'generationStatus', type: 'string', required: true, description: 'Status (pending/success/failed)', example: 'success' },
+      { name: 'errorMessage', type: 'string', required: false, description: 'Error message if failed', example: 'API timeout' },
+      { name: 'metadata', type: 'object', required: true, description: 'Generation metadata', example: '{model, parameters, processingTime}' },
+      { name: 'createdAt', type: 'Timestamp', required: true, description: 'Generation timestamp', example: 'Timestamp.now()' },
+      { name: 'subscriptionId', type: 'string', required: false, description: 'Active subscription ID', example: 'sub_abc123' },
+      { name: 'planId', type: 'string', required: false, description: 'Plan ID used', example: 'plan_premium' },
     ],
   },
   {
-    id: 'prompt-saves',
-    name: 'Prompt Saves',
-    icon: Icons.bookmark,
-    description: 'User saves for prompts (subcollection under each prompt)',
-    firebaseCollection: 'prompt/{promptId}/saves/{userId}',
+    id: 'devices',
+    name: 'Devices',
+    icon: Icons.smartphone,
+    description: 'Track devices and enforce account limits per device',
+    firebaseCollection: 'devices',
     fields: [
-      { name: 'createdAt', type: 'Timestamp', required: true, description: 'Save timestamp', example: 'Timestamp.now()' },
+      { name: 'id', type: 'string', required: true, description: 'Document ID (same as deviceId)', example: 'device_abc123' },
+      { name: 'deviceId', type: 'string', required: true, description: 'Unique device identifier', example: 'device_abc123' },
+      { name: 'accountIds', type: 'string[]', required: true, description: 'Array of user IDs on this device', example: '["user1", "user2", "user3"]' },
+      { name: 'accountCount', type: 'number', required: true, description: 'Number of accounts (length of accountIds)', example: '3' },
+      { name: 'accounts', type: 'DeviceAccount[]', required: true, description: 'Detailed account information array', example: '[{userId, email, name, photoURL, firstLoginAt, lastLoginAt}]' },
+      { name: 'deviceInfo', type: 'DeviceInfo', required: true, description: 'Device metadata object', example: '{model: "iPhone 14", os: "iOS 16.5", appVersion: "1.2.0"}' },
+      { name: 'firstLoginAt', type: 'Timestamp', required: true, description: 'First account login on this device', example: 'Timestamp.now()' },
+      { name: 'lastLoginAt', type: 'Timestamp', required: true, description: 'Most recent login', example: 'Timestamp.now()' },
+      { name: 'createdAt', type: 'Timestamp', required: true, description: 'Device document creation', example: 'Timestamp.now()' },
+      { name: 'updatedAt', type: 'Timestamp', required: true, description: 'Last update timestamp', example: 'Timestamp.now()' },
     ],
   },
   {
@@ -142,6 +219,9 @@ const collections: Collection[] = [
       { name: 'createdBy', type: 'string', required: true, description: 'User ID who created', example: 'user_abc123' },
       { name: 'updatedBy', type: 'string', required: false, description: 'User ID who last updated', example: 'user_abc123' },
       { name: 'updatedAt', type: 'Timestamp', required: false, description: 'Last update timestamp', example: 'Timestamp.now()' },
+      { name: 'isDeleted', type: 'boolean', required: true, description: 'Soft delete flag', example: 'false' },
+      { name: 'deletedAt', type: 'Timestamp', required: false, description: 'When country was deleted', example: 'Timestamp.now()' },
+      { name: 'deletedBy', type: 'string', required: false, description: 'User ID who deleted', example: 'user_abc123' },
     ],
   },
   {
@@ -199,26 +279,6 @@ const collections: Collection[] = [
     ],
   },
   {
-    id: 'user-generations',
-    name: 'User Generations',
-    icon: Icons.images,
-    description: 'Track user image generation history and usage',
-    firebaseCollection: 'user_generations',
-    fields: [
-      { name: 'id', type: 'string', required: true, description: 'Unique generation ID', example: 'gen_abc123' },
-      { name: 'userId', type: 'string', required: true, description: 'User ID reference', example: 'user_abc123' },
-      { name: 'promptId', type: 'string', required: true, description: 'Prompt ID used', example: 'prompt_xyz789' },
-      { name: 'promptText', type: 'string', required: true, description: 'Actual prompt text used', example: 'A beautiful sunset' },
-      { name: 'imageUrl', type: 'string', required: true, description: 'Generated image URL', example: 'https://example.com/generated.jpg' },
-      { name: 'generationStatus', type: 'string', required: true, description: 'Status (pending/success/failed)', example: 'success' },
-      { name: 'errorMessage', type: 'string', required: false, description: 'Error message if failed', example: 'API timeout' },
-      { name: 'metadata', type: 'object', required: true, description: 'Generation metadata', example: '{model, parameters, processingTime}' },
-      { name: 'createdAt', type: 'Timestamp', required: true, description: 'Generation timestamp', example: 'Timestamp.now()' },
-      { name: 'subscriptionId', type: 'string', required: false, description: 'Active subscription ID', example: 'sub_abc123' },
-      { name: 'planId', type: 'string', required: false, description: 'Plan ID used', example: 'plan_premium' },
-    ],
-  },
-  {
     id: 'app-settings',
     name: 'App Settings',
     icon: Icons.appSettings,
@@ -231,6 +291,24 @@ const collections: Collection[] = [
       { name: 'terms', type: 'string', required: false, description: 'Terms & conditions URL', example: 'https://example.com/terms' },
       { name: 'minimumVersion', type: 'string', required: false, description: 'Minimum required app version', example: '1.0.0' },
       { name: 'liveVersion', type: 'string', required: false, description: 'Current live app version', example: '1.2.0' },
+      { name: 'banners', type: 'string[]', required: false, description: 'Array of banner image URLs for app', example: '["https://example.com/banner1.jpg", "https://example.com/banner2.jpg"]' },
+      { name: 'maxAccountsPerDevice', type: 'number', required: true, description: 'Maximum accounts allowed per device', example: '3' },
+    ],
+  },
+  {
+    id: 'app-settings-activity',
+    name: 'App Settings Activity',
+    icon: Icons.clock,
+    description: 'Track all changes made to app settings by admins',
+    firebaseCollection: 'app_settings_activity',
+    fields: [
+      { name: 'id', type: 'string', required: true, description: 'Unique activity ID', example: 'activity_abc123' },
+      { name: 'adminId', type: 'string', required: true, description: 'Admin user ID who made changes', example: 'user_admin123' },
+      { name: 'adminName', type: 'string', required: true, description: 'Admin user name', example: 'John Admin' },
+      { name: 'adminEmail', type: 'string', required: true, description: 'Admin email address', example: 'admin@example.com' },
+      { name: 'changes', type: 'FieldChange[]', required: true, description: 'Array of field changes', example: '[{field, fieldLabel, oldValue, newValue}]' },
+      { name: 'timestamp', type: 'Timestamp', required: true, description: 'When changes were made', example: 'Timestamp.now()' },
+      { name: 'createdAt', type: 'Timestamp', required: true, description: 'Activity creation timestamp', example: 'Timestamp.now()' },
     ],
   },
 ];
@@ -239,7 +317,16 @@ export default function DeveloperGuidePage() {
   const [selectedCollection, setSelectedCollection] = useState<string>('users');
   const [copiedField, setCopiedField] = useState<string | null>(null);
 
-  const currentCollection = collections.find((c) => c.id === selectedCollection);
+  // Flatten all collections including subcollections for easy lookup
+  const allCollections: Collection[] = [];
+  collections.forEach((collection) => {
+    allCollections.push(collection);
+    if (collection.subCollections) {
+      allCollections.push(...collection.subCollections);
+    }
+  });
+
+  const currentCollection = allCollections.find((c) => c.id === selectedCollection);
 
   const copyToClipboard = (text: string, fieldName: string) => {
     navigator.clipboard.writeText(text);
@@ -284,19 +371,47 @@ export default function DeveloperGuidePage() {
                 {collections.map((collection) => {
                   const IconComponent = collection.icon;
                   const isActive = selectedCollection === collection.id;
+                  const hasSubCollections = collection.subCollections && collection.subCollections.length > 0;
+                  
                   return (
-                    <button
-                      key={collection.id}
-                      onClick={() => setSelectedCollection(collection.id)}
-                      className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all text-left ${
-                        isActive
-                          ? 'bg-accent text-primary font-semibold'
-                          : 'text-secondary hover:bg-background font-medium'
-                      }`}
-                    >
-                      <IconComponent size={18} />
-                      <span className="text-sm font-body">{collection.name}</span>
-                    </button>
+                    <div key={collection.id}>
+                      <button
+                        onClick={() => setSelectedCollection(collection.id)}
+                        className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all text-left ${
+                          isActive
+                            ? 'bg-accent text-primary font-semibold'
+                            : 'text-secondary hover:bg-background font-medium'
+                        }`}
+                      >
+                        <IconComponent size={18} />
+                        <span className="text-sm font-body">{collection.name}</span>
+                      </button>
+                      
+                      {/* Subcollections */}
+                      {hasSubCollections && (
+                        <div className="ml-4 mt-1 space-y-1 border-l-2 border-primary/10 pl-2">
+                          {collection.subCollections!.map((subCollection) => {
+                            const SubIconComponent = subCollection.icon;
+                            const isSubActive = selectedCollection === subCollection.id;
+                            return (
+                              <button
+                                key={subCollection.id}
+                                onClick={() => setSelectedCollection(subCollection.id)}
+                                className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg transition-all text-left text-sm ${
+                                  isSubActive
+                                    ? 'bg-accent/80 text-primary font-semibold'
+                                    : 'text-secondary/80 hover:bg-background/50 font-normal'
+                                }`}
+                              >
+                                <Icons.cornerDownRight size={14} />
+                                <SubIconComponent size={16} />
+                                <span className="text-xs font-body">{subCollection.name}</span>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
                   );
                 })}
               </nav>
@@ -419,9 +534,9 @@ export default function DeveloperGuidePage() {
                               </p>
                             </td>
                             <td className="px-6 py-4">
-                              <code className="text-xs font-mono text-primary bg-background px-2 py-1 rounded border border-primary/10">
+                              <div className="text-xs w-fit font-mono text-primary bg-background px-2 py-1 rounded border border-primary/10">
                                 {field.example}
-                              </code>
+                              </div>
                             </td>
                             <td className="px-6 py-4 text-right">
                               <button
@@ -502,50 +617,6 @@ export default function DeveloperGuidePage() {
                         {'}'}
                       </code>
                     </pre>
-                  </div>
-                </div>
-
-                {/* Quick Tips */}
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
-                  <div className="flex items-start gap-3">
-                    <Icons.info size={24} className="text-blue-600 flex-shrink-0 mt-0.5" />
-                    <div>
-                      <h4 className="text-lg font-bold text-blue-900 font-heading mb-2">
-                        Quick Tips
-                      </h4>
-                      <ul className="space-y-2 text-sm text-blue-800 font-body">
-                        <li className="flex items-start gap-2">
-                          <Icons.check size={16} className="flex-shrink-0 mt-0.5" />
-                          <span>
-                            <strong>Required fields</strong> must be provided when creating new documents
-                          </span>
-                        </li>
-                        <li className="flex items-start gap-2">
-                          <Icons.check size={16} className="flex-shrink-0 mt-0.5" />
-                          <span>
-                            <strong>Timestamp fields</strong> use Firebase Timestamp.now() for current time
-                          </span>
-                        </li>
-                        <li className="flex items-start gap-2">
-                          <Icons.check size={16} className="flex-shrink-0 mt-0.5" />
-                          <span>
-                            <strong>Array fields</strong> can be empty [] or contain multiple values
-                          </span>
-                        </li>
-                        <li className="flex items-start gap-2">
-                          <Icons.check size={16} className="flex-shrink-0 mt-0.5" />
-                          <span>
-                            <strong>Subcollections</strong> (Prompt Likes/Saves) are nested under prompt documents. likesCount and savesCount are auto-maintained counters
-                          </span>
-                        </li>
-                        <li className="flex items-start gap-2">
-                          <Icons.check size={16} className="flex-shrink-0 mt-0.5" />
-                          <span>
-                            Click the <Icons.copy size={12} className="inline mx-1" /> icon to copy examples to clipboard
-                          </span>
-                        </li>
-                      </ul>
-                    </div>
                   </div>
                 </div>
               </div>

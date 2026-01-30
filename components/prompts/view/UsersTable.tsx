@@ -7,10 +7,11 @@ interface UsersTableProps {
   users: Array<{ user: User; timestamp: Timestamp }>;
   loading: boolean;
   title: string;
-  icon: 'check' | 'bookmark';
+  icon: 'check' | 'bookmark' | 'heart';
   emptyMessage: string;
   timestampLabel: string;
   onViewUser: (userId: string) => void;
+  fullWidth?: boolean;
 }
 
 export default function UsersTable({
@@ -21,11 +22,12 @@ export default function UsersTable({
   emptyMessage,
   timestampLabel,
   onViewUser,
+  fullWidth = false,
 }: UsersTableProps) {
-  const IconComponent = icon === 'check' ? Icons.check : Icons.bookmark;
+  const IconComponent = icon === 'check' ? Icons.check : icon === 'heart' ? Icons.heart : Icons.bookmark;
 
   return (
-    <div className="bg-white rounded-lg border border-primary/10 overflow-hidden">
+    <div className={`bg-white rounded-lg border border-primary/10 overflow-hidden ${fullWidth ? '' : ''}`}>
       <div className="p-6 border-b border-primary/10">
         <div className="flex items-center justify-between">
           <div>
@@ -34,7 +36,7 @@ export default function UsersTable({
               {title}
             </h3>
             <p className="text-sm text-secondary mt-1">
-              {users.length} {users.length === 1 ? 'user' : 'users'} {emptyMessage.toLowerCase()}
+              {users.length} {users.length === 1 ? 'user' : 'users'}
             </p>
           </div>
         </div>
@@ -86,7 +88,15 @@ export default function UsersTable({
                           </div>
                         )}
                         <div>
-                          <p className="font-semibold text-primary">{item.user.name}</p>
+                          <div className="flex items-center gap-2">
+                            <p className="font-semibold text-primary">{item.user.name}</p>
+                            {item.user.isDeleted && (
+                              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-secondary/20 text-secondary">
+                                <Icons.trash size={12} className="mr-1" />
+                                Deleted
+                              </span>
+                            )}
+                          </div>
                           <p className="text-xs text-secondary">{item.user.email}</p>
                         </div>
                       </div>
@@ -117,7 +127,7 @@ export default function UsersTable({
         ) : (
           <div className="text-center py-12">
             <IconComponent size={48} className="text-secondary/30 mx-auto mb-4" />
-            <h4 className="text-lg font-semibold text-primary mb-2">No {title}</h4>
+            <h4 className="text-lg font-semibold text-primary mb-2">No Users Yet</h4>
             <p className="text-secondary text-sm">
               {emptyMessage}
             </p>

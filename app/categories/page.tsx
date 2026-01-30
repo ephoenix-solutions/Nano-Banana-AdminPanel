@@ -14,6 +14,7 @@ import StatsCards from '@/components/categories/list/StatsCards';
 import CategoriesTable from '@/components/categories/list/CategoriesTable';
 import EmptyState from '@/components/categories/list/EmptyState';
 import ErrorMessage from '@/components/categories/list/ErrorMessage';
+import { useRouter } from 'next/navigation';
 
 export default function CategoriesPage() {
   const {
@@ -25,7 +26,6 @@ export default function CategoriesPage() {
     
     // Loading states
     loading,
-    error,
     
     // Filter states
     searchQuery,
@@ -68,6 +68,13 @@ export default function CategoriesPage() {
     });
   };
 
+  const router = useRouter();
+
+  // Handle view trash
+  const handleViewTrash = () => {
+    router.push('/categories/trash');
+  };
+
   if (loading) {
     return (
       <AdminLayout>
@@ -85,7 +92,7 @@ export default function CategoriesPage() {
         <Breadcrumbs items={[{ label: 'Categories' }]} />
 
         {/* Page Header */}
-        <PageHeader onAddCategory={handleAddCategory} onExport={handleExport} totalCategories={filteredAndSortedCategories.length} />
+        <PageHeader onAddCategory={handleAddCategory} onExport={handleExport} onViewTrash={handleViewTrash} totalCategories={filteredAndSortedCategories.length} />
 
         {/* Search and Filter Bar */}
         <SearchFilterBar
@@ -101,9 +108,6 @@ export default function CategoriesPage() {
 
         {/* Stats Cards */}
         <StatsCards categories={categories} />
-
-        {/* Error Message */}
-        <ErrorMessage message={error} />
 
         {/* Categories Table - Only show if there are results */}
         {filteredAndSortedCategories.length > 0 && (

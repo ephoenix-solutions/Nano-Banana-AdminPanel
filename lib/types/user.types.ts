@@ -17,6 +17,11 @@ export interface User {
   generatedCount: number; // Total images generated (lifetime)
   currentPeriodCount: number; // Count for current subscription period
   lastResetDate: Timestamp; // When the count was last reset
+  
+  // Soft delete fields
+  isDeleted: boolean; // false by default
+  deletedAt?: Timestamp; // When the user was deleted
+  deletedBy?: string | { id: string; name: string; email: string }; // User ID or user info of who deleted this user
 }
 
 export interface CreateUserInput {
@@ -44,4 +49,41 @@ export interface UpdateUserInput {
   generatedCount?: number;
   currentPeriodCount?: number;
   lastResetDate?: Timestamp;
+  
+  // Soft delete fields
+  isDeleted?: boolean;
+  deletedAt?: Timestamp;
+  deletedBy?: string | { id: string; name: string; email: string };
+}
+
+// ============================================
+// LOGIN HISTORY TYPES (Subcollection)
+// ============================================
+
+/**
+ * Device information captured during login
+ */
+export interface DeviceInfo {
+  model: string;      // Device model (e.g., "iPhone 14 Pro", "Samsung Galaxy S23")
+  os: string;         // Operating system (e.g., "iOS 16.5", "Android 13")
+  appVersion: string; // App version (e.g., "1.2.0")
+}
+
+/**
+ * Login history record stored in subcollection
+ * Path: users/{userId}/loginHistory/{loginId}
+ */
+export interface LoginHistory {
+  id: string;              // Auto-generated document ID
+  loginTime: Timestamp;    // When the user logged in
+  deviceInfo: DeviceInfo;  // Device information
+  deviceId: string;        // Unique device identifier
+}
+
+/**
+ * Input for creating a new login history record
+ */
+export interface CreateLoginHistoryInput {
+  deviceInfo: DeviceInfo;
+  deviceId: string;
 }

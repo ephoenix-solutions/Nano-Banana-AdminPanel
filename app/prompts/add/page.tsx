@@ -11,12 +11,12 @@ import ImageRequirementRadio from '@/components/prompts/utils/ImageRequirementRa
 import TagsInput from '@/components/prompts/utils/TagsInput';
 import FormActions from '@/components/prompts/utils/FormActions';
 import ErrorMessage from '@/components/prompts/utils/ErrorMessage';
+import ImageUpload from '@/components/shared/ImageUpload';
 
 export default function AddPromptPage() {
   const {
     loading,
     loadingCategories,
-    error,
     categories,
     subcategories,
     formData,
@@ -121,16 +121,15 @@ export default function AddPromptPage() {
               />
             </div>
 
-            {/* Image URL Field */}
-            <FormInput
-              id="url"
-              name="url"
-              label="Image URL"
+            {/* Image Upload Field */}
+            <ImageUpload
               value={formData.url}
-              onChange={handleChange}
-              type="url"
-              required
-              placeholder="https://example.com/image.jpg"
+              onChange={(url) => handleChange({ target: { name: 'url', value: url } } as any)}
+              folder="prompts"
+              label="Prompt Image"
+              required={true}
+              enableCrop={true}
+              aspectRatio={4/3}
             />
 
             {/* Image Requirement Radio Buttons */}
@@ -166,9 +165,6 @@ export default function AddPromptPage() {
                 Mark as Trending
               </label>
             </div>
-
-            {/* Error Message */}
-            <ErrorMessage message={error} />
 
             {/* Form Actions */}
             <FormActions loading={loading} onCancel={handleCancel} />

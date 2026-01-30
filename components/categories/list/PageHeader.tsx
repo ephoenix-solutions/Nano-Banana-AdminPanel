@@ -4,6 +4,7 @@ import { useState } from 'react';
 interface PageHeaderProps {
   onAddCategory: () => void;
   onExport: (format: 'csv' | 'json') => void;
+  onViewTrash: () => void;
   totalCategories: number;
 }
 

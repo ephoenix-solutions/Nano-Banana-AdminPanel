@@ -22,12 +22,20 @@ import {
 const COLLECTION_NAME = 'countries';
 
 /**
- * Get all countries
+ * Get all countries (excluding deleted by default)
  */
-export async function getAllCountries(): Promise<Country[]> {
+export async function getAllCountries(includeDeleted: boolean = false): Promise<Country[]> {
   try {
     const countriesRef = collection(db, COLLECTION_NAME);
-    const q = query(countriesRef, orderBy('name', 'asc'));
+    const constraints = [];
+    
+    if (!includeDeleted) {
+      constraints.push(where('isDeleted', '==', false));
+    }
+    
+    constraints.push(orderBy('name', 'asc'));
+    
+    const q = query(countriesRef, ...constraints);
     const querySnapshot = await getDocs(q);
     
     const countries: Country[] = querySnapshot.docs.map((doc) => ({
@@ -38,6 +46,31 @@ export async function getAllCountries(): Promise<Country[]> {
     return countries;
   } catch (error) {
     console.error('Error getting countries:', error);
+    throw error;
+  }
+}
+
+/**
+ * Get deleted countries (trash)
+ */
+export async function getDeletedCountries(): Promise<Country[]> {
+  try {
+    const countriesRef = collection(db, COLLECTION_NAME);
+    const q = query(
+      countriesRef,
+      where('isDeleted', '==', true),
+      orderBy('deletedAt', 'desc')
+    );
+    const querySnapshot = await getDocs(q);
+    
+    const countries: Country[] = querySnapshot.docs.map((doc) => ({
+      id: doc.id,
+      ...doc.data(),
+    } as Country));
+    
+    return countries;
+  } catch (error) {
+    console.error('Error getting deleted countries:', error);
     throw error;
   }
 }
@@ -65,12 +98,16 @@ export async function getCountryById(countryId: string): Promise<Country | null>
 }
 
 /**
- * Get countries that use a specific category
+ * Get countries that use a specific category (excluding deleted)
  */
 export async function getCountriesByCategory(categoryId: string): Promise<Country[]> {
   try {
     const countriesRef = collection(db, COLLECTION_NAME);
-    const q = query(countriesRef, where('categories', 'array-contains', categoryId));
+    const q = query(
+      countriesRef,
+      where('categories', 'array-contains', categoryId),
+      where('isDeleted', '==', false)
+    );
     const querySnapshot = await getDocs(q);
     
     const countries: Country[] = querySnapshot.docs.map((doc) => ({
@@ -86,12 +123,16 @@ export async function getCountriesByCategory(categoryId: string): Promise<Countr
 }
 
 /**
- * Count countries that use a specific category
+ * Count countries that use a specific category (excluding deleted)
  */
 export async function countCountriesByCategory(categoryId: string): Promise<number> {
   try {
     const countriesRef = collection(db, COLLECTION_NAME);
-    const q = query(countriesRef, where('categories', 'array-contains', categoryId));
+    const q = query(
+      countriesRef,
+      where('categories', 'array-contains', categoryId),
+      where('isDeleted', '==', false)
+    );
     const querySnapshot = await getDocs(q);
     
     return querySnapshot.size;
@@ -114,6 +155,7 @@ export async function createCountry(countryData: CreateCountryInput): Promise<st
       categories: countryData.categories || [],
       createdAt: Timestamp.now(),
       createdBy: countryData.createdBy,
+      isDeleted: false, // New countries are not deleted
     };
     
     const docRef = await addDoc(countriesRef, newCountry);
@@ -153,14 +195,51 @@ export async function updateCountry(
 }
 
 /**
- * Delete a country
+ * Soft delete a country
  */
-export async function deleteCountry(countryId: string): Promise<void> {
+export async function softDeleteCountry(
+  countryId: string,
+  deletedBy: string
+): Promise<void> {
+  try {
+    const countryRef = doc(db, COLLECTION_NAME, countryId);
+    await updateDoc(countryRef, {
+      isDeleted: true,
+      deletedAt: Timestamp.now(),
+      deletedBy: deletedBy,
+    });
+  } catch (error) {
+    console.error('Error soft deleting country:', error);
+    throw error;
+  }
+}
+
+/**
+ * Restore a deleted country
+ */
+export async function restoreCountry(countryId: string): Promise<void> {
+  try {
+    const countryRef = doc(db, COLLECTION_NAME, countryId);
+    await updateDoc(countryRef, {
+      isDeleted: false,
+      deletedAt: null,
+      deletedBy: null,
+    });
+  } catch (error) {
+    console.error('Error restoring country:', error);
+    throw error;
+  }
+}
+
+/**
+ * Permanently delete a country (hard delete)
+ */
+export async function permanentlyDeleteCountry(countryId: string): Promise<void> {
   try {
     const countryRef = doc(db, COLLECTION_NAME, countryId);
     await deleteDoc(countryRef);
   } catch (error) {
-    console.error('Error deleting country:', error);
+    console.error('Error permanently deleting country:', error);
     throw error;
   }
 }
@@ -181,6 +260,7 @@ export async function bulkImportCountries(
         name: country.Name,
         isoCode: country.isoCode,
         categories: [],
+        isDeleted: false,
       });
     });
     

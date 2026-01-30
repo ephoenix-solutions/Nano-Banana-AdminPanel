@@ -1,13 +1,50 @@
-import { User } from '@/lib/types/user.types';
+import { User, LoginHistory } from '@/lib/types/user.types';
 import { Category } from '@/lib/types/category.types';
 import { Prompt } from '@/lib/types/prompt.types';
 import { UserGeneration } from '@/lib/types/user-generation.types';
+import { collection, getDocs, query, where, Timestamp as FirestoreTimestamp } from 'firebase/firestore';
+import { db } from '@/config/firebase';
 
 /**
- * Process user login data for charts
+ * Fetch all login history records from all users
  */
-export function processUserLoginData(users: User[]) {
+async function getAllLoginHistory(): Promise<Array<LoginHistory & { userId: string }>> {
+  try {
+    const allLoginHistory: Array<LoginHistory & { userId: string }> = [];
+    
+    // Get all users
+    const usersRef = collection(db, 'users');
+    const usersSnapshot = await getDocs(usersRef);
+    
+    // For each user, get their login history
+    for (const userDoc of usersSnapshot.docs) {
+      const loginHistoryRef = collection(db, 'users', userDoc.id, 'loginHistory');
+      const loginHistorySnapshot = await getDocs(loginHistoryRef);
+      
+      loginHistorySnapshot.docs.forEach(doc => {
+        allLoginHistory.push({
+          id: doc.id,
+          userId: userDoc.id, // Add userId from parent document
+          ...doc.data()
+        } as LoginHistory & { userId: string });
+      });
+    }
+    
+    return allLoginHistory;
+  } catch (error) {
+    console.error('Error fetching all login history:', error);
+    return [];
+  }
+}
+
+/**
+ * Process user login data for charts using login history subcollection
+ */
+export async function processUserLoginData(users: User[]) {
   const now = new Date();
+  
+  // Fetch all login history from subcollections
+  const allLoginHistory = await getAllLoginHistory();
   
   // Day-wise data (last 30 days)
   const dayWise = [];
@@ -23,12 +60,18 @@ export function processUserLoginData(users: User[]) {
       return createdDate.toDateString() === date.toDateString();
     }).length;
     
-    // Count active users (logged in on this date)
-    const activeUsersOnDate = users.filter(user => {
-      if (!user.lastLogin) return false;
-      const loginDate = user.lastLogin.toDate();
-      return loginDate.toDateString() === date.toDateString();
-    }).length;
+    // Count active users (logged in on this date) from login history subcollection
+    // Use Set to count unique users (not total login records)
+    const uniqueActiveUsers = new Set(
+      allLoginHistory
+        .filter(login => {
+          if (!login.loginTime) return false;
+          const loginDate = login.loginTime.toDate();
+          return loginDate.toDateString() === date.toDateString();
+        })
+        .map(login => login.userId)
+    );
+    const activeUsersOnDate = uniqueActiveUsers.size;
     
     dayWise.push({ 
       date: dateStr, 
@@ -52,13 +95,19 @@ export function processUserLoginData(users: User[]) {
              createdDate.getFullYear() === date.getFullYear();
     }).length;
     
-    // Count active users in this month
-    const activeUsersInMonth = users.filter(user => {
-      if (!user.lastLogin) return false;
-      const loginDate = user.lastLogin.toDate();
-      return loginDate.getMonth() === date.getMonth() && 
-             loginDate.getFullYear() === date.getFullYear();
-    }).length;
+    // Count active users in this month from login history subcollection
+    // Use Set to count unique users (not total login records)
+    const uniqueActiveUsersInMonth = new Set(
+      allLoginHistory
+        .filter(login => {
+          if (!login.loginTime) return false;
+          const loginDate = login.loginTime.toDate();
+          return loginDate.getMonth() === date.getMonth() && 
+                 loginDate.getFullYear() === date.getFullYear();
+        })
+        .map(login => login.userId)
+    );
+    const activeUsersInMonth = uniqueActiveUsersInMonth.size;
     
     monthWise.push({ 
       month: monthStr, 
@@ -79,12 +128,18 @@ export function processUserLoginData(users: User[]) {
       return createdDate.getFullYear() === year;
     }).length;
     
-    // Count active users in this year
-    const activeUsersInYear = users.filter(user => {
-      if (!user.lastLogin) return false;
-      const loginDate = user.lastLogin.toDate();
-      return loginDate.getFullYear() === year;
-    }).length;
+    // Count active users in this year from login history subcollection
+    // Use Set to count unique users (not total login records)
+    const uniqueActiveUsersInYear = new Set(
+      allLoginHistory
+        .filter(login => {
+          if (!login.loginTime) return false;
+          const loginDate = login.loginTime.toDate();
+          return loginDate.getFullYear() === year;
+        })
+        .map(login => login.userId)
+    );
+    const activeUsersInYear = uniqueActiveUsersInYear.size;
     
     yearWise.push({ 
       year: year.toString(), 

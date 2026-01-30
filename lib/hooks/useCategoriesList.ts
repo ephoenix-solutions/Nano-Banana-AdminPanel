@@ -5,12 +5,13 @@ import { User } from '@/lib/types/user.types';
 import { Country } from '@/lib/types/country.types';
 import {
   getAllCategories,
-  deleteCategory,
-  deleteSubcategory,
+  softDeleteCategory,
+  softDeleteSubcategory,
 } from '@/lib/services/category.service';
 import { getUsersByIds } from '@/lib/services/user.service';
 import { countPromptsByCategory } from '@/lib/services/prompt.service';
 import { getCountriesByCategory } from '@/lib/services/country.service';
+import { useToast } from '@/components/shared/Toast';
 
 export type SortField = 'name' | 'order' | 'searchCount' | 'subcategories' | 'createdAt' | 'updatedAt';
 export type SortOrder = 'asc' | 'desc';
@@ -36,7 +37,6 @@ interface UseCategoriesListReturn {
   
   // Loading states
   loading: boolean;
-  error: string | null;
   
   // Filter states
   searchQuery: string;
@@ -74,6 +74,7 @@ interface UseCategoriesListReturn {
 
 export function useCategoriesList(): UseCategoriesListReturn {
   const router = useRouter();
+  const { showToast } = useToast();
   
   // Data states
   const [categories, setCategories] = useState<Category[]>([]);
@@ -125,12 +126,11 @@ export function useCategoriesList(): UseCategoriesListReturn {
   const fetchCategories = async () => {
     try {
       setLoading(true);
-      setError(null);
       const data = await getAllCategories();
       setCategories(data);
     } catch (err) {
       console.error('Error fetching categories:', err);
-      setError('Failed to load categories');
+      showToast('Failed to load categories', 'error');
     } finally {
       setLoading(false);
     }
@@ -262,13 +262,18 @@ export function useCategoriesList(): UseCategoriesListReturn {
   const handleDeleteConfirm = async () => {
     try {
       if (deleteModalState.type === 'category' && deleteModalState.categoryId) {
-        await deleteCategory(deleteModalState.categoryId);
+        // Get current user ID for soft delete (you may want to get actual logged-in user)
+        const currentUserId = categories.find(c => c.id === deleteModalState.categoryId)?.createdBy || 'unknown';
+        await softDeleteCategory(deleteModalState.categoryId, currentUserId);
       } else if (
         deleteModalState.type === 'subcategory' &&
         deleteModalState.categoryId &&
         deleteModalState.subcategoryId
       ) {
-        await deleteSubcategory(deleteModalState.categoryId, deleteModalState.subcategoryId);
+        // Get current user ID for soft delete
+        const category = categories.find(c => c.id === deleteModalState.categoryId);
+        const currentUserId = category?.createdBy || 'unknown';
+        await softDeleteSubcategory(deleteModalState.categoryId, deleteModalState.subcategoryId, currentUserId);
       }
       setDeleteModalState({
         isOpen: false,
@@ -281,9 +286,10 @@ export function useCategoriesList(): UseCategoriesListReturn {
         loadingUsage: false,
       });
       await fetchCategories();
+      showToast(`${deleteModalState.type === 'category' ? 'Category' : 'Subcategory'} moved to trash`, 'success');
     } catch (err) {
       console.error('Error deleting:', err);
-      setError(`Failed to delete ${deleteModalState.type}`);
+      showToast(`Failed to delete ${deleteModalState.type}`, 'error');
     }
   };
 
@@ -398,7 +404,6 @@ export function useCategoriesList(): UseCategoriesListReturn {
     
     // Loading states
     loading,
-    error,
     
     // Filter states
     searchQuery,

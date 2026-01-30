@@ -20,6 +20,7 @@ export default function ViewUserPage() {
     creatorUser,
     handleBack,
     handleEdit,
+    handleLoginHistory,
     formatTimestamp,
   } = useUserDetails(userId);
 
@@ -89,13 +90,22 @@ export default function ViewUserPage() {
               View user information
             </p>
           </div>
-          <button
-            onClick={handleEdit}
-            className="flex items-center gap-2 px-6 py-3 bg-accent text-primary rounded-lg font-semibold hover:bg-accent/90 transition-all"
-          >
-            <Icons.edit size={20} />
-            <span>Edit User</span>
-          </button>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={handleLoginHistory}
+              className="flex items-center gap-2 px-6 py-3 border text-secondary rounded-lg font-semibold transition-all cursor-pointer border-secondary"
+            >
+              <Icons.clock size={20} />
+              <span>Login History</span>
+            </button>
+            <button
+              onClick={handleEdit}
+              className="flex items-center gap-2 px-6 py-3 bg-accent text-primary rounded-lg font-semibold hover:bg-accent/90 transition-all cursor-pointer"
+            >
+              <Icons.edit size={20} />
+              <span>Edit User</span>
+            </button>
+          </div>
         </div>
 
         {/* User Details Card */}

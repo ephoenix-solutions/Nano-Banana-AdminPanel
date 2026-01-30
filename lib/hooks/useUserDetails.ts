@@ -1,6 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { getUserById, getUsersByIds } from '@/lib/services/user.service';
+import { 
+  getUserById, 
+  getUsersByIds,
+} from '@/lib/services/user.service';
 import { User } from '@/lib/types/user.types';
 import { Timestamp } from 'firebase/firestore';
 
@@ -11,6 +14,7 @@ interface UseUserDetailsReturn {
   creatorUser: User | null;
   handleBack: () => void;
   handleEdit: () => void;
+  handleLoginHistory: () => void;
   formatTimestamp: (timestamp: Timestamp) => string;
 }
 
@@ -61,12 +65,18 @@ export function useUserDetails(userId: string): UseUserDetailsReturn {
     }
   };
 
+
+
   const handleBack = () => {
     router.push('/users');
   };
 
   const handleEdit = () => {
     router.push(`/users/edit/${userId}`);
+  };
+
+  const handleLoginHistory = () => {
+    router.push(`/users/view/${userId}/login-history`);
   };
 
   const formatTimestamp = (timestamp: Timestamp): string => {
@@ -89,6 +99,7 @@ export function useUserDetails(userId: string): UseUserDetailsReturn {
     creatorUser,
     handleBack,
     handleEdit,
+    handleLoginHistory,
     formatTimestamp,
   };
 }

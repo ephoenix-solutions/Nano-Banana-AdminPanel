@@ -9,6 +9,10 @@ export interface Subcategory {
   updatedBy?: string;
   updatedAt?: Timestamp;
   createdAt: Timestamp;
+  // Soft delete fields
+  isDeleted: boolean;
+  deletedAt?: Timestamp;
+  deletedBy?: string;
 }
 
 export interface Category {
@@ -22,6 +26,10 @@ export interface Category {
   updatedBy?: string;
   updatedAt?: Timestamp;
   createdAt: Timestamp;
+  // Soft delete fields
+  isDeleted: boolean;
+  deletedAt?: Timestamp;
+  deletedBy?: string;
 }
 
 export interface CreateCategoryInput {
@@ -39,6 +47,10 @@ export interface UpdateCategoryInput {
   order?: number;
   searchCount?: string | number;
   updatedBy?: string;
+  // Soft delete fields
+  isDeleted?: boolean;
+  deletedAt?: Timestamp;
+  deletedBy?: string;
 }
 
 export interface CreateSubcategoryInput {
@@ -53,4 +65,8 @@ export interface UpdateSubcategoryInput {
   order?: number;
   searchCount?: number;
   updatedBy?: string;
+  // Soft delete fields
+  isDeleted?: boolean;
+  deletedAt?: Timestamp;
+  deletedBy?: string;
 }

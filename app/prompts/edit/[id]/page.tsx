@@ -11,6 +11,7 @@ import FormSelect from '@/components/prompts/utils/FormSelect';
 import ImageRequirementRadio from '@/components/prompts/utils/ImageRequirementRadio';
 import TagsInput from '@/components/prompts/utils/TagsInput';
 import ErrorMessage from '@/components/prompts/utils/ErrorMessage';
+import ImageUpload from '@/components/shared/ImageUpload';
 
 export default function EditPromptPage() {
   const params = useParams();
@@ -124,16 +125,15 @@ export default function EditPromptPage() {
               />
             </div>
 
-            {/* Image URL Field */}
-            <FormInput
-              id="url"
-              name="url"
-              label="Image URL"
+            {/* Image Upload Field */}
+            <ImageUpload
               value={formData.url}
-              onChange={handleChange}
-              type="url"
-              required
-              placeholder="https://example.com/image.jpg"
+              onChange={(url) => handleChange({ target: { name: 'url', value: url } } as any)}
+              folder="prompts"
+              label="Prompt Image"
+              required={true}
+              enableCrop={true}
+              aspectRatio={4/3}
             />
 
             {/* Image Requirement Radio Buttons */}
