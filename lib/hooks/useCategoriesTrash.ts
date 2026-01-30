@@ -216,13 +216,16 @@ export function useCategoriesTrash(): UseCategoriesTrashReturn {
 
   const toggleCategory = (categoryId: string) => {
     setExpandedCategories((prev) => {
-      const newSet = new Set(prev);
-      if (newSet.has(categoryId)) {
-        newSet.delete(categoryId);
+      const newSet = new Set<string>();
+      // If clicking the same category, close it
+      if (prev.has(categoryId)) {
+        // Return empty set (close all)
+        return newSet;
       } else {
+        // Open only this category (close all others)
         newSet.add(categoryId);
+        return newSet;
       }
-      return newSet;
     });
   };
 

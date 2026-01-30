@@ -154,7 +154,10 @@ export async function getOrphanedDeletedSubcategories(): Promise<Array<{ categor
 /**
  * Get a single category by ID with subcategories
  */
-export async function getCategoryById(categoryId: string): Promise<Category | null> {
+export async function getCategoryById(
+  categoryId: string,
+  includeDeletedSubcategories: boolean = false
+): Promise<Category | null> {
   try {
     const categoryRef = doc(db, COLLECTION_NAME, categoryId);
     const categorySnap = await getDoc(categoryRef);
@@ -165,8 +168,8 @@ export async function getCategoryById(categoryId: string): Promise<Category | nu
         ...categorySnap.data(),
       } as Category;
       
-      // Get subcategories
-      category.subcategories = await getSubcategories(categoryId);
+      // Get subcategories (include deleted if specified)
+      category.subcategories = await getSubcategories(categoryId, includeDeletedSubcategories);
       
       return category;
     }

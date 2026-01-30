@@ -4,9 +4,10 @@ import { User } from '@/lib/types/user.types';
 interface UserHeaderProps {
   user: User;
   onEdit: () => void;
+  hideActions?: boolean;
 }
 
-export default function UserHeader({ user, onEdit }: UserHeaderProps) {
+export default function UserHeader({ user, onEdit, hideActions = false }: UserHeaderProps) {
   return (
     <div className="bg-gradient-to-r from-accent/10 to-secondary/10 p-8 border-b border-primary/10">
       <div className="flex items-center gap-6">

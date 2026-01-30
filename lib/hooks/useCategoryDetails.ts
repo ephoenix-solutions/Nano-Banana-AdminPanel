@@ -20,7 +20,10 @@ interface UseCategoryDetailsReturn {
   formatTimestamp: (timestamp: any) => string;
 }
 
-export function useCategoryDetails(categoryId: string): UseCategoryDetailsReturn {
+export function useCategoryDetails(
+  categoryId: string,
+  includeDeletedSubcategories: boolean = false
+): UseCategoryDetailsReturn {
   const router = useRouter();
   
   const [loading, setLoading] = useState(true);
@@ -38,7 +41,7 @@ export function useCategoryDetails(categoryId: string): UseCategoryDetailsReturn
   const fetchCategory = async () => {
     try {
       setLoading(true);
-      const categoryData = await getCategoryById(categoryId);
+      const categoryData = await getCategoryById(categoryId, includeDeletedSubcategories);
       if (categoryData) {
         setCategory(categoryData);
         

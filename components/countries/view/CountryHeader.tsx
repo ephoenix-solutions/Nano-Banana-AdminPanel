@@ -20,7 +20,7 @@ export default function CountryHeader({ country }: CountryHeaderProps) {
             {country.name}
           </h2>
           <div className="flex items-center gap-3 mt-4">
-            <span className="inline-flex items-center px-4 py-2 rounded-full text-lg font-medium bg-accent/20 text-primary font-mono">
+            <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-accent/20 text-primary font-mono">
               {country.isoCode}
             </span>
             <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-secondary/20 text-primary">

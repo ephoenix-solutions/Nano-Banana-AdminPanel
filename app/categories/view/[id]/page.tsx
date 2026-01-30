@@ -1,6 +1,6 @@
 'use client';
 
-import { useParams } from 'next/navigation';
+import { useParams, useSearchParams } from 'next/navigation';
 import AdminLayout from '@/components/AdminLayout';
 import Breadcrumbs from '@/components/Breadcrumbs';
 import { Icons } from '@/config/icons';
@@ -12,7 +12,9 @@ import SubcategoriesTable from '@/components/categories/view/SubcategoriesTable'
 
 export default function ViewCategoryPage() {
   const params = useParams();
+  const searchParams = useSearchParams();
   const categoryId = params.id as string;
+  const fromTrash = searchParams.get('from') === 'trash';
 
   const {
     loading,
@@ -27,7 +29,7 @@ export default function ViewCategoryPage() {
     handleAddSubcategory,
     handleEditSubcategory,
     formatTimestamp,
-  } = useCategoryDetails(categoryId);
+  } = useCategoryDetails(categoryId, fromTrash);
 
   if (loading) {
     return (
@@ -88,29 +90,39 @@ export default function ViewCategoryPage() {
               <Icons.arrowLeft size={20} />
               <span className="font-body text-sm">Back to Categories</span>
             </button>
-            <h1 className="text-4xl font-bold text-primary font-heading">
-              Category Details
-            </h1>
+            <div className="flex items-center gap-3">
+              <h1 className="text-4xl font-bold text-primary font-heading">
+                Category Details
+              </h1>
+              {(fromTrash || category.isDeleted) && (
+                <span className="inline-flex items-center px-3 py-1.5 rounded-full text-sm font-semibold bg-secondary/20 text-secondary border border-secondary/30">
+                  <Icons.trash size={16} className="mr-1.5" />
+                  Deleted
+                </span>
+              )}
+            </div>
             <p className="text-secondary mt-2 font-body">
               View category information and subcategories
             </p>
           </div>
-          <div className="flex items-center gap-3">
-            <button
-              onClick={handleAddSubcategory}
-              className="flex items-center gap-2 px-6 py-3 bg-secondary text-white rounded-lg font-semibold hover:bg-secondary/90 transition-all"
-            >
-              <Icons.plus size={20} />
-              <span>Add Subcategory</span>
-            </button>
-            <button
-              onClick={handleEdit}
-              className="flex items-center gap-2 px-6 py-3 bg-accent text-primary rounded-lg font-semibold hover:bg-accent/90 transition-all"
-            >
-              <Icons.edit size={20} />
-              <span>Edit Category</span>
-            </button>
-          </div>
+          {!fromTrash && !category.isDeleted && (
+            <div className="flex items-center gap-3">
+              <button
+                onClick={handleAddSubcategory}
+                className="flex items-center gap-2 px-6 py-3 bg-secondary text-white rounded-lg font-semibold hover:bg-secondary/90 transition-all"
+              >
+                <Icons.plus size={20} />
+                <span>Add Subcategory</span>
+              </button>
+              <button
+                onClick={handleEdit}
+                className="flex items-center gap-2 px-6 py-3 bg-accent text-primary rounded-lg font-semibold hover:bg-accent/90 transition-all"
+              >
+                <Icons.edit size={20} />
+                <span>Edit Category</span>
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Category Details Card */}
@@ -143,6 +155,7 @@ export default function ViewCategoryPage() {
           onAddSubcategory={handleAddSubcategory}
           onEditSubcategory={handleEditSubcategory}
           formatTimestamp={formatTimestamp}
+          hideActions={fromTrash || category.isDeleted}
         />
 
       </div>
