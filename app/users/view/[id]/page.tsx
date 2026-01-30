@@ -1,6 +1,6 @@
 'use client';
 
-import { useParams } from 'next/navigation';
+import { useParams, useSearchParams } from 'next/navigation';
 import AdminLayout from '@/components/AdminLayout';
 import Breadcrumbs from '@/components/Breadcrumbs';
 import { Icons } from '@/config/icons';
@@ -11,7 +11,9 @@ import UserPhotoSection from '@/components/users/view/UserPhotoSection';
 
 export default function ViewUserPage() {
   const params = useParams();
+  const searchParams = useSearchParams();
   const userId = params.id as string;
+  const fromTrash = searchParams.get('from') === 'trash';
 
   const {
     loading,
@@ -83,35 +85,45 @@ export default function ViewUserPage() {
               <Icons.arrowLeft size={20} />
               <span className="font-body text-sm">Back to Users</span>
             </button>
-            <h1 className="text-4xl font-bold text-primary font-heading">
-              User Details
-            </h1>
+            <div className="flex items-center gap-3">
+              <h1 className="text-4xl font-bold text-primary font-heading">
+                User Details
+              </h1>
+              {(fromTrash || user.isDeleted) && (
+                <span className="inline-flex items-center px-3 py-1.5 rounded-full text-sm font-semibold bg-secondary/20 text-secondary border border-secondary/30">
+                  <Icons.trash size={16} className="mr-1.5" />
+                  Deleted
+                </span>
+              )}
+            </div>
             <p className="text-secondary mt-2 font-body">
               View user information
             </p>
           </div>
-          <div className="flex items-center gap-3">
-            <button
-              onClick={handleLoginHistory}
-              className="flex items-center gap-2 px-6 py-3 border text-secondary rounded-lg font-semibold transition-all cursor-pointer border-secondary"
-            >
-              <Icons.clock size={20} />
-              <span>Login History</span>
-            </button>
-            <button
-              onClick={handleEdit}
-              className="flex items-center gap-2 px-6 py-3 bg-accent text-primary rounded-lg font-semibold hover:bg-accent/90 transition-all cursor-pointer"
-            >
-              <Icons.edit size={20} />
-              <span>Edit User</span>
-            </button>
-          </div>
+          {!fromTrash && !user.isDeleted && (
+            <div className="flex items-center gap-3">
+              <button
+                onClick={handleLoginHistory}
+                className="flex items-center gap-2 px-6 py-3 border text-secondary rounded-lg font-semibold transition-all cursor-pointer border-secondary"
+              >
+                <Icons.clock size={20} />
+                <span>Login History</span>
+              </button>
+              <button
+                onClick={handleEdit}
+                className="flex items-center gap-2 px-6 py-3 bg-accent text-primary rounded-lg font-semibold hover:bg-accent/90 transition-all cursor-pointer"
+              >
+                <Icons.edit size={20} />
+                <span>Edit User</span>
+              </button>
+            </div>
+          )}
         </div>
 
         {/* User Details Card */}
         <div className="bg-white rounded-lg border border-primary/10 overflow-hidden">
           {/* Profile Header Section */}
-          <UserHeader user={user} onEdit={handleEdit} />
+          <UserHeader user={user} onEdit={handleEdit} hideActions={fromTrash || user.isDeleted} />
 
           {/* Detailed Information Section */}
           <div className="p-8">

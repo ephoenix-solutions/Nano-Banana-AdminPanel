@@ -1,6 +1,6 @@
 'use client';
 
-import { useParams } from 'next/navigation';
+import { useParams, useSearchParams } from 'next/navigation';
 import AdminLayout from '@/components/AdminLayout';
 import Breadcrumbs from '@/components/Breadcrumbs';
 import { Icons } from '@/config/icons';
@@ -11,7 +11,9 @@ import AssignedCategories from '@/components/countries/view/AssignedCategories';
 
 export default function ViewCountryPage() {
   const params = useParams();
+  const searchParams = useSearchParams();
   const countryId = params.id as string;
+  const fromTrash = searchParams.get('from') === 'trash';
 
   const {
     loading,
@@ -88,20 +90,30 @@ export default function ViewCountryPage() {
               <Icons.arrowLeft size={20} />
               <span className="font-body text-sm">Back to Countries</span>
             </button>
-            <h1 className="text-4xl font-bold text-primary font-heading">
-              Country Details
-            </h1>
+            <div className="flex items-center gap-3">
+              <h1 className="text-4xl font-bold text-primary font-heading">
+                Country Details
+              </h1>
+              {(fromTrash || country.isDeleted) && (
+                <span className="inline-flex items-center px-3 py-1.5 rounded-full text-sm font-semibold bg-secondary/20 text-secondary border border-secondary/30">
+                  <Icons.trash size={16} className="mr-1.5" />
+                  Deleted
+                </span>
+              )}
+            </div>
             <p className="text-secondary mt-2 font-body">
               View country information and assigned categories
             </p>
           </div>
-          <button
-            onClick={handleEdit}
-            className="flex items-center gap-2 px-6 py-3 bg-accent text-primary rounded-lg font-semibold hover:bg-accent/90 transition-all"
-          >
-            <Icons.edit size={20} />
-            <span>Edit Country</span>
-          </button>
+          {!fromTrash && !country.isDeleted && (
+            <button
+              onClick={handleEdit}
+              className="flex items-center gap-2 px-6 py-3 bg-accent text-primary rounded-lg font-semibold hover:bg-accent/90 transition-all"
+            >
+              <Icons.edit size={20} />
+              <span>Edit Country</span>
+            </button>
+          )}
         </div>
 
         {/* Country Details Card */}
@@ -128,6 +140,7 @@ export default function ViewCountryPage() {
             <AssignedCategories
               categoryNames={assignedCategories}
               onEdit={handleEdit}
+              hideActions={fromTrash || country.isDeleted}
             />
           </div>
         </div>

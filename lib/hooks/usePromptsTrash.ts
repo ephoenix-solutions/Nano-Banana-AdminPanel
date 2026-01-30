@@ -181,7 +181,7 @@ export function usePromptsTrash(): UsePromptsTrashReturn {
 
   // Navigation handlers
   const handleView = (prompt: Prompt) => {
-    router.push(`/prompts/view/${prompt.id}`);
+    router.push(`/prompts/view/${prompt.id}?from=trash`);
   };
 
   const handleRestoreClick = (prompt: Prompt) => {

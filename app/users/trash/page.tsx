@@ -63,8 +63,8 @@ export default function UsersTrashPage() {
   } = useUsersTrash();
 
   // Handle view
-  const handleView = (user :User) => {
-    router.push(`/users/view/${user.id}`);
+  const handleView = (user: User) => {
+    router.push(`/users/view/${user.id}?from=trash`);
   };
 
 

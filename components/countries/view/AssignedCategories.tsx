@@ -3,9 +3,10 @@ import { Icons } from '@/config/icons';
 interface AssignedCategoriesProps {
   categoryNames: string[];
   onEdit: () => void;
+  hideActions?: boolean;
 }
 
-export default function AssignedCategories({ categoryNames, onEdit }: AssignedCategoriesProps) {
+export default function AssignedCategories({ categoryNames, onEdit, hideActions = false }: AssignedCategoriesProps) {
   return (
     <div className="mt-8">
       <h3 className="text-xl font-bold text-primary font-heading mb-4">
@@ -38,13 +39,15 @@ export default function AssignedCategories({ categoryNames, onEdit }: AssignedCa
           <p className="text-secondary font-body mb-4">
             This country doesn't have any categories assigned yet.
           </p>
-          <button
-            onClick={onEdit}
-            className="inline-flex items-center gap-2 px-6 py-3 bg-accent text-primary rounded-lg font-semibold hover:bg-accent/90 transition-all"
-          >
-            <Icons.edit size={20} />
-            <span>Assign Categories</span>
-          </button>
+          {!hideActions && (
+            <button
+              onClick={onEdit}
+              className="inline-flex items-center gap-2 px-6 py-3 bg-accent text-primary rounded-lg font-semibold hover:bg-accent/90 transition-all"
+            >
+              <Icons.edit size={20} />
+              <span>Assign Categories</span>
+            </button>
+          )}
         </div>
       )}
     </div>

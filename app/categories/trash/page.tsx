@@ -74,7 +74,7 @@ export default function CategoriesTrashPage() {
 
   // Handle view
   const handleView = (category: Category) => {
-          router.push(`/categories/view/${category.id}`);
+    router.push(`/categories/view/${category.id}?from=trash`);
   };
   
 

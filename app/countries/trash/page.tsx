@@ -57,7 +57,7 @@ export default function CountriesTrashPage() {
 
   // Handle view
   const handleView = (country: Country) => {
-    router.push(`/countries/view/${country.id}`);
+    router.push(`/countries/view/${country.id}?from=trash`);
   };
 
   // Handle export

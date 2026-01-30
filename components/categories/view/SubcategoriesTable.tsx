@@ -7,6 +7,7 @@ interface SubcategoriesTableProps {
   onAddSubcategory: () => void;
   onEditSubcategory: (subcategoryId: string) => void;
   formatTimestamp: (timestamp: any) => string;
+  hideActions?: boolean;
 }
 
 export default function SubcategoriesTable({
@@ -14,6 +15,7 @@ export default function SubcategoriesTable({
   onAddSubcategory,
   onEditSubcategory,
   formatTimestamp,
+  hideActions = false,
 }: SubcategoriesTableProps) {
   if (!category.subcategories || category.subcategories.length === 0) {
     return (
@@ -28,13 +30,15 @@ export default function SubcategoriesTable({
           <p className="text-secondary font-body mb-4">
             This category doesn't have any subcategories yet.
           </p>
-          <button
-            onClick={onAddSubcategory}
-            className="inline-flex items-center gap-2 px-6 py-3 bg-accent text-primary rounded-lg font-semibold hover:bg-accent/90 transition-all"
-          >
-            <Icons.plus size={20} />
-            <span>Add First Subcategory</span>
-          </button>
+          {!hideActions && (
+            <button
+              onClick={onAddSubcategory}
+              className="inline-flex items-center gap-2 px-6 py-3 bg-accent text-primary rounded-lg font-semibold hover:bg-accent/90 transition-all"
+            >
+              <Icons.plus size={20} />
+              <span>Add First Subcategory</span>
+            </button>
+          )}
         </div>
       </div>
     );
@@ -51,13 +55,15 @@ export default function SubcategoriesTable({
             All subcategories under this category
           </p>
         </div>
-        <button
-          onClick={onAddSubcategory}
-          className="flex items-center gap-2 px-4 py-2 bg-accent text-primary rounded-lg font-semibold hover:bg-accent/90 transition-all text-sm"
-        >
-          <Icons.plus size={18} />
-          <span>Add Subcategory</span>
-        </button>
+        {!hideActions && (
+          <button
+            onClick={onAddSubcategory}
+            className="flex items-center gap-2 px-4 py-2 bg-accent text-primary rounded-lg font-semibold hover:bg-accent/90 transition-all text-sm"
+          >
+            <Icons.plus size={18} />
+            <span>Add Subcategory</span>
+          </button>
+        )}
       </div>
       <div className="overflow-x-auto">
         <table className="w-full">
@@ -78,9 +84,11 @@ export default function SubcategoriesTable({
               <th className="px-6 py-4 text-left text-sm font-semibold text-primary font-body">
                 Updated By
               </th>
-              <th className="px-6 py-4 text-right text-sm font-semibold text-primary font-body">
-                Actions
-              </th>
+              {!hideActions && (
+                <th className="px-6 py-4 text-right text-sm font-semibold text-primary font-body">
+                  Actions
+                </th>
+              )}
             </tr>
           </thead>
           <tbody className="divide-y divide-primary/10">
@@ -121,15 +129,17 @@ export default function SubcategoriesTable({
                     <span className="text-secondary text-xs italic">Not updated</span>
                   )}
                 </td>
-                <td className="px-6 py-4 text-right">
-                  <button
-                    onClick={() => onEditSubcategory(subcategory.id)}
-                    className="p-2 text-primary bg-background hover:bg-accent hover:text-primary rounded-md transition-all border border-primary/10 cursor-pointer"
-                    title="Edit"
-                  >
-                    <Icons.edit size={18} />
-                  </button>
-                </td>
+                {!hideActions && (
+                  <td className="px-6 py-4 text-right">
+                    <button
+                      onClick={() => onEditSubcategory(subcategory.id)}
+                      className="p-2 text-primary bg-background hover:bg-accent hover:text-primary rounded-md transition-all border border-primary/10 cursor-pointer"
+                      title="Edit"
+                    >
+                      <Icons.edit size={18} />
+                    </button>
+                  </td>
+                )}
               </tr>
             ))}
           </tbody>

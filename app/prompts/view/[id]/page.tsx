@@ -1,6 +1,6 @@
 'use client';
 
-import { useRouter, useParams } from 'next/navigation';
+import { useRouter, useParams, useSearchParams } from 'next/navigation';
 import AdminLayout from '@/components/AdminLayout';
 import Breadcrumbs from '@/components/Breadcrumbs';
 import { Icons } from '@/config/icons';
@@ -14,7 +14,9 @@ import PromptImageSection from '@/components/prompts/view/PromptImageSection';
 export default function ViewPromptPage() {
   const router = useRouter();
   const params = useParams();
+  const searchParams = useSearchParams();
   const promptId = params.id as string;
+  const fromTrash = searchParams.get('from') === 'trash';
 
   const {
     loading,
@@ -96,36 +98,46 @@ export default function ViewPromptPage() {
               <Icons.arrowLeft size={20} />
               <span className="font-body text-sm">Back to Prompts</span>
             </button>
-            <h1 className="text-4xl font-bold text-primary font-heading">
-              Prompt Details
-            </h1>
+            <div className="flex items-center gap-3">
+              <h1 className="text-4xl font-bold text-primary font-heading">
+                Prompt Details
+              </h1>
+              {(fromTrash || prompt.isDeleted) && (
+                <span className="inline-flex items-center px-3 py-1.5 rounded-full text-sm font-semibold bg-secondary/20 text-secondary border border-secondary/30">
+                  <Icons.trash size={16} className="mr-1.5" />
+                  Deleted
+                </span>
+              )}
+            </div>
             <p className="text-secondary mt-2 font-body">
               View prompt information and generated image
             </p>
           </div>
-          <div className="flex items-center gap-3">
-            <button
-              onClick={handleLikedBy}
-              className="flex items-center gap-2 px-6 py-3 bg-accent/10 text-accent rounded-lg font-semibold hover:bg-accent/20 transition-all border border-accent/20"
-            >
-              <Icons.heart size={20} />
-              <span>Liked By</span>
-            </button>
-            <button
-              onClick={handleSavedBy}
-              className="flex items-center gap-2 px-6 py-3 bg-secondary/10 text-secondary rounded-lg font-semibold hover:bg-secondary/20 transition-all border border-secondary/20"
-            >
-              <Icons.bookmark size={20} />
-              <span>Saved By</span>
-            </button>
-            <button
-              onClick={handleEdit}
-              className="flex items-center gap-2 px-6 py-3 bg-accent text-primary rounded-lg font-semibold hover:bg-accent/90 transition-all"
-            >
-              <Icons.edit size={20} />
-              <span>Edit Prompt</span>
-            </button>
-          </div>
+          {!fromTrash && !prompt.isDeleted && (
+            <div className="flex items-center gap-3">
+              <button
+                onClick={handleLikedBy}
+                className="flex items-center gap-2 px-6 py-3 bg-accent/10 text-accent rounded-lg font-semibold hover:bg-accent/20 transition-all border border-accent/20"
+              >
+                <Icons.heart size={20} />
+                <span>Liked By</span>
+              </button>
+              <button
+                onClick={handleSavedBy}
+                className="flex items-center gap-2 px-6 py-3 bg-secondary/10 text-secondary rounded-lg font-semibold hover:bg-secondary/20 transition-all border border-secondary/20"
+              >
+                <Icons.bookmark size={20} />
+                <span>Saved By</span>
+              </button>
+              <button
+                onClick={handleEdit}
+                className="flex items-center gap-2 px-6 py-3 bg-accent text-primary rounded-lg font-semibold hover:bg-accent/90 transition-all"
+              >
+                <Icons.edit size={20} />
+                <span>Edit Prompt</span>
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Prompt Details Card */}
