@@ -24,6 +24,7 @@ import {
 
 const COLLECTION_NAME = 'users';
 const LOGIN_HISTORY_SUBCOLLECTION = 'loginHistory';
+const PROMPTS_COLLECTION = 'prompt'; // For cleaning up user likes/saves
 
 /**
  * Get all users from Firestore
@@ -273,17 +274,106 @@ export async function restoreUser(userId: string): Promise<void> {
 
 /**
  * Permanently delete a user (hard delete)
+ * Also removes all their likes and saves from prompts
  */
-export async function permanentlyDeleteUser(userId: string): Promise<void> {
+export async function permanentlyDeleteUser(
+  userId: string,
+  onProgress?: (message: string) => void
+): Promise<void> {
   try {
     if (!userId || typeof userId !== 'string' || userId.trim() === '') {
       throw new Error('Invalid userId provided to permanentlyDeleteUser');
     }
 
+    onProgress?.('Fetching user data...');
     const user = await getUserById(userId, true);
+    
+    // Step 1: Remove user's likes and saves from all prompts
+    try {
+      // Get all prompts
+      const promptsRef = collection(db, PROMPTS_COLLECTION);
+      const promptsSnapshot = await getDocs(promptsRef);
+      
+      let hasLikes = false;
+      let hasSaves = false;
+  
+      for (const promptDoc of promptsSnapshot.docs) {
+        const promptId = promptDoc.id;
+        const promptData = promptDoc.data();
+        let needsUpdate = false;
+        let likesDecrement = 0;
+        let savesDecrement = 0;
+        
+        // Remove from likes subcollection
+        try {
+          const likeDocRef = doc(db, PROMPTS_COLLECTION, promptId, 'likes', userId);
+          const likeDoc = await getDoc(likeDocRef);
+          if (likeDoc.exists()) {
+            if (!hasLikes) {
+              onProgress?.('Removing likes...');
+              hasLikes = true;
+            }
+            await deleteDoc(likeDocRef);
+            likesDecrement = 1;
+            needsUpdate = true;
+          }
+        } catch (likeError) {
+          console.error(`Error removing like from prompt ${promptId}:`, likeError);
+        }
+        
+        // Remove from saves subcollection
+        try {
+          const saveDocRef = doc(db, PROMPTS_COLLECTION, promptId, 'saves', userId);
+          const saveDoc = await getDoc(saveDocRef);
+          if (saveDoc.exists()) {
+            if (!hasSaves) {
+              onProgress?.('Removing saves...');
+              hasSaves = true;
+            }
+            await deleteDoc(saveDocRef);
+            savesDecrement = 1;
+            needsUpdate = true;
+          }
+        } catch (saveError) {
+          console.error(`Error removing save from prompt ${promptId}:`, saveError);
+        }
+        
+        // Update prompt counts
+        if (needsUpdate) {
+          try {
+            const promptDocRef = doc(db, PROMPTS_COLLECTION, promptId);
+            const updateData: Record<string, number> = {};
+            
+            if (likesDecrement > 0) {
+              const newLikesCount = Math.max(0, (promptData.likesCount || 0) - likesDecrement);
+              updateData.likesCount = newLikesCount;
+            }
+            
+            if (savesDecrement > 0) {
+              const newSavesCount = Math.max(0, (promptData.savesCount || 0) - savesDecrement);
+              updateData.savesCount = newSavesCount;
+            }
+            
+            if (Object.keys(updateData).length > 0) {
+              await updateDoc(promptDocRef, updateData);
+            }
+          } catch (updateError) {
+            console.error(`Error updating counts for prompt ${promptId}:`, updateError);
+          }
+        }
+      }
+      
+    } catch (cleanupError) {
+      console.error('Error cleaning up user likes/saves (non-critical):', cleanupError);
+      // Don't throw - continue with user deletion
+    }
+    
+    // Step 2: Delete the user document
+    onProgress?.('Deleting user...');
     const userRef = doc(db, COLLECTION_NAME, userId);
     await deleteDoc(userRef);
     
+    // Step 3: Delete user's photo from S3 if exists
     if (user?.photoURL && typeof window === 'undefined') {
       try {
         const bucketName = process.env.AWS_S3_BUCKET_NAME || 'nano-banana-images';
@@ -295,6 +385,7 @@ export async function permanentlyDeleteUser(userId: string): Promise<void> {
         console.error('Error deleting S3 photo (non-critical):', s3Error);
       }
     }
+    onProgress?.('Done');
   } catch (error) {
     console.error('Error permanently deleting user:', error);
     throw error;

@@ -61,6 +61,10 @@ interface UseUsersTrashReturn {
   setRestoreModal: (modal: { isOpen: boolean; user: User | null }) => void;
   setPermanentDeleteModal: (modal: { isOpen: boolean; user: User | null }) => void;
   
+  // Delete progress states
+  deleteProgress: Array<{ message: string; timestamp: number }>;
+  isDeleting: boolean;
+  
   // Utilities
   formatTimestamp: (timestamp: Timestamp) => string;
   getDeletedById: (user: User) => string | null;
@@ -84,6 +88,10 @@ export function useUsersTrash(): UseUsersTrashReturn {
   const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
   const [roleFilter, setRoleFilter] = useState<RoleFilter>('all');
   const [providerFilter, setProviderFilter] = useState<ProviderFilter>('all');
+  
+  // Delete progress states
+  const [deleteProgress, setDeleteProgress] = useState<Array<{ message: string; timestamp: number }>>([]);
+  const [isDeleting, setIsDeleting] = useState(false);
   
 
   
@@ -215,12 +223,24 @@ export function useUsersTrash(): UseUsersTrashReturn {
     if (!permanentDeleteModal.user) return;
 
     try {
-      await permanentlyDeleteUser(permanentDeleteModal.user.id);
+      setIsDeleting(true);
+      setDeleteProgress([]);
+      
+      await permanentlyDeleteUser(permanentDeleteModal.user.id, (message) => {
+        setDeleteProgress(prev => [...prev, { message, timestamp: Date.now() }]);
+      });
+      
+      setIsDeleting(false);
       setPermanentDeleteModal({ isOpen: false, user: null });
+      setDeleteProgress([]);
       await fetchDeletedUsers();
+      showToast('User permanently deleted', 'success');
     } catch (err) {
       console.error('Error permanently deleting user:', err);
+      setIsDeleting(false);
       showToast('Failed to permanently delete user', 'error');
+      setPermanentDeleteModal({ isOpen: false, user: null });
+      setDeleteProgress([]);
     }
   };
 
@@ -348,6 +368,10 @@ export function useUsersTrash(): UseUsersTrashReturn {
     permanentDeleteModal,
     setRestoreModal,
     setPermanentDeleteModal,
+    
+    // Delete progress states
+    deleteProgress,
+    isDeleting,
     
     // Utilities
     formatTimestamp,

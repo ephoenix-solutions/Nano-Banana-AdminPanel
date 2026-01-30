@@ -11,6 +11,7 @@ import {
 import { getAllCategories } from '@/lib/services/category.service';
 import { getUserById, getUsersByIds } from '@/lib/services/user.service';
 import { useToast } from '@/components/shared/Toast';
+import { useAuth } from '@/lib/hooks/useAuth';
 
 export type SortField = 'title' | 'likes' | 'createdAt' | 'searchCount' | 'saveCount' | 'category' | 'updatedAt';
 export type SortOrder = 'asc' | 'desc';
@@ -70,6 +71,7 @@ interface UsePromptsListReturn {
 export function usePromptsList(): UsePromptsListReturn {
   const router = useRouter();
   const { showToast } = useToast();
+  const { user: currentUser } = useAuth();
   
   // Data states
   const [prompts, setPrompts] = useState<Prompt[]>([]);
@@ -206,7 +208,12 @@ export function usePromptsList(): UsePromptsListReturn {
 
     try {
       // Get current user ID for soft delete
-      const currentUserId = deleteModal.prompt.createdBy; // You may want to get actual logged-in user
+      const currentUserId = currentUser?.uid || currentUser?.id || '';
+      
+      if (!currentUserId) {
+        console.warn('No current user ID available for deletedBy field');
+      }
+      
       await softDeletePrompt(deleteModal.prompt.id, currentUserId);
       setDeleteModal({ isOpen: false, prompt: null });
       await fetchData();
