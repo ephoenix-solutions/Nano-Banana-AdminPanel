@@ -13,6 +13,8 @@ import TrashSearchFilterBar from '@/components/users/trash/TrashSearchFilterBar'
 import TrashStatsCards from '@/components/users/trash/TrashStatsCards';
 import TrashTable from '@/components/users/trash/TrashTable';
 import TrashEmptyState from '@/components/users/trash/TrashEmptyState';
+import { User } from '@/lib/types/user.types';
+
 
 export default function UsersTrashPage() {
   const router = useRouter();
@@ -61,9 +63,10 @@ export default function UsersTrashPage() {
   } = useUsersTrash();
 
   // Handle view
-  const handleView = (user: User) => {
-    window.open(`/users/view/${user.id}`, '_blank');
+  const handleView = (user :User) => {
+    router.push(`/users/view/${user.id}`);
   };
+
 
   // Handle export
   const handleExport = (format: ExportFormat) => {

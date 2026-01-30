@@ -8,7 +8,7 @@ interface PageHeaderProps {
   totalCategories: number;
 }
 
-export default function PageHeader({ onAddCategory, onExport, onViewTrash, totalCategories }: PageHeaderProps) {
+export default function PageHeader({ onAddCategory, onExport, totalCategories }: PageHeaderProps) {
   const [showExportMenu, setShowExportMenu] = useState(false);
 
   const handleExport = (format: 'csv' | 'json') => {

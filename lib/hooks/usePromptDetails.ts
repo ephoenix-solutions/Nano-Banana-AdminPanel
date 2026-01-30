@@ -2,10 +2,9 @@ import { useState, useEffect } from 'react';
 import { Timestamp } from 'firebase/firestore';
 import { Prompt } from '@/lib/types/prompt.types';
 import { Category } from '@/lib/types/category.types';
-import { User } from '@/lib/types/user.types';
-import { getPromptById, getPromptLikedByUsers, getPromptSavedByUsers } from '@/lib/services/prompt.service';
+import { getPromptById } from '@/lib/services/prompt.service';
 import { getAllCategories } from '@/lib/services/category.service';
-import { getUserById, getUserInfo } from '@/lib/services/user.service';
+import { getUserInfo } from '@/lib/services/user.service';
 
 interface UsePromptDetailsReturn {
   loading: boolean;
@@ -16,16 +15,14 @@ interface UsePromptDetailsReturn {
   creatorPhoto: string;
   updaterName: string;
   updaterPhoto: string;
-  likedByUsers: Array<{ user: User; likedAt: Timestamp }>;
-  savedByUsers: Array<{ user: User; savedAt: Timestamp }>;
-  loadingLikes: boolean;
-  loadingSaves: boolean;
+  handleLikedBy: () => void;
+  handleSavedBy: () => void;
 }
 
 /**
- * Custom hook to fetch prompt details including likes and saves
+ * Custom hook to fetch prompt details (without likes and saves)
  */
-export function usePromptDetails(promptId: string): UsePromptDetailsReturn {
+export function usePromptDetails(promptId: string, router: any): UsePromptDetailsReturn {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [prompt, setPrompt] = useState<Prompt | null>(null);
@@ -34,10 +31,6 @@ export function usePromptDetails(promptId: string): UsePromptDetailsReturn {
   const [creatorPhoto, setCreatorPhoto] = useState<string>('');
   const [updaterName, setUpdaterName] = useState<string>('Loading...');
   const [updaterPhoto, setUpdaterPhoto] = useState<string>('');
-  const [likedByUsers, setLikedByUsers] = useState<Array<{ user: User; likedAt: Timestamp }>>([]);
-  const [savedByUsers, setSavedByUsers] = useState<Array<{ user: User; savedAt: Timestamp }>>([]);
-  const [loadingLikes, setLoadingLikes] = useState(false);
-  const [loadingSaves, setLoadingSaves] = useState(false);
 
   useEffect(() => {
     fetchData();
@@ -55,10 +48,6 @@ export function usePromptDetails(promptId: string): UsePromptDetailsReturn {
 
       if (promptData) {
         setPrompt(promptData);
-        
-        // Fetch likes and saves
-        fetchLikedByUsers(promptId);
-        fetchSavedByUsers(promptId);
         
         // Fetch creator information
         if (promptData.createdBy) {
@@ -94,58 +83,12 @@ export function usePromptDetails(promptId: string): UsePromptDetailsReturn {
     }
   };
 
-  const fetchLikedByUsers = async (promptId: string) => {
-    try {
-      setLoadingLikes(true);
-      const likes = await getPromptLikedByUsers(promptId);
-      
-      const likesData = await Promise.all(
-        likes.map(async (like) => {
-          const user = await getUserById(like.userId);
-          if (user) {
-            return {
-              user,
-              likedAt: like.likedAt,
-            };
-          }
-          return null;
-        })
-      );
-      
-      setLikedByUsers(likesData.filter((item): item is { user: User; likedAt: Timestamp } => item !== null));
-    } catch (err) {
-      console.error('Error fetching likes:', err);
-      setLikedByUsers([]);
-    } finally {
-      setLoadingLikes(false);
-    }
+  const handleLikedBy = () => {
+    router.push(`/prompts/view/${promptId}/liked-by`);
   };
 
-  const fetchSavedByUsers = async (promptId: string) => {
-    try {
-      setLoadingSaves(true);
-      const saves = await getPromptSavedByUsers(promptId);
-      
-      const savesData = await Promise.all(
-        saves.map(async (save) => {
-          const user = await getUserById(save.userId);
-          if (user) {
-            return {
-              user,
-              savedAt: save.savedAt,
-            };
-          }
-          return null;
-        })
-      );
-      
-      setSavedByUsers(savesData.filter((item): item is { user: User; savedAt: Timestamp } => item !== null));
-    } catch (err) {
-      console.error('Error fetching saves:', err);
-      setSavedByUsers([]);
-    } finally {
-      setLoadingSaves(false);
-    }
+  const handleSavedBy = () => {
+    router.push(`/prompts/view/${promptId}/saved-by`);
   };
 
   return {
@@ -157,9 +100,7 @@ export function usePromptDetails(promptId: string): UsePromptDetailsReturn {
     creatorPhoto,
     updaterName,
     updaterPhoto,
-    likedByUsers,
-    savedByUsers,
-    loadingLikes,
-    loadingSaves,
+    handleLikedBy,
+    handleSavedBy,
   };
 }

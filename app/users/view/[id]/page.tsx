@@ -8,7 +8,6 @@ import { useUserDetails } from '@/lib/hooks/useUserDetails';
 import UserHeader from '@/components/users/view/UserHeader';
 import UserInfoGrid from '@/components/users/view/UserInfoGrid';
 import UserPhotoSection from '@/components/users/view/UserPhotoSection';
-import LoginHistoryTable from '@/components/users/view/LoginHistoryTable';
 
 export default function ViewUserPage() {
   const params = useParams();
@@ -19,10 +18,9 @@ export default function ViewUserPage() {
     error,
     user,
     creatorUser,
-    loginHistory,
-    loginHistoryLoading,
     handleBack,
     handleEdit,
+    handleLoginHistory,
     formatTimestamp,
   } = useUserDetails(userId);
 
@@ -92,13 +90,22 @@ export default function ViewUserPage() {
               View user information
             </p>
           </div>
-          <button
-            onClick={handleEdit}
-            className="flex items-center gap-2 px-6 py-3 bg-accent text-primary rounded-lg font-semibold hover:bg-accent/90 transition-all"
-          >
-            <Icons.edit size={20} />
-            <span>Edit User</span>
-          </button>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={handleLoginHistory}
+              className="flex items-center gap-2 px-6 py-3 border text-secondary rounded-lg font-semibold transition-all cursor-pointer border-secondary"
+            >
+              <Icons.clock size={20} />
+              <span>Login History</span>
+            </button>
+            <button
+              onClick={handleEdit}
+              className="flex items-center gap-2 px-6 py-3 bg-accent text-primary rounded-lg font-semibold hover:bg-accent/90 transition-all cursor-pointer"
+            >
+              <Icons.edit size={20} />
+              <span>Edit User</span>
+            </button>
+          </div>
         </div>
 
         {/* User Details Card */}
@@ -118,21 +125,6 @@ export default function ViewUserPage() {
             <UserPhotoSection photoURL={user.photoURL} />
           </div>
         </div>
-
-        {/* Login History Section */}
-        {loginHistoryLoading ? (
-          <div className="bg-white rounded-lg border border-primary/10 p-8">
-            <div className="flex items-center justify-center">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-accent"></div>
-              <span className="ml-3 text-secondary font-body">Loading login history...</span>
-            </div>
-          </div>
-        ) : (
-          <LoginHistoryTable 
-            loginHistory={loginHistory} 
-            formatTimestamp={formatTimestamp}
-          />
-        )}
       </div>
     </AdminLayout>
   );

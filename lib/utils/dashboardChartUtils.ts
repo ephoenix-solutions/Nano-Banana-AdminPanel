@@ -8,9 +8,9 @@ import { db } from '@/config/firebase';
 /**
  * Fetch all login history records from all users
  */
-async function getAllLoginHistory(): Promise<LoginHistory[]> {
+async function getAllLoginHistory(): Promise<Array<LoginHistory & { userId: string }>> {
   try {
-    const allLoginHistory: LoginHistory[] = [];
+    const allLoginHistory: Array<LoginHistory & { userId: string }> = [];
     
     // Get all users
     const usersRef = collection(db, 'users');
@@ -24,8 +24,9 @@ async function getAllLoginHistory(): Promise<LoginHistory[]> {
       loginHistorySnapshot.docs.forEach(doc => {
         allLoginHistory.push({
           id: doc.id,
+          userId: userDoc.id, // Add userId from parent document
           ...doc.data()
-        } as LoginHistory);
+        } as LoginHistory & { userId: string });
       });
     }
     
@@ -60,11 +61,17 @@ export async function processUserLoginData(users: User[]) {
     }).length;
     
     // Count active users (logged in on this date) from login history subcollection
-    const activeUsersOnDate = allLoginHistory.filter(login => {
-      if (!login.loginTime) return false;
-      const loginDate = login.loginTime.toDate();
-      return loginDate.toDateString() === date.toDateString();
-    }).length;
+    // Use Set to count unique users (not total login records)
+    const uniqueActiveUsers = new Set(
+      allLoginHistory
+        .filter(login => {
+          if (!login.loginTime) return false;
+          const loginDate = login.loginTime.toDate();
+          return loginDate.toDateString() === date.toDateString();
+        })
+        .map(login => login.userId)
+    );
+    const activeUsersOnDate = uniqueActiveUsers.size;
     
     dayWise.push({ 
       date: dateStr, 
@@ -89,12 +96,18 @@ export async function processUserLoginData(users: User[]) {
     }).length;
     
     // Count active users in this month from login history subcollection
-    const activeUsersInMonth = allLoginHistory.filter(login => {
-      if (!login.loginTime) return false;
-      const loginDate = login.loginTime.toDate();
-      return loginDate.getMonth() === date.getMonth() && 
-             loginDate.getFullYear() === date.getFullYear();
-    }).length;
+    // Use Set to count unique users (not total login records)
+    const uniqueActiveUsersInMonth = new Set(
+      allLoginHistory
+        .filter(login => {
+          if (!login.loginTime) return false;
+          const loginDate = login.loginTime.toDate();
+          return loginDate.getMonth() === date.getMonth() && 
+                 loginDate.getFullYear() === date.getFullYear();
+        })
+        .map(login => login.userId)
+    );
+    const activeUsersInMonth = uniqueActiveUsersInMonth.size;
     
     monthWise.push({ 
       month: monthStr, 
@@ -116,11 +129,17 @@ export async function processUserLoginData(users: User[]) {
     }).length;
     
     // Count active users in this year from login history subcollection
-    const activeUsersInYear = allLoginHistory.filter(login => {
-      if (!login.loginTime) return false;
-      const loginDate = login.loginTime.toDate();
-      return loginDate.getFullYear() === year;
-    }).length;
+    // Use Set to count unique users (not total login records)
+    const uniqueActiveUsersInYear = new Set(
+      allLoginHistory
+        .filter(login => {
+          if (!login.loginTime) return false;
+          const loginDate = login.loginTime.toDate();
+          return loginDate.getFullYear() === year;
+        })
+        .map(login => login.userId)
+    );
+    const activeUsersInYear = uniqueActiveUsersInYear.size;
     
     yearWise.push({ 
       year: year.toString(), 

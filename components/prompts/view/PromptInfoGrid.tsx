@@ -252,6 +252,20 @@ export default function PromptInfoGrid({
           </div>
         </div>
       </div>
+      {/* isDeleted */}
+      <div className="bg-background rounded-lg p-4 border border-primary/10">
+        <div className="flex items-start gap-3">
+          <div className="w-10 h-10 bg-accent/20 rounded-lg flex items-center justify-center flex-shrink-0">
+            <Icons.trash size={20} className="text-accent" />
+          </div>
+          <div className="flex-1">
+            <p className="text-sm text-secondary font-body mb-1">Prompt Status</p>
+            <p className="text-base font-semibold text-primary font-body">
+              {prompt.isDeleted ? 'Deleted' : 'Active'}
+            </p>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

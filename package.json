@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "create-admin": "node scripts/create-admin.js"
+    "ci": "rm -rf node_modules package-lock.json && npm install"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.975.0",

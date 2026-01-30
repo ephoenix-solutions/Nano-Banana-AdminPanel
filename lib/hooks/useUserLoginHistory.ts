@@ -1,39 +1,39 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { 
-  getUserById, 
-  getUsersByIds,
+  getUserById,
+  getRecentLoginHistory,
 } from '@/lib/services/user.service';
-import { User } from '@/lib/types/user.types';
+import { User, LoginHistory } from '@/lib/types/user.types';
 import { Timestamp } from 'firebase/firestore';
 
-interface UseUserDetailsReturn {
+interface UseUserLoginHistoryReturn {
   loading: boolean;
   error: string | null;
   user: User | null;
-  creatorUser: User | null;
+  loginHistory: LoginHistory[];
+  loginHistoryLoading: boolean;
   handleBack: () => void;
-  handleEdit: () => void;
-  handleLoginHistory: () => void;
   formatTimestamp: (timestamp: Timestamp) => string;
 }
 
-export function useUserDetails(userId: string): UseUserDetailsReturn {
+export function useUserLoginHistory(userId: string): UseUserLoginHistoryReturn {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [user, setUser] = useState<User | null>(null);
-  const [creatorUser, setCreatorUser] = useState<User | null>(null);
+  const [loginHistory, setLoginHistory] = useState<LoginHistory[]>([]);
+  const [loginHistoryLoading, setLoginHistoryLoading] = useState(false);
 
   useEffect(() => {
     fetchUser();
   }, [userId]);
 
   useEffect(() => {
-    if (user?.createdBy) {
-      fetchCreatorUser();
+    if (userId) {
+      fetchLoginHistory();
     }
-  }, [user]);
+  }, [userId]);
 
   const fetchUser = async () => {
     try {
@@ -52,31 +52,20 @@ export function useUserDetails(userId: string): UseUserDetailsReturn {
     }
   };
 
-  const fetchCreatorUser = async () => {
+  const fetchLoginHistory = async () => {
     try {
-      if (!user?.createdBy) return;
-      
-      const creators = await getUsersByIds([user.createdBy]);
-      if (creators.length > 0) {
-        setCreatorUser(creators[0]);
-      }
+      setLoginHistoryLoading(true);
+      const history = await getRecentLoginHistory(userId, 50); // Get last 50 logins
+      setLoginHistory(history);
     } catch (err) {
-      console.error('Error fetching creator user:', err);
+      console.error('Error fetching login history:', err);
+    } finally {
+      setLoginHistoryLoading(false);
     }
   };
 
-
-
   const handleBack = () => {
-    router.push('/users');
-  };
-
-  const handleEdit = () => {
-    router.push(`/users/edit/${userId}`);
-  };
-
-  const handleLoginHistory = () => {
-    router.push(`/users/view/${userId}/login-history`);
+    router.push(`/users/view/${userId}`);
   };
 
   const formatTimestamp = (timestamp: Timestamp): string => {
@@ -96,10 +85,9 @@ export function useUserDetails(userId: string): UseUserDetailsReturn {
     loading,
     error,
     user,
-    creatorUser,
+    loginHistory,
+    loginHistoryLoading,
     handleBack,
-    handleEdit,
-    handleLoginHistory,
     formatTimestamp,
   };
 }

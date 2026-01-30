@@ -14,6 +14,7 @@ import StatsCards from '@/components/categories/list/StatsCards';
 import CategoriesTable from '@/components/categories/list/CategoriesTable';
 import EmptyState from '@/components/categories/list/EmptyState';
 import ErrorMessage from '@/components/categories/list/ErrorMessage';
+import { useRouter } from 'next/navigation';
 
 export default function CategoriesPage() {
   const {
@@ -66,6 +67,8 @@ export default function CategoriesPage() {
       formatTimestamp,
     });
   };
+
+  const router = useRouter();
 
   // Handle view trash
   const handleViewTrash = () => {

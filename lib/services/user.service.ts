@@ -105,9 +105,9 @@ export async function getUserById(userId: string, includeDeleted: boolean = fals
         ...userSnap.data(),
       } as User;
       
-      if (!includeDeleted && user.isDeleted) {
-        return null;
-      }
+      // if (!includeDeleted && user.isDeleted) {
+      //   return null;
+      // }
       
       return user;
     }

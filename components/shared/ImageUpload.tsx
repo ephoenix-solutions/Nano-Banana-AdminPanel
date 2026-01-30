@@ -32,7 +32,7 @@ export default function ImageUpload({
   circularCrop = false,
   showAspectRatioButtons = true,
 }: ImageUploadProps) {
-  const [uploadMode, setUploadMode] = useState<'upload' | 'url'>('upload');
+  const [uploadMode, setUploadMode] = useState<'upload' | 'url'>('url');
   const [uploading, setUploading] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(value || null);
@@ -282,7 +282,15 @@ export default function ImageUpload({
                     value={option.value}
                     name="uploadMode"
                     checked={uploadMode === option.value}
-                    onChange={(e) => setUploadMode(e.target.value as 'upload' | 'url')}
+                    // onChange={(e) => setUploadMode(e.target.value as 'upload' | 'url')}
+                    onChange={(e) => {
+                      const newMode = e.target.value as 'upload' | 'url';
+                      if (newMode === 'upload') {
+                        showToast('Upload service is currently unavailable. Please use Direct URL option.', 'warning');
+                        return;
+                      }
+                      setUploadMode(newMode);
+                    }}
                     className="w-4 h-4 border-2 border-primary/30 bg-white rounded-full appearance-none cursor-pointer checked:bg-accent checked:border-accent focus:ring-2 focus:ring-accent/20 focus:outline-none transition-all"
                   />
                   <label

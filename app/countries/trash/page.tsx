@@ -4,6 +4,7 @@ import AdminLayout from '@/components/AdminLayout';
 import Breadcrumbs from '@/components/Breadcrumbs';
 import ConfirmModal from '@/components/ConfirmModal';
 import { useCountriesTrash } from '@/lib/hooks/useCountriesTrash';
+import { useRouter } from 'next/navigation';
 
 // Import trash components
 import TrashPageHeader from '@/components/countries/trash/TrashPageHeader';
@@ -11,6 +12,7 @@ import TrashSearchFilterBar from '@/components/countries/trash/TrashSearchFilter
 import TrashStatsCards from '@/components/countries/trash/TrashStatsCards';
 import TrashTable from '@/components/countries/trash/TrashTable';
 import TrashEmptyState from '@/components/countries/trash/TrashEmptyState';
+import { Country } from '@/lib/types/country.types';
 
 export default function CountriesTrashPage() {
   const {
@@ -51,9 +53,11 @@ export default function CountriesTrashPage() {
     formatTimestamp,
   } = useCountriesTrash();
 
+  const router = useRouter();
+
   // Handle view
   const handleView = (country: Country) => {
-    window.open(`/countries/view/${country.id}`, '_blank');
+    router.push(`/countries/view/${country.id}`);
   };
 
   // Handle export

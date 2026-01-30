@@ -56,6 +56,7 @@ export function ToastProvider({
   const [toasts, setToasts] = useState<Toast[]>([]);
   const [isHovered, setIsHovered] = useState(false);
   const timeoutsRef = useRef<Map<string, { timeoutId: NodeJS.Timeout; remainingTime: number; startTime: number }>>(new Map());
+  const toastRefs = useRef<Map<string, HTMLDivElement>>(new Map());
 
   const addToast = useCallback((toast: Omit<Toast, 'id'>) => {
     const id = `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
@@ -199,8 +200,24 @@ export function ToastProvider({
               // Calculate 3D stacking effect
               // index 0 = oldest (back), last index = newest (front)
               const reverseIndex = displayToasts.length - 1 - index;
+              
+              // Get the actual height of the current toast
+              const toastElement = toastRefs.current.get(toast.id);
+              const toastHeight = toastElement ? toastElement.offsetHeight : 70; // Default 70px if not measured
+              
+              // Calculate cumulative height for proper spacing
+              let cumulativeHeight = 0;
+              if (isHovered) {
+                for (let i = displayToasts.length - 1; i > index; i--) {
+                  const prevToast = displayToasts[i];
+                  const prevElement = toastRefs.current.get(prevToast.id);
+                  const prevHeight = prevElement ? prevElement.offsetHeight : 70;
+                  cumulativeHeight += prevHeight + 12; // 12px gap between toasts
+                }
+              }
+              
               const scale = isHovered ? 1 : (1 - (reverseIndex * 0.05)); // Full size on hover
-              const translateY = isHovered ? (reverseIndex * 63) : (reverseIndex * 8); // 63px spacing on hover
+              const translateY = isHovered ? cumulativeHeight : (reverseIndex * 8); // Dynamic spacing on hover
               const opacity = isHovered ? 1 : (1 - (reverseIndex * 0.15)); // Full opacity on hover
               const zIndex = index + 1; // Oldest has lowest z-index, newest has highest
 
@@ -225,6 +242,11 @@ export function ToastProvider({
                   className="pointer-events-auto"
                 >
                   <div
+                    ref={(el) => {
+                      if (el) {
+                        toastRefs.current.set(toast.id, el);
+                      }
+                    }}
                     className={`flex items-start gap-3 min-w-[320px] max-w-[420px] p-4 rounded-lg shadow-lg transition-shadow duration-300 ${
                       isHovered ? 'shadow-xl' : ''
                     } ${getVariantStyles(toast.variant)}`}

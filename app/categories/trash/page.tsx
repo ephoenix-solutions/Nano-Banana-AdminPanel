@@ -1,6 +1,8 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+
 import AdminLayout from '@/components/AdminLayout';
 import Breadcrumbs from '@/components/Breadcrumbs';
 import ConfirmModal from '@/components/ConfirmModal';
@@ -16,10 +18,12 @@ import TrashTable from '@/components/categories/trash/TrashTable';
 import TrashEmptyState from '@/components/categories/trash/TrashEmptyState';
 import OrphanedSubcategoryRow from '@/components/categories/trash/OrphanedSubcategoryRow';
 import SortableHeader from '@/components/categories/trash/SortableHeader';
+import { Category } from '@/lib/types/category.types';
 
 export default function CategoriesTrashPage() {
   const [activeTab, setActiveTab] = useState<'categories' | 'subcategories'>('categories');
-  
+  const router = useRouter();
+
   const {
     // Data
     deletedCategories,
@@ -70,8 +74,9 @@ export default function CategoriesTrashPage() {
 
   // Handle view
   const handleView = (category: Category) => {
-    window.open(`/categories/view/${category.id}`, '_blank');
+          router.push(`/categories/view/${category.id}`);
   };
+  
 
   // Handle export
   const handleExport = (format: ExportFormat, type: 'categories' | 'subcategories') => {

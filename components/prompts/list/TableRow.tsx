@@ -79,7 +79,7 @@ export default function TableRow({
             ? 'None'
             : (prompt.imageRequirement ?? 0) === 0
             ? 'Optional'
-            : `${prompt.imageRequirement} Req.`}
+            : `${prompt.imageRequirement}`}
         </span>
       </td>
 
