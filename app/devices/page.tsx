@@ -265,6 +265,9 @@ export default function DevicesPage() {
                       Device Info
                     </th>
                     <th className="px-6 py-4 text-left text-xs font-semibold text-secondary uppercase tracking-wider">
+                      App Version
+                    </th>
+                    <th className="px-6 py-4 text-left text-xs font-semibold text-secondary uppercase tracking-wider">
                       Accounts
                     </th>
                     <th className="px-6 py-4 text-left text-xs font-semibold text-secondary uppercase tracking-wider">
@@ -283,7 +286,7 @@ export default function DevicesPage() {
                     <tr key={device.id} className="hover:bg-background/50 transition-colors">
                       <td className="px-6 py-4">
                         <code className="text-xs font-mono text-primary bg-background px-2 py-1 rounded" title={device.deviceId}>
-                          {device.deviceId.substring(0, 12)}...
+                          {device.deviceId || 'N/A'}
                         </code>
                       </td>
                       <td className="px-6 py-4">
@@ -297,6 +300,11 @@ export default function DevicesPage() {
                             </p>
                           </div>
                         </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-mono font-medium bg-accent/10 text-accent border border-accent/20">
+                          v{device.deviceInfo.appVersion}
+                        </span>
                       </td>
                       <td className="px-6 py-4">
                         <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${
