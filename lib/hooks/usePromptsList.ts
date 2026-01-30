@@ -208,7 +208,7 @@ export function usePromptsList(): UsePromptsListReturn {
 
     try {
       // Get current user ID for soft delete
-      const currentUserId = currentUser?.uid || currentUser?.id || '';
+      const currentUserId = currentUser?.id || '';
       
       if (!currentUserId) {
         console.warn('No current user ID available for deletedBy field');
